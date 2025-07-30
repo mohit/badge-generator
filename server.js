@@ -116,58 +116,167 @@ app.get('/upload', requireAuth, (req, res) => {
     <head>
       <title>Badge Generator - Upload</title>
       <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; }
         input[type="file"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        button { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        textarea { width: 100%; height: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        button { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
         button:hover { background: #218838; }
-        .logout { float: right; background: #dc3545; }
+        .logout { float: right; background: #dc3545; margin-right: 0; }
         .logout:hover { background: #c82333; }
         .success { color: green; margin-top: 10px; }
         .error { color: red; margin-top: 10px; }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #28a745; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .json-editor { border: 1px solid #ddd; border-radius: 4px; padding: 15px; background: #f8f9fa; }
+        .template-buttons { margin-bottom: 15px; }
+        .template-btn { background: #6c757d; font-size: 12px; padding: 5px 10px; }
+        .template-btn:hover { background: #5a6268; }
       </style>
     </head>
     <body>
       <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h2>Upload Badge JSON Files</h2>
+        <h2>Badge Generator</h2>
         <a href="/logout"><button class="logout">Logout</button></a>
       </div>
       
-      <form method="POST" action="/upload" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="filename">Custom Filename (optional):</label>
-          <input type="text" id="filename" name="filename" placeholder="badge.json">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('upload')">File Upload</div>
+        <div class="tab" onclick="switchTab('editor')">JSON Editor</div>
+      </div>
+      
+      <div id="upload-tab" class="tab-content active">
+        <h3>Upload JSON File</h3>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="filename">Custom Filename (optional):</label>
+            <input type="text" id="filename" name="filename" placeholder="badge.json">
+          </div>
+          <div class="form-group">
+            <label for="file">JSON File:</label>
+            <input type="file" id="file" name="file" accept=".json,application/json" required>
+          </div>
+          <button type="submit">Upload File</button>
+        </form>
+      </div>
+      
+      <div id="editor-tab" class="tab-content">
+        <h3>Create JSON Directly</h3>
+        <div class="json-editor">
+          <div class="template-buttons">
+            <button type="button" class="template-btn" onclick="loadTemplate('issuer')">Issuer Template</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('badge-class')">Badge Class Template</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('assertion')">Assertion Template</button>
+            <button type="button" class="template-btn" onclick="clearEditor()">Clear</button>
+          </div>
+          <form method="POST" action="/create-json">
+            <div class="form-group">
+              <label for="json-filename">Filename:</label>
+              <input type="text" id="json-filename" name="filename" placeholder="my-badge.json" required>
+            </div>
+            <div class="form-group">
+              <label for="json-content">JSON Content:</label>
+              <textarea id="json-content" name="content" placeholder="Enter your JSON here..." required></textarea>
+            </div>
+            <button type="submit">Create JSON File</button>
+            <button type="button" onclick="validateJSON()">Validate JSON</button>
+          </form>
         </div>
-        <div class="form-group">
-          <label for="file">JSON File:</label>
-          <input type="file" id="file" name="file" accept=".json,application/json" required>
-        </div>
-        <button type="submit">Upload</button>
-      </form>
+      </div>
       
       <h3>Uploaded Files</h3>
       <div id="file-list"></div>
       
       <script>
-        // Load and display uploaded files
-        fetch('/api/files')
-          .then(response => response.json())
-          .then(files => {
-            const fileList = document.getElementById('file-list');
-            if (files.length === 0) {
-              fileList.innerHTML = '<p>No files uploaded yet.</p>';
-            } else {
-              fileList.innerHTML = files.map(file => 
-                \`<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
-                  <strong>\${file.name}</strong><br>
-                  <a href="/badges/\${file.name}" target="_blank">View JSON</a> | 
-                  <a href="/badges/\${file.name}" download>Download</a>
-                  <br><small>URL: \${window.location.origin}/badges/\${file.name}</small>
-                </div>\`
-              ).join('');
+        function switchTab(tabName) {
+          document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+          
+          document.querySelector(\`[onclick="switchTab('\${tabName}')"]\`).classList.add('active');
+          document.getElementById(\`\${tabName}-tab\`).classList.add('active');
+        }
+        
+        function loadTemplate(type) {
+          const templates = {
+            'issuer': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "Issuer",
+              "id": "https://example.com/issuer/1",
+              "name": "Example Organization",
+              "url": "https://example.com",
+              "email": "contact@example.com",
+              "description": "An example organization that issues badges",
+              "image": "https://example.com/logo.png"
+            },
+            'badge-class': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "BadgeClass",
+              "id": "https://example.com/badge/excellence",
+              "name": "Excellence Badge",
+              "description": "Awarded for demonstrating excellence",
+              "image": "https://example.com/badge.png",
+              "criteria": "https://example.com/criteria/excellence",
+              "issuer": "https://example.com/issuer/1",
+              "tags": ["excellence", "achievement"]
+            },
+            'assertion': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "Assertion",
+              "id": "https://example.com/assertion/123",
+              "recipient": {
+                "type": "email",
+                "hashed": false,
+                "identity": "recipient@example.com"
+              },
+              "badge": "https://example.com/badge/excellence",
+              "issuedOn": new Date().toISOString(),
+              "evidence": "https://example.com/evidence/123"
             }
-          });
+          };
+          
+          document.getElementById('json-content').value = JSON.stringify(templates[type], null, 2);
+        }
+        
+        function clearEditor() {
+          document.getElementById('json-content').value = '';
+        }
+        
+        function validateJSON() {
+          const content = document.getElementById('json-content').value;
+          try {
+            JSON.parse(content);
+            alert('Valid JSON!');
+          } catch (e) {
+            alert('Invalid JSON: ' + e.message);
+          }
+        }
+        
+        // Load and display uploaded files
+        function loadFiles() {
+          fetch('/api/files')
+            .then(response => response.json())
+            .then(files => {
+              const fileList = document.getElementById('file-list');
+              if (files.length === 0) {
+                fileList.innerHTML = '<p>No files uploaded yet.</p>';
+              } else {
+                fileList.innerHTML = files.map(file => 
+                  \`<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <strong>\${file.name}</strong><br>
+                    <a href="/badges/\${file.name}" target="_blank">View JSON</a> | 
+                    <a href="/badges/\${file.name}" download>Download</a>
+                    <br><small>URL: \${window.location.origin}/badges/\${file.name}</small>
+                  </div>\`
+                ).join('');
+              }
+            });
+        }
+        
+        loadFiles();
       </script>
     </body>
     </html>
@@ -187,6 +296,31 @@ app.post('/upload', requireAuth, upload.single('file'), (req, res) => {
     fs.unlinkSync(req.file.path); // Delete invalid file
     return res.status(400).send('Invalid JSON file');
   }
+  
+  res.redirect('/upload');
+});
+
+// Handle direct JSON creation
+app.post('/create-json', requireAuth, (req, res) => {
+  const { filename, content } = req.body;
+  
+  if (!filename || !content) {
+    return res.status(400).send('Missing filename or content');
+  }
+  
+  // Validate JSON
+  try {
+    JSON.parse(content);
+  } catch (error) {
+    return res.status(400).send('Invalid JSON: ' + error.message);
+  }
+  
+  // Ensure filename ends with .json
+  const jsonFilename = filename.endsWith('.json') ? filename : filename + '.json';
+  const filepath = path.join('uploads', jsonFilename);
+  
+  // Write the JSON file
+  fs.writeFileSync(filepath, content);
   
   res.redirect('/upload');
 });
