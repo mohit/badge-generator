@@ -611,11 +611,78 @@ app.post('/create-smart-badge', requireAuth, (req, res) => {
   }
   
   try {
-    // Parse multiple JSON objects
-    const objects = content.trim().split('\n\n').map(obj => obj.trim()).filter(obj => obj);
+    // Smart JSON object parser - handles both separated and concatenated JSON
+    function parseMultipleJSONObjects(content) {
+      const trimmed = content.trim();
+      
+      // First try: split by blank lines (preferred format)
+      let objects = trimmed.split('\n\n').map(obj => obj.trim()).filter(obj => obj);
+      
+      // If we only got one object but it looks like multiple concatenated JSONs, try smart parsing
+      if (objects.length === 1 && objects[0].includes('}{')) {
+        console.log('Detected concatenated JSON objects, attempting smart parsing...');
+        objects = smartSplitJSON(objects[0]);
+      }
+      
+      return objects;
+    }
+    
+    // Smart JSON splitter for concatenated objects
+    function smartSplitJSON(text) {
+      const results = [];
+      let current = '';
+      let braceDepth = 0;
+      let inString = false;
+      let escapeNext = false;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        
+        if (escapeNext) {
+          escapeNext = false;
+          current += char;
+          continue;
+        }
+        
+        if (char === '\\') {
+          escapeNext = true;
+          current += char;
+          continue;
+        }
+        
+        if (char === '"' && !escapeNext) {
+          inString = !inString;
+        }
+        
+        if (!inString) {
+          if (char === '{') {
+            braceDepth++;
+          } else if (char === '}') {
+            braceDepth--;
+          }
+        }
+        
+        current += char;
+        
+        // If we've closed a complete JSON object and we're not in a string
+        if (braceDepth === 0 && current.trim() && !inString) {
+          results.push(current.trim());
+          current = '';
+        }
+      }
+      
+      // Add any remaining content
+      if (current.trim()) {
+        results.push(current.trim());
+      }
+      
+      return results;
+    }
+    
+    const objects = parseMultipleJSONObjects(content);
     
     if (objects.length === 0) {
-      return res.status(400).send('No JSON objects found. Please paste valid JSON objects separated by blank lines.');
+      return res.status(400).send('No JSON objects found. Please paste valid JSON objects. Objects can be separated by blank lines or concatenated together.');
     }
     
     console.log(`Smart Badge Creator: Processing ${objects.length} JSON objects for title "${title}"`);
