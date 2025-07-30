@@ -382,7 +382,7 @@ app.get('/upload', requireAuth, (req, res) => {
     "identity": "student@example.com"
   },
   "badge": "https://example.com/badge/web-development",
-  "issuedOn": "\${new Date().toISOString()}"
+  "issuedOn": "2024-01-15T10:00:00Z"
 }\`;
           
           const exampleV3 = \`{
@@ -424,7 +424,7 @@ app.get('/upload', requireAuth, (req, res) => {
     "type": "Profile",
     "name": "Example University"
   },
-  "validFrom": "\${new Date().toISOString()}",
+  "validFrom": "2024-01-15T10:00:00Z",
   "name": "Web Development Certificate",
   "credentialSubject": {
     "type": "AchievementSubject",
