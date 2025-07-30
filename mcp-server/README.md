@@ -1,0 +1,221 @@
+# Badge Generator MCP Server
+
+An MCP (Model Context Protocol) server that allows AI assistants like Claude or ChatGPT to interact with the Badge Generator API to create and manage Open Badges.
+
+## Features
+
+- 🏆 **Create Issuers** - Set up badge-issuing organizations
+- 🎖️ **Create Badge Classes** - Define badge types and criteria  
+- 📜 **Create Credentials** - Award badges to recipients
+- 🚀 **Smart Badge Creation** - Process complete badge systems from combined JSON
+- 📋 **List & View Badges** - Browse and inspect created badges
+- 🔧 **Configuration** - Dynamic server and API key setup
+
+## Installation
+
+1. Install dependencies:
+```bash
+cd mcp-server
+npm install
+```
+
+2. Set environment variables (optional):
+```bash
+export BADGE_API_KEY="your_api_key_here"
+```
+
+## Usage with Claude Desktop
+
+Add this to your Claude Desktop configuration file:
+
+### macOS
+`~/Library/Application Support/Claude/claude_desktop_config.json`
+
+### Windows  
+`%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "badge-generator": {
+      "command": "node",
+      "args": ["/path/to/badge-generator/mcp-server/index.js"],
+      "env": {
+        "BADGE_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+## Usage with Other MCP Clients
+
+```bash
+# Run the server
+node index.js
+
+# Or with development watching
+npm run dev
+```
+
+## Available Tools
+
+### `configure_server`
+Configure connection to your Badge Generator instance.
+
+**Parameters:**
+- `baseUrl` (required) - Badge Generator API URL (e.g., "https://your-domain.com")
+- `apiKey` (required) - API key for authentication
+
+**Example:**
+```
+Please configure the MCP server to connect to https://my-badges.railway.app with API key abc123...
+```
+
+### `create_issuer`
+Create a new issuer/organization profile.
+
+**Parameters:**
+- `id` (required) - Unique URL identifier
+- `name` (required) - Organization name
+- `url` (required) - Organization website
+- `email` (optional) - Contact email
+- `description` (optional) - Organization description
+- `image` (optional) - Logo URL
+
+**Example:**
+```
+Create an issuer for "Acme University" with URL https://acme.edu and email badges@acme.edu
+```
+
+### `create_badge_class`
+Create a new badge type/achievement.
+
+**Parameters:**
+- `id` (required) - Unique URL identifier
+- `name` (required) - Badge name
+- `description` (required) - What the badge represents
+- `criteria` (required) - How to earn the badge
+- `issuer` (required) - URL of the issuer
+- `image` (optional) - Badge image URL
+- `tags` (optional) - Array of tags
+
+**Example:**
+```
+Create a "Web Development Certificate" badge class for completing advanced web development coursework
+```
+
+### `create_credential_subject`
+Award a badge to a recipient.
+
+**Parameters:**
+- `id` (required) - Unique URL identifier
+- `recipient` (required) - Object with type, hashed, and identity
+- `badge` (required) - URL of the badge class
+- `issuedOn` (optional) - Issue date (ISO 8601)
+- `expires` (optional) - Expiration date (ISO 8601)
+- `evidence` (optional) - Evidence URL
+
+**Example:**
+```
+Award the Web Development Certificate to student@example.com with evidence at https://portfolio.example.com
+```
+
+### `create_smart_badge`
+Create a complete badge system from combined JSON objects.
+
+**Parameters:**
+- `title` (required) - File prefix (e.g., "web-dev")
+- `content` (required) - Combined JSON objects separated by blank lines
+
+**Example:**
+```
+Create a smart badge system called "excellence-2024" with the following combined JSON objects: [paste issuer, badge class, and assertion JSON]
+```
+
+### `list_badges`
+List all uploaded badge files.
+
+**Example:**
+```
+Show me all the badges that have been created
+```
+
+### `get_badge`  
+Retrieve a specific badge file.
+
+**Parameters:**
+- `filename` (required) - Name of the badge file
+
+**Example:**
+```
+Show me the contents of web-dev-badge.json
+```
+
+## Supported Badge Formats
+
+The MCP server supports both Open Badges v2.0 and v3.0 formats:
+
+- **v2.0** - Classic Open Badges (Issuer, BadgeClass, Assertion)
+- **v3.0** - Verifiable Credentials format (Profile, Achievement, OpenBadgeCredential)
+
+## Authentication Notes
+
+- API endpoints (`create_issuer`, `create_badge_class`, `create_credential_subject`) use API key authentication
+- Web endpoints (`create_smart_badge`, `list_badges`) require session authentication
+- Public badge files (`get_badge`) require no authentication
+
+## Error Handling
+
+The MCP server provides detailed error messages for:
+- Invalid JSON schemas
+- API authentication failures
+- Network connectivity issues
+- Missing required parameters
+
+## Example Workflow
+
+1. **Configure the server:**
+   ```
+   Configure the server to use https://my-badges.com with API key xyz789
+   ```
+
+2. **Create an issuer:**
+   ```
+   Create an issuer for "Tech Academy" at https://techacademy.org
+   ```
+
+3. **Create a badge class:**
+   ```
+   Create a "JavaScript Mastery" badge for completing advanced JavaScript coursework
+   ```
+
+4. **Award the badge:**
+   ```
+   Award the JavaScript Mastery badge to developer@email.com
+   ```
+
+5. **View the results:**
+   ```
+   List all badges and show me the JavaScript badge details
+   ```
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Run with auto-reload
+npm run dev
+
+# Test with MCP inspector (if available)
+npx @modelcontextprotocol/inspector node index.js
+```
+
+## Support
+
+For issues related to:
+- MCP server functionality → Check this README
+- Badge Generator API → See main project documentation
+- Claude Desktop integration → Check Claude Desktop MCP documentation

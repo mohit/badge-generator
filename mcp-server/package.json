@@ -1,0 +1,19 @@
+{
+  "name": "badge-generator-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for Open Badges API integration",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0",
+    "node-fetch": "^3.3.2",
+    "zod": "^3.23.8"
+  },
+  "keywords": ["mcp", "open-badges", "credentials", "api"],
+  "author": "Badge Generator",
+  "license": "MIT"
+}
