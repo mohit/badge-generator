@@ -6,6 +6,16 @@ const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
+// Helper function to ensure uploads directory exists
+function ensureUploadsDir() {
+  if (!fs.existsSync('uploads')) {
+    fs.mkdirSync('uploads', { recursive: true });
+  }
+}
+
+// Ensure uploads directory exists at startup
+ensureUploadsDir();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -320,6 +330,7 @@ app.post('/create-json', requireAuth, (req, res) => {
   const filepath = path.join('uploads', jsonFilename);
   
   // Write the JSON file
+  ensureUploadsDir();
   fs.writeFileSync(filepath, content);
   
   res.redirect('/upload');
@@ -373,6 +384,7 @@ app.post('/api/issuer', requireApiKey, (req, res) => {
   const filename = `issuer-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
+  ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(issuer, null, 2));
   
   res.json({
@@ -408,6 +420,7 @@ app.post('/api/badge-class', requireApiKey, (req, res) => {
   const filename = `badge-class-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
+  ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(badgeClass, null, 2));
   
   res.json({
@@ -443,6 +456,7 @@ app.post('/api/credential-subject', requireApiKey, (req, res) => {
   const filename = `credential-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
+  ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(credentialSubject, null, 2));
   
   res.json({
