@@ -119,6 +119,49 @@ X-API-Key: your_api_key_here
 - `API_KEY` - API key for creating badges via API
 - `PORT` - Server port (default: 3000)
 
+## MCP Server Integration
+
+This project includes an MCP (Model Context Protocol) server that allows AI assistants like Claude or ChatGPT to interact with your Badge Generator API.
+
+### Setup MCP Server
+
+1. Install MCP server dependencies:
+```bash
+cd mcp-server
+npm install
+```
+
+2. Configure Claude Desktop by adding to your config file:
+
+**macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "badge-generator": {
+      "command": "node",
+      "args": ["/absolute/path/to/badge-generator/mcp-server/index.js"],
+      "env": {
+        "BADGE_API_KEY": "hJOvxkppmwJnTRoreFwprv59SY5YeWr+vRslC7Ytg4M="
+      }
+    }
+  }
+}
+```
+
+### Available MCP Tools
+
+- `configure_server` - Set up API connection
+- `create_issuer` - Create badge-issuing organizations
+- `create_badge_class` - Define badge types and criteria
+- `create_credential_subject` - Award badges to recipients
+- `create_smart_badge` - Process complete badge systems
+- `list_badges` - Browse created badges
+- `get_badge` - Retrieve specific badge files
+
+See `mcp-server/README.md` for detailed usage instructions.
+
 ## Generated Credentials
 
 Your `.env` file contains randomly generated secure credentials:
