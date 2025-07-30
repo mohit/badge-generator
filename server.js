@@ -619,7 +619,7 @@ app.post('/create-smart-badge', requireAuth, (req, res) => {
       let objects = trimmed.split('\n\n').map(obj => obj.trim()).filter(obj => obj);
       
       // If we only got one object but it looks like multiple concatenated JSONs, try smart parsing
-      if (objects.length === 1 && objects[0].includes('}{')) {
+      if (objects.length === 1 && (objects[0].includes('}{') || objects[0].includes('} {'))) {
         console.log('Detected concatenated JSON objects, attempting smart parsing...');
         objects = smartSplitJSON(objects[0]);
       }
