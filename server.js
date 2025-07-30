@@ -179,9 +179,16 @@ app.get('/upload', requireAuth, (req, res) => {
         <h3>Create JSON Directly</h3>
         <div class="json-editor">
           <div class="template-buttons">
-            <button type="button" class="template-btn" onclick="loadTemplate('issuer')">Issuer Template</button>
-            <button type="button" class="template-btn" onclick="loadTemplate('badge-class')">Badge Class Template</button>
-            <button type="button" class="template-btn" onclick="loadTemplate('assertion')">Assertion Template</button>
+            <strong>v2.0 Templates:</strong><br>
+            <button type="button" class="template-btn" onclick="loadTemplate('issuer')">Issuer</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('badge-class')">Badge Class</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('assertion')">Assertion</button>
+            <br><br>
+            <strong>v3.0 Templates:</strong><br>
+            <button type="button" class="template-btn" onclick="loadTemplate('issuer-v3')">Profile (Issuer)</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('achievement-v3')">Achievement</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('credential-v3')">OpenBadgeCredential</button>
+            <br><br>
             <button type="button" class="template-btn" onclick="clearEditor()">Clear</button>
           </div>
           <form method="POST" action="/create-json">
@@ -265,6 +272,65 @@ app.get('/upload', requireAuth, (req, res) => {
               "badge": "https://example.com/badge/excellence",
               "issuedOn": new Date().toISOString(),
               "evidence": "https://example.com/evidence/123"
+            },
+            'issuer-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://example.com/issuers/1",
+              "type": "Profile",
+              "name": "Example Organization",
+              "url": "https://example.com",
+              "email": "contact@example.com",
+              "description": "An example organization that issues badges"
+            },
+            'achievement-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://example.com/achievements/excellence",
+              "type": "Achievement",
+              "name": "Excellence Achievement",
+              "description": "Awarded for demonstrating excellence in learning",
+              "achievementType": "Certificate",
+              "criteria": {
+                "narrative": "Demonstrates mastery of core competencies"
+              },
+              "image": {
+                "id": "https://example.com/badge.png",
+                "type": "Image"
+              }
+            },
+            'credential-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://example.com/credentials/123",
+              "type": ["VerifiableCredential", "OpenBadgeCredential"],
+              "issuer": {
+                "id": "https://example.com/issuers/1",
+                "type": "Profile",
+                "name": "Example Organization"
+              },
+              "validFrom": new Date().toISOString(),
+              "name": "Excellence Badge",
+              "credentialSubject": {
+                "type": "AchievementSubject",
+                "identifier": {
+                  "type": "IdentityObject",
+                  "hashed": false,
+                  "identityType": "email",
+                  "identity": "recipient@example.com"
+                },
+                "achievement": {
+                  "id": "https://example.com/achievements/excellence",
+                  "type": "Achievement",
+                  "name": "Excellence Achievement"
+                }
+              }
             }
           };
           
@@ -286,7 +352,7 @@ app.get('/upload', requireAuth, (req, res) => {
         }
         
         function loadSmartExample() {
-          const example = \`{
+          const exampleV2 = \`{
   "@context": "https://w3id.org/openbadges/v2",
   "type": "Issuer",
   "id": "https://example.com/issuer/1",
@@ -318,7 +384,72 @@ app.get('/upload', requireAuth, (req, res) => {
   "badge": "https://example.com/badge/web-development",
   "issuedOn": "\${new Date().toISOString()}"
 }\`;
-          document.getElementById('smart-content').value = example;
+          
+          const exampleV3 = \`{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://example.com/issuers/1",
+  "type": "Profile",
+  "name": "Example University",
+  "url": "https://example.com",
+  "email": "badges@example.com"
+}
+
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://example.com/achievements/web-development",
+  "type": "Achievement",
+  "name": "Web Development Certificate",
+  "description": "Demonstrates proficiency in modern web development",
+  "achievementType": "Certificate",
+  "criteria": {
+    "narrative": "Complete web development course with 80% score"
+  }
+}
+
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://example.com/credentials/123",
+  "type": ["VerifiableCredential", "OpenBadgeCredential"],
+  "issuer": {
+    "id": "https://example.com/issuers/1",
+    "type": "Profile",
+    "name": "Example University"
+  },
+  "validFrom": "\${new Date().toISOString()}",
+  "name": "Web Development Certificate",
+  "credentialSubject": {
+    "type": "AchievementSubject",
+    "identifier": {
+      "type": "IdentityObject",
+      "hashed": false,
+      "identityType": "email",
+      "identity": "student@example.com"
+    },
+    "achievement": {
+      "id": "https://example.com/achievements/web-development",
+      "type": "Achievement",
+      "name": "Web Development Certificate"
+    }
+  }
+}\`;
+          
+          // Ask user which version they want
+          const version = prompt("Which version would you like to load?\\n\\n1. Open Badges v2.0 (classic)\\n2. Open Badges v3.0 (with Verifiable Credentials)\\n\\nEnter 1 or 2:");
+          
+          if (version === "2" || version === "3.0" || version === "v3") {
+            document.getElementById('smart-content').value = exampleV3;
+          } else {
+            document.getElementById('smart-content').value = exampleV2;
+          }
         }
         
         function validateSmartJSON() {
@@ -423,39 +554,67 @@ app.post('/create-smart-badge', requireAuth, (req, res) => {
     const objects = content.trim().split('\n\n').map(obj => obj.trim()).filter(obj => obj);
     const parsedObjects = objects.map(obj => JSON.parse(obj));
     
-    // Identify object types
+    // Identify object types (support both v2.0 and v3.0)
     let issuer = null, badgeClass = null, assertion = null;
+    let isV3 = false;
     
     parsedObjects.forEach(obj => {
+      // v2.0 types
       if (obj.type === 'Issuer') issuer = obj;
       else if (obj.type === 'BadgeClass') badgeClass = obj;
       else if (obj.type === 'Assertion') assertion = obj;
+      // v3.0 types
+      else if (obj.type === 'Profile') { issuer = obj; isV3 = true; }
+      else if (obj.type === 'Achievement') { badgeClass = obj; isV3 = true; }
+      else if (Array.isArray(obj.type) && obj.type.includes('OpenBadgeCredential')) { assertion = obj; isV3 = true; }
     });
     
     if (!issuer || !badgeClass || !assertion) {
-      return res.status(400).send('Missing required objects. Please include Issuer, BadgeClass, and Assertion.');
+      return res.status(400).send('Missing required objects. Please include Issuer/Profile, BadgeClass/Achievement, and Assertion/OpenBadgeCredential.');
     }
     
     // Generate new URLs based on the domain and title
     const baseUrl = `${req.protocol}://${req.get('host')}/badges`;
-    const issuerUrl = `${baseUrl}/${title}-issuer.json`;
-    const badgeUrl = `${baseUrl}/${title}-badge.json`;
-    const assertionUrl = `${baseUrl}/${title}-assertion.json`;
+    const issuerUrl = `${baseUrl}/${title}-${isV3 ? 'profile' : 'issuer'}.json`;
+    const badgeUrl = `${baseUrl}/${title}-${isV3 ? 'achievement' : 'badge'}.json`;
+    const assertionUrl = `${baseUrl}/${title}-${isV3 ? 'credential' : 'assertion'}.json`;
     
-    // Update IDs and references
-    issuer.id = issuerUrl;
-    badgeClass.id = badgeUrl;
-    badgeClass.issuer = issuerUrl;
-    assertion.id = assertionUrl;
-    assertion.badge = badgeUrl;
+    // Update IDs and references based on version
+    if (isV3) {
+      // v3.0 linking
+      issuer.id = issuerUrl;
+      badgeClass.id = badgeUrl;
+      assertion.id = assertionUrl;
+      
+      // Update issuer reference in credential
+      if (assertion.issuer) {
+        assertion.issuer.id = issuerUrl;
+      }
+      
+      // Update achievement reference in credential subject
+      if (assertion.credentialSubject && assertion.credentialSubject.achievement) {
+        assertion.credentialSubject.achievement.id = badgeUrl;
+      }
+    } else {
+      // v2.0 linking
+      issuer.id = issuerUrl;
+      badgeClass.id = badgeUrl;
+      badgeClass.issuer = issuerUrl;
+      assertion.id = assertionUrl;
+      assertion.badge = badgeUrl;
+    }
     
     // Ensure uploads directory exists
     ensureUploadsDir();
     
-    // Save all three files
-    fs.writeFileSync(path.join('uploads', `${title}-issuer.json`), JSON.stringify(issuer, null, 2));
-    fs.writeFileSync(path.join('uploads', `${title}-badge.json`), JSON.stringify(badgeClass, null, 2));
-    fs.writeFileSync(path.join('uploads', `${title}-assertion.json`), JSON.stringify(assertion, null, 2));
+    // Save all three files with appropriate names
+    const issuerFilename = `${title}-${isV3 ? 'profile' : 'issuer'}.json`;
+    const badgeFilename = `${title}-${isV3 ? 'achievement' : 'badge'}.json`;
+    const assertionFilename = `${title}-${isV3 ? 'credential' : 'assertion'}.json`;
+    
+    fs.writeFileSync(path.join('uploads', issuerFilename), JSON.stringify(issuer, null, 2));
+    fs.writeFileSync(path.join('uploads', badgeFilename), JSON.stringify(badgeClass, null, 2));
+    fs.writeFileSync(path.join('uploads', assertionFilename), JSON.stringify(assertion, null, 2));
     
     res.redirect('/upload');
   } catch (error) {
