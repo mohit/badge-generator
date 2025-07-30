@@ -454,19 +454,80 @@ app.get('/upload', requireAuth, (req, res) => {
         
         function validateSmartJSON() {
           const content = document.getElementById('smart-content').value;
+          
+          if (!content.trim()) {
+            alert('Please paste some JSON content first.');
+            return;
+          }
+          
           try {
             // Try to parse as individual JSON objects
             const objects = content.trim().split('\\n\\n').map(obj => obj.trim()).filter(obj => obj);
+            
+            if (objects.length === 0) {
+              alert('No JSON objects found. Please separate multiple objects with blank lines.');
+              return;
+            }
+            
+            let issuer = null, badgeClass = null, assertion = null;
+            let isV3 = false;
+            
             objects.forEach((obj, index) => {
               try {
-                JSON.parse(obj);
+                const parsed = JSON.parse(obj);
+                
+                // Detect object types
+                if (parsed.type === 'Issuer') issuer = parsed;
+                else if (parsed.type === 'BadgeClass') badgeClass = parsed;
+                else if (parsed.type === 'Assertion') assertion = parsed;
+                else if (parsed.type === 'Profile') { issuer = parsed; isV3 = true; }
+                else if (parsed.type === 'Achievement') { badgeClass = parsed; isV3 = true; }
+                else if (Array.isArray(parsed.type) && parsed.type.includes('OpenBadgeCredential')) { assertion = parsed; isV3 = true; }
+                
               } catch (e) {
-                throw new Error(\`Object \${index + 1}: \${e.message}\`);
+                // Enhanced error message with position info
+                let errorMsg = \`Object \${index + 1}: \${e.message}\`;
+                
+                const posMatch = e.message.match(/position (\\d+)/);
+                if (posMatch) {
+                  const pos = parseInt(posMatch[1]);
+                  const char = obj[pos] || 'EOF';
+                  const context = obj.substring(Math.max(0, pos - 10), pos + 11);
+                  errorMsg += \`\\n\\nCharacter at position \${pos}: "\${char}"\\nContext: "\${context}"\`;
+                  
+                  // Show which line has the error
+                  const lines = obj.substring(0, pos).split('\\n');
+                  errorMsg += \`\\nLine \${lines.length} in object \${index + 1}\`;
+                }
+                
+                throw new Error(errorMsg);
               }
             });
-            alert(\`Valid! Found \${objects.length} JSON objects.\`);
+            
+            // Check if we have all required objects
+            const missing = [];
+            if (!issuer) missing.push('Issuer/Profile');
+            if (!badgeClass) missing.push('BadgeClass/Achievement');
+            if (!assertion) missing.push('Assertion/OpenBadgeCredential');
+            
+            let message = \`✅ Valid JSON! Found \${objects.length} objects\\n\`;
+            message += \`📋 Detected: \${isV3 ? 'Open Badges v3.0' : 'Open Badges v2.0'}\\n\\n\`;
+            message += \`Objects found:\\n\`;
+            if (issuer) message += \`• \${isV3 ? 'Profile' : 'Issuer'}: \${issuer.name || 'Unnamed'}\\n\`;
+            if (badgeClass) message += \`• \${isV3 ? 'Achievement' : 'BadgeClass'}: \${badgeClass.name || 'Unnamed'}\\n\`;
+            if (assertion) message += \`• \${isV3 ? 'OpenBadgeCredential' : 'Assertion'}: Found\\n\`;
+            
+            if (missing.length > 0) {
+              message += \`\\n⚠️ Missing required objects: \${missing.join(', ')}\`;
+              message += \`\\n\\nFor a complete badge system, you need all three objects.\`;
+            } else {
+              message += \`\\n🎉 Complete badge system ready to create!\`;
+            }
+            
+            alert(message);
+            
           } catch (e) {
-            alert('Invalid JSON: ' + e.message);
+            alert('❌ Invalid JSON:\\n\\n' + e.message + '\\n\\nPlease fix the JSON syntax and try again.');
           }
         }
         
@@ -552,7 +613,45 @@ app.post('/create-smart-badge', requireAuth, (req, res) => {
   try {
     // Parse multiple JSON objects
     const objects = content.trim().split('\n\n').map(obj => obj.trim()).filter(obj => obj);
-    const parsedObjects = objects.map(obj => JSON.parse(obj));
+    
+    if (objects.length === 0) {
+      return res.status(400).send('No JSON objects found. Please paste valid JSON objects separated by blank lines.');
+    }
+    
+    console.log(`Smart Badge Creator: Processing ${objects.length} JSON objects for title "${title}"`);
+    
+    const parsedObjects = [];
+    objects.forEach((obj, index) => {
+      try {
+        const parsed = JSON.parse(obj);
+        parsedObjects.push(parsed);
+        console.log(`✅ Object ${index + 1} parsed: ${parsed.type || 'Unknown type'}`);
+      } catch (parseError) {
+        console.log(`❌ Error parsing object ${index + 1}: ${parseError.message}`);
+        
+        // Create detailed error message with context
+        let errorMsg = `JSON parsing error in object ${index + 1}: ${parseError.message}`;
+        
+        // Try to find position information
+        const posMatch = parseError.message.match(/position (\d+)/);
+        if (posMatch) {
+          const pos = parseInt(posMatch[1]);
+          const char = obj[pos] || 'EOF';
+          const context = obj.substring(Math.max(0, pos - 20), pos + 21);
+          errorMsg += `\n\nCharacter at position ${pos}: "${char}"\nContext: "${context}"`;
+          
+          // Show line information
+          const lines = obj.substring(0, pos).split('\n');
+          const lineNum = lines.length;
+          const charInLine = lines[lines.length - 1].length;
+          errorMsg += `\nLine ${lineNum}, Character ${charInLine}`;
+        }
+        
+        errorMsg += `\n\nObject ${index + 1} content preview:\n${obj.substring(0, 200)}${obj.length > 200 ? '...' : ''}`;
+        
+        throw new Error(errorMsg);
+      }
+    });
     
     // Identify object types (support both v2.0 and v3.0)
     let issuer = null, badgeClass = null, assertion = null;

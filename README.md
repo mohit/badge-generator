@@ -143,7 +143,7 @@ npm install
       "command": "node",
       "args": ["/absolute/path/to/badge-generator/mcp-server/index.js"],
       "env": {
-        "BADGE_API_KEY": "hJOvxkppmwJnTRoreFwprv59SY5YeWr+vRslC7Ytg4M="
+        "BADGE_API_KEY": "your_api_key_from_env_file"
       }
     }
   }
@@ -164,6 +164,8 @@ See `mcp-server/README.md` for detailed usage instructions.
 
 ## Generated Credentials
 
-Your `.env` file contains randomly generated secure credentials:
-- Upload password: `6rEt1xwM4ZalpuPoqPRaUuVtaWknb7eYbS5644nylHs=`
-- API key: `hJOvxkppmwJnTRoreFwprv59SY5YeWr+vRslC7Ytg4M=`
+Your `.env` file contains randomly generated secure credentials. Check the `.env` file for your specific credentials:
+- Upload password: Found in `UPLOAD_PASSWORD` 
+- API key: Found in `API_KEY`
+
+**⚠️ Security Note:** Never commit your `.env` file or share these credentials publicly.
