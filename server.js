@@ -157,6 +157,7 @@ app.get('/upload', requireAuth, (req, res) => {
       <div class="tabs">
         <div class="tab active" onclick="switchTab('upload')">File Upload</div>
         <div class="tab" onclick="switchTab('editor')">JSON Editor</div>
+        <div class="tab" onclick="switchTab('smart')">Smart Badge Creator</div>
       </div>
       
       <div id="upload-tab" class="tab-content active">
@@ -196,6 +197,25 @@ app.get('/upload', requireAuth, (req, res) => {
             <button type="button" onclick="validateJSON()">Validate JSON</button>
           </form>
         </div>
+      </div>
+      
+      <div id="smart-tab" class="tab-content">
+        <h3>Smart Badge Creator</h3>
+        <p>Paste your Issuer, Badge Class, and Assertion JSON objects below. The system will automatically link them together and save them with proper references.</p>
+        <form method="POST" action="/create-smart-badge">
+          <div class="form-group">
+            <label for="badge-title">Badge Title/Prefix:</label>
+            <input type="text" id="badge-title" name="title" placeholder="my-awesome-badge" required>
+            <small>Files will be saved as: {title}-issuer.json, {title}-badge.json, {title}-assertion.json</small>
+          </div>
+          <div class="form-group">
+            <label for="smart-content">JSON Objects (paste all together):</label>
+            <textarea id="smart-content" name="content" placeholder="Paste your Issuer, Badge Class, and Assertion JSON objects here. You can paste them all together - the system will separate and link them automatically." required style="height: 400px;"></textarea>
+          </div>
+          <button type="submit">Create Smart Badge</button>
+          <button type="button" onclick="loadSmartExample()">Load Example</button>
+          <button type="button" onclick="validateSmartJSON()">Validate JSON</button>
+        </form>
       </div>
       
       <h3>Uploaded Files</h3>
@@ -260,6 +280,60 @@ app.get('/upload', requireAuth, (req, res) => {
           try {
             JSON.parse(content);
             alert('Valid JSON!');
+          } catch (e) {
+            alert('Invalid JSON: ' + e.message);
+          }
+        }
+        
+        function loadSmartExample() {
+          const example = \`{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "Issuer",
+  "id": "https://example.com/issuer/1",
+  "name": "Example University",
+  "url": "https://example.com",
+  "email": "badges@example.com"
+}
+
+{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "BadgeClass",
+  "id": "https://example.com/badge/web-development",
+  "name": "Web Development Certificate",
+  "description": "Demonstrates proficiency in modern web development",
+  "image": "https://example.com/badge-image.png",
+  "criteria": "https://example.com/criteria/web-dev",
+  "issuer": "https://example.com/issuer/1"
+}
+
+{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "Assertion",
+  "id": "https://example.com/assertion/123",
+  "recipient": {
+    "type": "email",
+    "hashed": false,
+    "identity": "student@example.com"
+  },
+  "badge": "https://example.com/badge/web-development",
+  "issuedOn": "\${new Date().toISOString()}"
+}\`;
+          document.getElementById('smart-content').value = example;
+        }
+        
+        function validateSmartJSON() {
+          const content = document.getElementById('smart-content').value;
+          try {
+            // Try to parse as individual JSON objects
+            const objects = content.trim().split('\\n\\n').map(obj => obj.trim()).filter(obj => obj);
+            objects.forEach((obj, index) => {
+              try {
+                JSON.parse(obj);
+              } catch (e) {
+                throw new Error(\`Object \${index + 1}: \${e.message}\`);
+              }
+            });
+            alert(\`Valid! Found \${objects.length} JSON objects.\`);
           } catch (e) {
             alert('Invalid JSON: ' + e.message);
           }
@@ -334,6 +408,59 @@ app.post('/create-json', requireAuth, (req, res) => {
   fs.writeFileSync(filepath, content);
   
   res.redirect('/upload');
+});
+
+// Handle smart badge creation
+app.post('/create-smart-badge', requireAuth, (req, res) => {
+  const { title, content } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).send('Missing title or content');
+  }
+  
+  try {
+    // Parse multiple JSON objects
+    const objects = content.trim().split('\n\n').map(obj => obj.trim()).filter(obj => obj);
+    const parsedObjects = objects.map(obj => JSON.parse(obj));
+    
+    // Identify object types
+    let issuer = null, badgeClass = null, assertion = null;
+    
+    parsedObjects.forEach(obj => {
+      if (obj.type === 'Issuer') issuer = obj;
+      else if (obj.type === 'BadgeClass') badgeClass = obj;
+      else if (obj.type === 'Assertion') assertion = obj;
+    });
+    
+    if (!issuer || !badgeClass || !assertion) {
+      return res.status(400).send('Missing required objects. Please include Issuer, BadgeClass, and Assertion.');
+    }
+    
+    // Generate new URLs based on the domain and title
+    const baseUrl = `${req.protocol}://${req.get('host')}/badges`;
+    const issuerUrl = `${baseUrl}/${title}-issuer.json`;
+    const badgeUrl = `${baseUrl}/${title}-badge.json`;
+    const assertionUrl = `${baseUrl}/${title}-assertion.json`;
+    
+    // Update IDs and references
+    issuer.id = issuerUrl;
+    badgeClass.id = badgeUrl;
+    badgeClass.issuer = issuerUrl;
+    assertion.id = assertionUrl;
+    assertion.badge = badgeUrl;
+    
+    // Ensure uploads directory exists
+    ensureUploadsDir();
+    
+    // Save all three files
+    fs.writeFileSync(path.join('uploads', `${title}-issuer.json`), JSON.stringify(issuer, null, 2));
+    fs.writeFileSync(path.join('uploads', `${title}-badge.json`), JSON.stringify(badgeClass, null, 2));
+    fs.writeFileSync(path.join('uploads', `${title}-assertion.json`), JSON.stringify(assertion, null, 2));
+    
+    res.redirect('/upload');
+  } catch (error) {
+    return res.status(400).send('Error processing badge: ' + error.message);
+  }
 });
 
 app.get('/logout', (req, res) => {
