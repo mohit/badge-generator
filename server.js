@@ -207,7 +207,7 @@ app.get('/api/files', requireAuth, (req, res) => {
       .filter(file => file.endsWith('.json'))
       .map(file => ({
         name: file,
-        url: \`/badges/\${file}\`
+        url: `/badges/${file}`
       }));
     
     res.json(fileList);
@@ -236,7 +236,7 @@ app.post('/api/issuer', requireApiKey, (req, res) => {
   // Remove undefined fields
   Object.keys(issuer).forEach(key => issuer[key] === undefined && delete issuer[key]);
   
-  const filename = \`issuer-\${Date.now()}.json\`;
+  const filename = `issuer-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
   fs.writeFileSync(filepath, JSON.stringify(issuer, null, 2));
@@ -244,7 +244,7 @@ app.post('/api/issuer', requireApiKey, (req, res) => {
   res.json({
     message: 'Issuer created successfully',
     filename: filename,
-    url: \`\${req.protocol}://\${req.get('host')}/badges/\${filename}\`,
+    url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
     issuer: issuer
   });
 });
@@ -271,7 +271,7 @@ app.post('/api/badge-class', requireApiKey, (req, res) => {
   // Remove undefined fields
   Object.keys(badgeClass).forEach(key => badgeClass[key] === undefined && delete badgeClass[key]);
   
-  const filename = \`badge-class-\${Date.now()}.json\`;
+  const filename = `badge-class-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
   fs.writeFileSync(filepath, JSON.stringify(badgeClass, null, 2));
@@ -279,7 +279,7 @@ app.post('/api/badge-class', requireApiKey, (req, res) => {
   res.json({
     message: 'Badge class created successfully',
     filename: filename,
-    url: \`\${req.protocol}://\${req.get('host')}/badges/\${filename}\`,
+    url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
     badgeClass: badgeClass
   });
 });
@@ -306,7 +306,7 @@ app.post('/api/credential-subject', requireApiKey, (req, res) => {
   // Remove undefined fields
   Object.keys(credentialSubject).forEach(key => credentialSubject[key] === undefined && delete credentialSubject[key]);
   
-  const filename = \`credential-\${Date.now()}.json\`;
+  const filename = `credential-${Date.now()}.json`;
   const filepath = path.join('uploads', filename);
   
   fs.writeFileSync(filepath, JSON.stringify(credentialSubject, null, 2));
@@ -314,14 +314,14 @@ app.post('/api/credential-subject', requireApiKey, (req, res) => {
   res.json({
     message: 'Credential subject created successfully',
     filename: filename,
-    url: \`\${req.protocol}://\${req.get('host')}/badges/\${filename}\`,
+    url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
     credentialSubject: credentialSubject
   });
 });
 
 app.listen(PORT, () => {
-  console.log(\`Badge Generator server running on port \${PORT}\`);
-  console.log(\`Upload page: http://localhost:\${PORT}/upload\`);
-  console.log(\`Upload password: \${process.env.UPLOAD_PASSWORD}\`);
-  console.log(\`API key: \${process.env.API_KEY}\`);
+  console.log(`Badge Generator server running on port ${PORT}`);
+  console.log(`Upload page: http://localhost:${PORT}/upload`);
+  console.log(`Upload password: ${process.env.UPLOAD_PASSWORD}`);
+  console.log(`API key: ${process.env.API_KEY}`);
 });
