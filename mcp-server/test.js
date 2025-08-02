@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 import { config } from 'dotenv';
 
 // Load test environment variables
-config({ path: '.env.test' });
+config({ path: 'mcp-server/.env.test' });
 
 // Test configuration
 const TEST_CONFIG = {
