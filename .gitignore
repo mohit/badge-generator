@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+.env.test
 
 # Uploaded badge files (regenerated on deploy)
 uploads/
