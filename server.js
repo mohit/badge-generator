@@ -6,6 +6,7 @@ import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as dns } from 'dns';
 import { config } from 'dotenv';
+import fetch from 'node-fetch';
 
 config();
 
@@ -37,6 +38,18 @@ async function validateIssuerDomain(url) {
       };
     }
     
+    // Check if it's a verified external issuer
+    const verifiedIssuer = getVerifiedIssuer(domain);
+    if (verifiedIssuer && verifiedIssuer.status === 'verified') {
+      return {
+        valid: true,
+        type: 'verified-external',
+        warnings: [],
+        message: `Using verified issuer: ${verifiedIssuer.displayName}`,
+        issuer: verifiedIssuer
+      };
+    }
+    
     // Check if it's a safe testing domain
     const isSafeTestDomain = SAFE_TEST_DOMAINS.some(safeDomain => 
       domain === safeDomain || domain.endsWith('.' + safeDomain)
@@ -51,16 +64,28 @@ async function validateIssuerDomain(url) {
       };
     }
     
-    // Check if domain is registered (block real domains for now)
+    // Check if domain is registered (block real domains unless verified)
     try {
       await dns.lookup(domain);
-      // Domain exists - block it unless it's in our allowlist
+      // Domain exists - check if it has a failed verification record
+      if (verifiedIssuer && verifiedIssuer.status === 'failed') {
+        return {
+          valid: false,
+          type: 'verification-failed',
+          warnings: [],
+          message: `Domain '${domain}' verification failed. Please fix your /.well-known/openbadges-issuer.json file and re-verify.`,
+          error: 'VERIFICATION_FAILED',
+          lastError: verifiedIssuer.lastError
+        };
+      }
+      
+      // Domain exists but not verified - suggest verification
       return {
         valid: false,
-        type: 'blocked',
+        type: 'unverified',
         warnings: [],
-        message: `Domain '${domain}' appears to be registered. Please use example.com domains for testing or our verified issuer.`,
-        error: 'DOMAIN_REGISTERED'
+        message: `Domain '${domain}' appears to be registered but not verified. Please verify your domain using /api/issuers/verify or use example.com domains for testing.`,
+        error: 'DOMAIN_UNVERIFIED'
       };
     } catch (err) {
       // Domain doesn't exist - allow it (might be local/test domain)
@@ -87,6 +112,166 @@ async function validateIssuerDomain(url) {
 function ensureUploadsDir() {
   if (!fs.existsSync('uploads')) {
     fs.mkdirSync('uploads', { recursive: true });
+  }
+}
+
+// Helper functions for verified issuer storage
+function loadVerifiedIssuers() {
+  const filePath = path.join('uploads', 'verified-issuers.json');
+  if (fs.existsSync(filePath)) {
+    try {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    } catch (error) {
+      console.error('Error loading verified issuers:', error);
+      return {};
+    }
+  }
+  return {};
+}
+
+function saveVerifiedIssuers(issuers) {
+  ensureUploadsDir();
+  const filePath = path.join('uploads', 'verified-issuers.json');
+  fs.writeFileSync(filePath, JSON.stringify(issuers, null, 2));
+}
+
+function getVerifiedIssuer(domain) {
+  const issuers = loadVerifiedIssuers();
+  return issuers[domain] || null;
+}
+
+function setVerifiedIssuer(domain, issuerData) {
+  const issuers = loadVerifiedIssuers();
+  issuers[domain] = {
+    ...issuerData,
+    lastUpdated: new Date().toISOString()
+  };
+  saveVerifiedIssuers(issuers);
+  return issuers[domain];
+}
+
+// Verify issuer by fetching their well-known file
+async function verifyIssuerDomain(domain) {
+  try {
+    const wellKnownUrl = `https://${domain}/.well-known/openbadges-issuer.json`;
+    
+    console.log(`Verifying issuer domain: ${domain}`);
+    console.log(`Fetching: ${wellKnownUrl}`);
+    
+    // Fetch the well-known file
+    const response = await fetch(wellKnownUrl, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Badge-Generator-Verifier/1.0'
+      }
+    });
+    
+    if (!response.ok) {
+      return {
+        success: false,
+        error: `Failed to fetch well-known file: HTTP ${response.status}`,
+        details: { 
+          url: wellKnownUrl,
+          status: response.status,
+          statusText: response.statusText
+        }
+      };
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return {
+        success: false,
+        error: `Well-known file is not JSON (content-type: ${contentType})`,
+        details: { url: wellKnownUrl, contentType }
+      };
+    }
+    
+    let issuerData;
+    try {
+      issuerData = await response.json();
+    } catch (parseError) {
+      return {
+        success: false,
+        error: `Invalid JSON in well-known file: ${parseError.message}`,
+        details: { url: wellKnownUrl }
+      };
+    }
+    
+    // Validate required fields
+    const requiredFields = ['id', 'type', 'name'];
+    const missingFields = requiredFields.filter(field => !issuerData[field]);
+    
+    if (missingFields.length > 0) {
+      return {
+        success: false,
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        details: { url: wellKnownUrl, missingFields }
+      };
+    }
+    
+    // Validate that the ID matches the well-known URL or domain
+    const validIds = [
+      wellKnownUrl,
+      `https://${domain}`,
+      `https://${domain}/`,
+      `https://${domain}/.well-known/openbadges-issuer.json`
+    ];
+    
+    if (!validIds.includes(issuerData.id)) {
+      return {
+        success: false,
+        error: `Issuer ID '${issuerData.id}' does not match domain '${domain}'`,
+        details: { 
+          url: wellKnownUrl, 
+          issuerId: issuerData.id,
+          expectedIds: validIds 
+        }
+      };
+    }
+    
+    // Validate type (Open Badges v2.0 or v3.0)
+    const validTypes = ['Issuer', 'Profile'];
+    if (!validTypes.includes(issuerData.type)) {
+      return {
+        success: false,
+        error: `Invalid type '${issuerData.type}'. Must be 'Issuer' or 'Profile'`,
+        details: { url: wellKnownUrl, type: issuerData.type }
+      };
+    }
+    
+    // Success - store the verified issuer
+    const verifiedIssuer = {
+      id: issuerData.id,
+      domain: domain,
+      status: 'verified',
+      displayName: issuerData.name,
+      type: issuerData.type,
+      url: issuerData.url || `https://${domain}`,
+      email: issuerData.email,
+      description: issuerData.description,
+      publicKeys: issuerData.publicKey ? [issuerData.publicKey] : (issuerData.publicKeys || []),
+      wellKnownUrl: wellKnownUrl,
+      lastVerified: new Date().toISOString(),
+      verificationMethod: 'well-known',
+      rawData: issuerData // Store original for debugging
+    };
+    
+    setVerifiedIssuer(domain, verifiedIssuer);
+    
+    return {
+      success: true,
+      issuer: verifiedIssuer,
+      message: `Successfully verified issuer: ${issuerData.name}`
+    };
+    
+  } catch (error) {
+    console.error(`Error verifying issuer ${domain}:`, error);
+    return {
+      success: false,
+      error: `Verification failed: ${error.message}`,
+      details: { domain, errorType: error.name }
+    };
   }
 }
 
@@ -917,6 +1102,106 @@ app.get('/api/validate-issuer-domain', requireApiKey, async (req, res) => {
   
   const validation = await validateIssuerDomain(url);
   res.json(validation);
+});
+
+// Issuer verification endpoints
+app.post('/api/issuers/verify', requireApiKey, async (req, res) => {
+  const { domain } = req.body;
+  
+  if (!domain) {
+    return res.status(400).json({ error: 'Domain is required' });
+  }
+  
+  // Basic domain validation
+  try {
+    new URL(`https://${domain}`);
+  } catch (error) {
+    return res.status(400).json({ error: 'Invalid domain format' });
+  }
+  
+  const result = await verifyIssuerDomain(domain);
+  
+  if (result.success) {
+    res.json({
+      message: result.message,
+      issuer: result.issuer,
+      status: 'verified'
+    });
+  } else {
+    res.status(400).json({
+      error: result.error,
+      details: result.details,
+      status: 'failed'
+    });
+  }
+});
+
+// Get verified issuer info
+app.get('/api/issuers/:domain', requireApiKey, async (req, res) => {
+  const { domain } = req.params;
+  const issuer = getVerifiedIssuer(domain);
+  
+  if (!issuer) {
+    return res.status(404).json({ 
+      error: 'Issuer not found or not verified',
+      domain: domain
+    });
+  }
+  
+  res.json({
+    issuer: issuer,
+    status: issuer.status
+  });
+});
+
+// List all verified issuers
+app.get('/api/issuers', requireApiKey, async (req, res) => {
+  const issuers = loadVerifiedIssuers();
+  const issuerList = Object.values(issuers).map(issuer => ({
+    domain: issuer.domain,
+    displayName: issuer.displayName,
+    status: issuer.status,
+    lastVerified: issuer.lastVerified,
+    type: issuer.type
+  }));
+  
+  res.json({
+    issuers: issuerList,
+    count: issuerList.length
+  });
+});
+
+// Re-verify an existing issuer
+app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
+  const { domain } = req.params;
+  
+  const result = await verifyIssuerDomain(domain);
+  
+  if (result.success) {
+    res.json({
+      message: `Successfully re-verified issuer: ${result.issuer.displayName}`,
+      issuer: result.issuer,
+      status: 'verified'
+    });
+  } else {
+    // Mark as failed but keep the record
+    const existingIssuer = getVerifiedIssuer(domain);
+    if (existingIssuer) {
+      const failedIssuer = {
+        ...existingIssuer,
+        status: 'failed',
+        lastVerificationAttempt: new Date().toISOString(),
+        lastError: result.error
+      };
+      setVerifiedIssuer(domain, failedIssuer);
+    }
+    
+    res.status(400).json({
+      error: result.error,
+      details: result.details,
+      status: 'failed'
+    });
+  }
 });
 
 // API endpoints for creating issuers and badge classes
