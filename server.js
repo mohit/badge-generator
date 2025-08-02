@@ -793,7 +793,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/login');
 });
 
-// API endpoint to list uploaded files
+// API endpoint to list uploaded files (web session auth)
 app.get('/api/files', requireAuth, (req, res) => {
   fs.readdir('uploads', (err, files) => {
     if (err) {
@@ -805,6 +805,25 @@ app.get('/api/files', requireAuth, (req, res) => {
       .map(file => ({
         name: file,
         url: `/badges/${file}`
+      }));
+    
+    res.json(fileList);
+  });
+});
+
+// API endpoint to list uploaded files (API key auth)
+app.get('/api/badge-files', requireApiKey, (req, res) => {
+  fs.readdir('uploads', (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Unable to read files' });
+    }
+    
+    const fileList = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => ({
+        name: file,
+        url: `/badges/${file}`,
+        fullUrl: `${req.protocol}://${req.get('host')}/badges/${file}`
       }));
     
     res.json(fileList);
