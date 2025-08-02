@@ -1,54 +1,49 @@
 # Railway Deployment & Security Setup Guide
 
-## 🔐 Secure Key Management for Badge Signing
+## 🔐 Simplified & Secure Key Management
 
-For production deployment on Railway, you **must** store cryptographic keys as environment variables instead of files.
+Our badge verification system uses a **smart architecture**:
+- **ONE** private key (yours) for signing your badges
+- **Auto-cached** public keys from other verified issuers for verification
 
-### Step 1: Generate Keys Locally
+### Step 1: Generate YOUR Signing Keys
 
-First, generate your signing keys locally (these will NOT be committed to git):
+Generate keys for **your domain only** (these will NOT be committed to git):
 
 ```bash
-# Use the CLI tool to generate keys
+# Use the CLI tool to generate keys for YOUR domain
 npm run cli generate-keys \
   --name "Your Organization Name" \
-  --url "https://your-domain.com" \
-  --email "badges@your-domain.com"
+  --url "https://badge-generator-production.up.railway.app" \
+  --email "badges@yourdomain.com"
 
 # This creates files in issuer-verification-files/
-# - private-key.pem (NEVER commit this)
-# - public-key.pem 
+# - private-key.pem (NEVER commit - for YOUR domain only)
+# - public-key.pem (for YOUR domain only)
 # - issuer.json
 ```
 
 ### Step 2: Set Railway Environment Variables
 
-In your Railway dashboard, add these environment variables:
+In your Railway dashboard, add **only these** environment variables:
 
-#### Required Keys:
+#### Required Keys (YOUR domain only):
 ```bash
-# Default private key for signing badges
+# Your private key for signing badges from your domain
 DEFAULT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg...
 -----END PRIVATE KEY-----"
 
-# Default public key for verification
+# Your public key for verification (backup)
 DEFAULT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEA...
 -----END PUBLIC KEY-----"
 ```
 
-#### Domain-Specific Keys (Optional):
-For specific domains, you can add:
-```bash
-# Replace dots and hyphens with underscores and make uppercase
-PRIVATE_KEY_BADGE_GENERATOR_PRODUCTION_UP_RAILWAY_APP="-----BEGIN PRIVATE KEY-----..."
-PUBLIC_KEY_BADGE_GENERATOR_PRODUCTION_UP_RAILWAY_APP="-----BEGIN PUBLIC KEY-----..."
-
-# For custom domains:
-PRIVATE_KEY_MYBADGES_COM="-----BEGIN PRIVATE KEY-----..."
-PUBLIC_KEY_MYBADGES_COM="-----BEGIN PUBLIC KEY-----..."
-```
+**No domain-specific keys needed!** The system automatically:
+- ✅ Uses your private key only for your domain
+- ✅ Fetches & caches public keys from other issuers via API
+- ✅ Stores cached keys in Railway's persistent volume
 
 ### Step 3: Production Environment Settings
 

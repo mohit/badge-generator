@@ -1543,27 +1543,25 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
 }
 
 async function getBadgeSigningKey(domain) {
-  // First check environment variables (secure for production)
-  const envKeyName = `PRIVATE_KEY_${domain.replace(/[.-]/g, '_').toUpperCase()}`;
-  const envKey = process.env[envKeyName];
+  // Only support our own domain for signing
+  const ourDomain = req?.get?.('host') || process.env.DOMAIN || 'localhost:3000';
   
-  if (envKey) {
-    console.log(`Using private key from environment variable: ${envKeyName}`);
-    return envKey;
+  if (domain !== ourDomain && !domain.includes('railway.app') && !domain.includes('localhost')) {
+    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our own domain: ${ourDomain}`);
+    return null;
   }
   
-  // Fallback to default production key
+  // Use the default (our) private key from environment
   if (process.env.DEFAULT_PRIVATE_KEY) {
-    console.log('Using default private key from environment');
+    console.log('Using default private key for badge signing');
     return process.env.DEFAULT_PRIVATE_KEY;
   }
   
-  // Local development: try to find signing keys in files (NOT for production)
+  // Local development: try to find our signing key in files
   if (process.env.NODE_ENV !== 'production') {
     const keyPaths = [
       path.join('issuer-verification-files', 'private-key.pem'),
-      path.join('uploads', `${domain}-private-key.pem`),
-      path.join('keys', `${domain}.pem`)
+      path.join('uploads', 'default-private-key.pem')
     ];
     
     for (const keyPath of keyPaths) {
@@ -1578,58 +1576,63 @@ async function getBadgeSigningKey(domain) {
     }
   }
   
-  console.warn(`No private key found for domain: ${domain}`);
+  console.error(`No private key configured. Set DEFAULT_PRIVATE_KEY environment variable.`);
   return null;
 }
 
 async function getBadgeVerificationKey(issuerData, issuerUrl) {
-  // Try to get public key from issuer data
+  // Try to get public key from issuer data first (most reliable)
   if (issuerData.publicKey) {
     if (typeof issuerData.publicKey === 'string') {
+      await cachePublicKey(issuerUrl, issuerData.publicKey);
       return issuerData.publicKey;
     }
     if (issuerData.publicKey.publicKeyPem) {
+      await cachePublicKey(issuerUrl, issuerData.publicKey.publicKeyPem);
       return issuerData.publicKey.publicKeyPem;
     }
     if (issuerData.publicKey.publicKeyMultibase) {
       // Convert multibase to PEM if needed
       try {
         const keyBuffer = Buffer.from(issuerData.publicKey.publicKeyMultibase.slice(1), 'base64url');
-        return crypto.createPublicKey({
+        const pemKey = crypto.createPublicKey({
           key: keyBuffer,
           format: 'der',
           type: 'spki'
         }).export({ type: 'spki', format: 'pem' });
+        await cachePublicKey(issuerUrl, pemKey);
+        return pemKey;
       } catch (error) {
         console.warn('Failed to convert multibase key:', error.message);
       }
     }
   }
   
-  // Check environment variables for public keys
+  // Check cached public keys in uploads volume
   const urlObj = new URL(issuerUrl);
   const domain = urlObj.hostname;
+  const cachedKeyPath = path.join('uploads', `cached-public-keys`, `${domain}.pem`);
   
-  const envKeyName = `PUBLIC_KEY_${domain.replace(/[.-]/g, '_').toUpperCase()}`;
-  const envKey = process.env[envKeyName];
-  
-  if (envKey) {
-    console.log(`Using public key from environment variable: ${envKeyName}`);
-    return envKey;
+  if (fs.existsSync(cachedKeyPath)) {
+    try {
+      console.log(`Using cached public key for domain: ${domain}`);
+      return fs.readFileSync(cachedKeyPath, 'utf8');
+    } catch (error) {
+      console.warn(`Failed to read cached key for ${domain}:`, error.message);
+    }
   }
   
-  // Fallback to default public key
-  if (process.env.DEFAULT_PUBLIC_KEY) {
+  // Fallback to our default public key (for our own domain)
+  if (process.env.DEFAULT_PUBLIC_KEY && (domain.includes('railway.app') || domain.includes('localhost'))) {
     console.log('Using default public key from environment');
     return process.env.DEFAULT_PUBLIC_KEY;
   }
   
-  // Local development: try to find public key files (NOT for production)
+  // Local development: try to find public key files
   if (process.env.NODE_ENV !== 'production') {
     const keyPaths = [
       path.join('issuer-verification-files', 'public-key.pem'),
-      path.join('uploads', `${domain}-public-key.pem`),
-      path.join('keys', `${domain}-public.pem`)
+      path.join('uploads', 'default-public-key.pem')
     ];
     
     for (const keyPath of keyPaths) {
@@ -1646,6 +1649,27 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   
   console.warn(`No public key found for domain: ${domain}`);
   return null;
+}
+
+// Helper function to cache public keys to the uploads volume
+async function cachePublicKey(issuerUrl, publicKey) {
+  try {
+    const urlObj = new URL(issuerUrl);
+    const domain = urlObj.hostname;
+    const cacheDir = path.join('uploads', 'cached-public-keys');
+    const cachedKeyPath = path.join(cacheDir, `${domain}.pem`);
+    
+    // Ensure cache directory exists
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+    
+    // Cache the public key
+    fs.writeFileSync(cachedKeyPath, publicKey);
+    console.log(`Cached public key for domain: ${domain}`);
+  } catch (error) {
+    console.warn(`Failed to cache public key for ${issuerUrl}:`, error.message);
+  }
 }
 
 async function verifyCryptographicSignature(badgeData, issuerVerification) {
@@ -1717,6 +1741,68 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
     };
   }
 }
+
+// Public key caching endpoint
+app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
+  const { issuerUrl } = req.body;
+  
+  if (!issuerUrl) {
+    return res.status(400).json({ error: 'Issuer URL is required' });
+  }
+  
+  try {
+    console.log(`🔍 Fetching and caching public key for: ${issuerUrl}`);
+    
+    // Fetch the issuer data
+    const issuerResponse = await fetch(issuerUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Badge-Generator-KeyCache/1.0' }
+    });
+    
+    if (!issuerResponse.ok) {
+      return res.status(400).json({
+        error: `Failed to fetch issuer: HTTP ${issuerResponse.status}`,
+        details: { url: issuerUrl, status: issuerResponse.status }
+      });
+    }
+    
+    let issuerData;
+    try {
+      issuerData = await issuerResponse.json();
+    } catch (parseError) {
+      return res.status(400).json({
+        error: `Invalid JSON in issuer: ${parseError.message}`,
+        details: { url: issuerUrl }
+      });
+    }
+    
+    // Extract and cache the public key
+    const publicKey = await getBadgeVerificationKey(issuerData, issuerUrl);
+    
+    if (!publicKey) {
+      return res.status(400).json({
+        error: 'No public key found in issuer data',
+        details: { url: issuerUrl }
+      });
+    }
+    
+    res.json({
+      message: 'Public key cached successfully',
+      issuerUrl: issuerUrl,
+      issuerName: issuerData.name,
+      domain: new URL(issuerUrl).hostname,
+      keyType: 'PEM',
+      cached: true
+    });
+    
+  } catch (error) {
+    console.error(`Error caching public key for ${issuerUrl}:`, error);
+    res.status(500).json({
+      error: `Failed to cache public key: ${error.message}`,
+      details: { issuerUrl }
+    });
+  }
+});
 
 // Badge signing endpoint
 app.post('/api/sign-badge', requireApiKey, async (req, res) => {

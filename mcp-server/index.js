@@ -339,6 +339,21 @@ class BadgeGeneratorMCPServer {
               required: ['badgeData', 'domain'],
             },
           },
+          {
+            name: 'cache_public_key',
+            description: 'Cache a public key from a verified issuer for verification',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                issuerUrl: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL of the issuer to cache public key from',
+                },
+              },
+              required: ['issuerUrl'],
+            },
+          },
         ],
       };
     });
@@ -372,6 +387,8 @@ class BadgeGeneratorMCPServer {
             return await this.verifyIssuer(args);
           case 'sign_badge':
             return await this.signBadge(args);
+          case 'cache_public_key':
+            return await this.cachePublicKey(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -873,6 +890,45 @@ class BadgeGeneratorMCPServer {
         {
           type: 'text',
           text: `✅ Badge Signed Successfully!\n\nDomain: ${domain}${detailsText}\n\nSigned Badge:\n${JSON.stringify(result.signedBadge, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  async cachePublicKey(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
+    const { issuerUrl } = args;
+    
+    const response = await fetch(`${this.baseUrl}/api/cache-public-key`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': this.apiKey,
+      },
+      body: JSON.stringify({ issuerUrl }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(`Public Key Caching API Error: ${response.status} - ${errorData.error || errorData.message || response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    let detailsText = `\n\n🔑 Caching Details:\n`;
+    detailsText += `• Issuer: ${result.issuerName}\n`;
+    detailsText += `• Domain: ${result.domain}\n`;
+    detailsText += `• Key Type: ${result.keyType}\n`;
+    detailsText += `• Cached: ${result.cached ? 'Yes' : 'No'}\n`;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Public Key Cached Successfully!\n\nIssuer URL: ${issuerUrl}${detailsText}\n\nThis issuer's badges can now be cryptographically verified!`,
         },
       ],
     };
