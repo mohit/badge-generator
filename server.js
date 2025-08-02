@@ -1,11 +1,13 @@
-const express = require('express');
-const multer = require('multer');
-const session = require('express-session');
-const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
-const dns = require('dns').promises;
-require('dotenv').config();
+import express from 'express';
+import multer from 'multer';
+import session from 'express-session';
+import path from 'path';
+import fs from 'fs';
+import { v4 as uuidv4 } from 'uuid';
+import { promises as dns } from 'dns';
+import { config } from 'dotenv';
+
+config();
 
 // Domain validation constants
 const VERIFIED_ISSUER_DOMAIN = 'badge-generator-production.up.railway.app';
