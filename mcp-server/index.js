@@ -10,7 +10,7 @@ import fetch from 'node-fetch';
 import { z } from 'zod';
 
 // Configuration
-const DEFAULT_BASE_URL = 'http://localhost:3000';
+const DEFAULT_BASE_URL = process.env.BADGE_BASE_URL || 'http://localhost:3000';
 const DEFAULT_API_KEY = process.env.BADGE_API_KEY || '';
 
 // Validation schemas
@@ -67,6 +67,7 @@ class BadgeGeneratorMCPServer {
 
     this.baseUrl = DEFAULT_BASE_URL;
     this.apiKey = DEFAULT_API_KEY;
+    this.isConfigured = !!(DEFAULT_BASE_URL !== 'http://localhost:3000' && DEFAULT_API_KEY);
     
     this.setupToolHandlers();
   }
@@ -249,8 +250,16 @@ class BadgeGeneratorMCPServer {
             },
           },
           {
+            name: 'test_server',
+            description: 'Test the connection to the Badge Generator server and show current configuration',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+            },
+          },
+          {
             name: 'configure_server',
-            description: 'Configure the MCP server connection settings',
+            description: 'Configure the MCP server connection settings (optional if environment variables are set)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -276,6 +285,8 @@ class BadgeGeneratorMCPServer {
 
       try {
         switch (name) {
+          case 'test_server':
+            return await this.testServer();
           case 'configure_server':
             return await this.configureServer(args);
           case 'create_issuer':
@@ -307,22 +318,66 @@ class BadgeGeneratorMCPServer {
     });
   }
 
-  async configureServer(args) {
-    const { baseUrl, apiKey } = args;
-    this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
+  async testServer() {
+    let connectionStatus = '❌ Not tested';
+    let errorMessage = '';
+    
+    try {
+      // Test basic connectivity by trying to fetch the homepage with HEAD request
+      const response = await fetch(`${this.baseUrl}/`, { 
+        method: 'HEAD'
+      });
+      
+      if (response.ok) {
+        connectionStatus = '✅ Connected';
+      } else {
+        connectionStatus = `⚠️ Server responded with ${response.status}`;
+      }
+    } catch (error) {
+      connectionStatus = '❌ Connection failed';
+      errorMessage = error.message;
+    }
+    
+    const configStatus = this.isConfigured ? '✅ Configured via environment' : '⚠️ Default/manual configuration';
     
     return {
       content: [
         {
           type: 'text',
-          text: `✅ Server configured successfully!\nBase URL: ${baseUrl}\nAPI Key: ${apiKey ? '[SET]' : '[NOT SET]'}`,
+          text: `🔧 Badge Generator MCP Server Status\n\n` +
+                `Configuration: ${configStatus}\n` +
+                `Base URL: ${this.baseUrl}\n` +
+                `API Key: ${this.apiKey ? '[SET]' : '[NOT SET]'}\n` +
+                `Connection: ${connectionStatus}\n` +
+                `${errorMessage ? `Error: ${errorMessage}\n` : ''}\n` +
+                `${!this.isConfigured ? '💡 Tip: Set BADGE_BASE_URL and BADGE_API_KEY environment variables to avoid manual configuration.\n' : ''}` +
+                `${!this.apiKey ? '⚠️ Warning: No API key set. Some operations may fail.\n' : ''}`,
+        },
+      ],
+    };
+  }
+
+  async configureServer(args) {
+    const { baseUrl, apiKey } = args;
+    this.baseUrl = baseUrl;
+    this.apiKey = apiKey;
+    this.isConfigured = true;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Server configured successfully!\nBase URL: ${baseUrl}\nAPI Key: ${apiKey ? '[SET]' : '[NOT SET]'}\n\n💡 Tip: You can also set BADGE_BASE_URL and BADGE_API_KEY environment variables to avoid manual configuration.`,
         },
       ],
     };
   }
 
   async createIssuer(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
     const validatedData = IssuerSchema.parse(args);
     
     const response = await fetch(`${this.baseUrl}/api/issuer`, {
@@ -351,6 +406,10 @@ class BadgeGeneratorMCPServer {
   }
 
   async createBadgeClass(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
     const validatedData = BadgeClassSchema.parse(args);
     
     const response = await fetch(`${this.baseUrl}/api/badge-class`, {
@@ -379,6 +438,10 @@ class BadgeGeneratorMCPServer {
   }
 
   async createCredentialSubject(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
     const validatedData = CredentialSubjectSchema.parse(args);
     
     const response = await fetch(`${this.baseUrl}/api/credential-subject`, {
@@ -439,20 +502,47 @@ class BadgeGeneratorMCPServer {
   }
 
   async listBadges() {
-    const response = await fetch(`${this.baseUrl}/api/files`, {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+
+    const response = await fetch(`${this.baseUrl}/api/badge-files`, {
       headers: {
         'X-API-Key': this.apiKey,
-        // Note: This endpoint requires web session authentication in the current implementation
       },
     });
 
     if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}. Note: File listing requires web session authentication.`);
+      // Fallback to informative message if endpoint doesn't exist yet
+      if (response.status === 404) {
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `📋 Badge File Listing\n\n` +
+                    `❌ Server does not support API-authenticated file listing yet.\n` +
+                    `The /api/badge-files endpoint is not available.\n\n` +
+                    `🔧 Alternative approaches:\n` +
+                    `• Use get_badge with specific filenames\n` +
+                    `• Check the web interface at ${this.baseUrl}/upload\n` +
+                    `• Recently created files follow these patterns:\n` +
+                    `  - issuer-[timestamp].json\n` +
+                    `  - badge-class-[timestamp].json\n` +
+                    `  - credential-[timestamp].json\n` +
+                    `  - [title]-issuer.json (from smart badges)\n` +
+                    `  - [title]-badge.json (from smart badges)\n` +
+                    `  - [title]-assertion.json (from smart badges)\n\n` +
+                    `💡 Tip: The create_* tools return the exact filename and URL of created badges.`,
+            },
+          ],
+        };
+      }
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
     }
 
     const files = await response.json();
     
-    const fileList = files.map(file => `• ${file.name} - ${this.baseUrl}${file.url}`).join('\n');
+    const fileList = files.map(file => `• ${file.name} - ${file.fullUrl || this.baseUrl + file.url}`).join('\n');
     
     return {
       content: [

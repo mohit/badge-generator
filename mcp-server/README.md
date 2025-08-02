@@ -19,9 +19,16 @@ cd mcp-server
 npm install
 ```
 
-2. Set environment variables (optional):
+2. Set environment variables (recommended):
 ```bash
 export BADGE_API_KEY="your_api_key_here"
+export BADGE_BASE_URL="https://badge-generator-production.up.railway.app"
+```
+
+Or copy `.env.example` to `.env` and edit:
+```bash
+cp .env.example .env
+# Edit .env with your values
 ```
 
 ## Usage with Claude Desktop
@@ -60,8 +67,16 @@ npm run dev
 
 ## Available Tools
 
+### `test_server`
+Test the connection to the Badge Generator server and show current configuration status.
+
+**Example:**
+```
+Test the server connection and show current status
+```
+
 ### `configure_server`
-Configure connection to your Badge Generator instance.
+Configure connection to your Badge Generator instance (optional if environment variables are set).
 
 **Parameters:**
 - `baseUrl` (required) - Badge Generator API URL (e.g., "https://your-domain.com")
@@ -71,6 +86,8 @@ Configure connection to your Badge Generator instance.
 ```
 Please configure the MCP server to connect to https://my-badges.railway.app with API key abc123...
 ```
+
+**Note:** If you set `BADGE_BASE_URL` and `BADGE_API_KEY` environment variables, this tool becomes optional.
 
 ### `create_issuer`
 Create a new issuer/organization profile.
@@ -175,27 +192,34 @@ The MCP server provides detailed error messages for:
 
 ## Example Workflow
 
-1. **Configure the server:**
+1. **Check server status (optional):**
+   ```
+   Test the server connection and show current status
+   ```
+
+2. **Configure the server (if needed):**
    ```
    Configure the server to use https://my-badges.com with API key xyz789
    ```
+   
+   *Note: Skip this step if you've set environment variables*
 
-2. **Create an issuer:**
+3. **Create an issuer:**
    ```
    Create an issuer for "Tech Academy" at https://techacademy.org
    ```
 
-3. **Create a badge class:**
+4. **Create a badge class:**
    ```
    Create a "JavaScript Mastery" badge for completing advanced JavaScript coursework
    ```
 
-4. **Award the badge:**
+5. **Award the badge:**
    ```
    Award the JavaScript Mastery badge to developer@email.com
    ```
 
-5. **View the results:**
+6. **View the results:**
    ```
    List all badges and show me the JavaScript badge details
    ```
