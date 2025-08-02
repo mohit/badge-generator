@@ -10,7 +10,11 @@
     "lint": "echo 'No linting configured'",
     "test": "node run-tests.js",
     "test:domain": "node tests/domain-validation.test.js",
-    "test:mcp": "node mcp-server/test.js"
+    "test:mcp": "node mcp-server/test.js",
+    "cli": "node cli/badge-cli.js"
+  },
+  "bin": {
+    "badge-cli": "./cli/badge-cli.js"
   },
   "keywords": [
     "open-badges",
@@ -32,6 +36,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
+    "commander": "^12.1.0",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "express-session": "^1.17.3",

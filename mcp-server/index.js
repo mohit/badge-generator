@@ -291,6 +291,54 @@ class BadgeGeneratorMCPServer {
               required: ['baseUrl', 'apiKey'],
             },
           },
+          {
+            name: 'verify_badge',
+            description: 'Verify the authenticity and structure of an Open Badge',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                badgeUrl: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL of the badge to verify',
+                },
+              },
+              required: ['badgeUrl'],
+            },
+          },
+          {
+            name: 'verify_issuer',
+            description: 'Verify an Open Badges issuer',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                issuerUrl: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'URL of the issuer to verify',
+                },
+              },
+              required: ['issuerUrl'],
+            },
+          },
+          {
+            name: 'sign_badge',
+            description: 'Cryptographically sign a badge with issuer keys',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                badgeData: {
+                  type: 'object',
+                  description: 'Badge data to sign (JSON object)',
+                },
+                domain: {
+                  type: 'string',
+                  description: 'Domain of the issuer for key lookup',
+                },
+              },
+              required: ['badgeData', 'domain'],
+            },
+          },
         ],
       };
     });
@@ -318,6 +366,12 @@ class BadgeGeneratorMCPServer {
             return await this.listBadges();
           case 'get_badge':
             return await this.getBadge(args);
+          case 'verify_badge':
+            return await this.verifyBadge(args);
+          case 'verify_issuer':
+            return await this.verifyIssuer(args);
+          case 'sign_badge':
+            return await this.signBadge(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -645,6 +699,180 @@ class BadgeGeneratorMCPServer {
         {
           type: 'text',
           text: `📄 Badge File: ${filename}\n\n${JSON.stringify(badgeData, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  async verifyBadge(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
+    const { badgeUrl } = args;
+    
+    const response = await fetch(`${this.baseUrl}/api/verify/badge/${encodeURIComponent(badgeUrl)}`, {
+      headers: {
+        'X-API-Key': this.apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Verification API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const verification = await response.json();
+    
+    // Format verification levels with emojis
+    const levelEmojis = {
+      'cryptographically_verified': '🔐 Cryptographically Verified',
+      'fully_verified': '✅ Fully Verified',
+      'remote_verified': '🌐 Remote Verified',
+      'basic_verified': '📋 Basic Verified',
+      'structure_only': '📝 Structure Only',
+      'structure_valid_issuer_invalid': '⚠️ Structure Valid, Issuer Invalid',
+      'invalid': '❌ Invalid'
+    };
+    
+    const verificationLevel = levelEmojis[verification.verificationLevel] || verification.verificationLevel;
+    const overallStatus = verification.valid ? '✅ VALID' : '❌ INVALID';
+    
+    let detailsText = `\n\n🔍 Verification Details:\n`;
+    detailsText += `• Badge Version: ${verification.version}\n`;
+    detailsText += `• Verification Level: ${verificationLevel}\n`;
+    
+    // Structure validation details
+    if (verification.structure) {
+      const structStatus = verification.structure.valid ? '✅' : '❌';
+      detailsText += `• Structure: ${structStatus} ${verification.structure.valid ? 'Valid' : 'Invalid'}\n`;
+      if (verification.structure.errors && verification.structure.errors.length > 0) {
+        detailsText += `  Errors: ${verification.structure.errors.join(', ')}\n`;
+      }
+      if (verification.structure.warnings && verification.structure.warnings.length > 0) {
+        detailsText += `  Warnings: ${verification.structure.warnings.join(', ')}\n`;
+      }
+    }
+    
+    // Issuer verification details
+    if (verification.issuer) {
+      const issuerStatus = verification.issuer.valid ? '✅' : '❌';
+      detailsText += `• Issuer: ${issuerStatus} ${verification.issuer.message || (verification.issuer.valid ? 'Valid' : 'Invalid')}\n`;
+      if (verification.issuer.type) {
+        detailsText += `  Type: ${verification.issuer.type}\n`;
+      }
+    }
+    
+    // Signature verification details
+    if (verification.signature) {
+      const sigStatus = verification.signature.valid ? '🔐' : '❌';
+      detailsText += `• Signature: ${sigStatus} ${verification.signature.message || (verification.signature.valid ? 'Valid' : 'Invalid')}\n`;
+      if (verification.signature.signatureType) {
+        detailsText += `  Type: ${verification.signature.signatureType}\n`;
+      }
+    } else {
+      detailsText += `• Signature: ➖ No cryptographic signature found\n`;
+    }
+    
+    detailsText += `\n⏰ Verified at: ${verification.verifiedAt}`;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `🔍 Badge Verification Results\n\n${overallStatus}\nBadge URL: ${badgeUrl}${detailsText}`,
+        },
+      ],
+    };
+  }
+
+  async verifyIssuer(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
+    const { issuerUrl } = args;
+    
+    const response = await fetch(`${this.baseUrl}/api/verify/issuer/${encodeURIComponent(issuerUrl)}`, {
+      headers: {
+        'X-API-Key': this.apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Issuer Verification API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const verification = result.verification;
+    
+    const overallStatus = verification.valid ? '✅ VALID' : '❌ INVALID';
+    
+    let detailsText = `\n\n🔍 Issuer Verification Details:\n`;
+    detailsText += `• Status: ${verification.valid ? 'Valid' : 'Invalid'}\n`;
+    detailsText += `• Type: ${verification.type || 'Unknown'}\n`;
+    detailsText += `• Message: ${verification.message || 'No message'}\n`;
+    
+    if (verification.issuer) {
+      detailsText += `\n📋 Issuer Information:\n`;
+      detailsText += `• Name: ${verification.issuer.name || 'Unknown'}\n`;
+      detailsText += `• ID: ${verification.issuer.id || 'Unknown'}\n`;
+      if (verification.issuer.url) {
+        detailsText += `• URL: ${verification.issuer.url}\n`;
+      }
+      if (verification.issuer.email) {
+        detailsText += `• Email: ${verification.issuer.email}\n`;
+      }
+    }
+    
+    if (verification.error) {
+      detailsText += `\n❌ Error: ${verification.error}\n`;
+    }
+    
+    detailsText += `\n⏰ Verified at: ${result.verifiedAt}`;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `🔍 Issuer Verification Results\n\n${overallStatus}\nIssuer URL: ${issuerUrl}${detailsText}`,
+        },
+      ],
+    };
+  }
+
+  async signBadge(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
+    const { badgeData, domain } = args;
+    
+    const response = await fetch(`${this.baseUrl}/api/sign-badge`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': this.apiKey,
+      },
+      body: JSON.stringify({ badgeData, domain }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(`Badge Signing API Error: ${response.status} - ${errorData.error || errorData.message || response.statusText}`);
+    }
+
+    const result = await response.json();
+    
+    let detailsText = `\n\n🔐 Signing Details:\n`;
+    detailsText += `• Domain: ${domain}\n`;
+    detailsText += `• Verification Method: ${result.verificationMethod}\n`;
+    detailsText += `• Signature: ${result.signature.substring(0, 50)}...\n`;
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Badge Signed Successfully!\n\nDomain: ${domain}${detailsText}\n\nSigned Badge:\n${JSON.stringify(result.signedBadge, null, 2)}`,
         },
       ],
     };

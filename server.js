@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { promises as dns } from 'dns';
 import { config } from 'dotenv';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 
 config();
 
@@ -1200,6 +1201,521 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
       error: result.error,
       details: result.details,
       status: 'failed'
+    });
+  }
+});
+
+// Badge and Issuer Verification endpoints
+app.get('/api/verify/badge/:badgeUrl(*)', requireApiKey, async (req, res) => {
+  const badgeUrl = req.params.badgeUrl;
+  
+  if (!badgeUrl) {
+    return res.status(400).json({ error: 'Badge URL is required' });
+  }
+  
+  try {
+    console.log(`🔍 Verifying badge: ${badgeUrl}`);
+    
+    // Fetch the badge JSON
+    const badgeResponse = await fetch(badgeUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Badge-Generator-Verifier/1.0' }
+    });
+    
+    if (!badgeResponse.ok) {
+      return res.status(400).json({
+        valid: false,
+        error: `Failed to fetch badge: HTTP ${badgeResponse.status}`,
+        details: { url: badgeUrl, status: badgeResponse.status }
+      });
+    }
+    
+    let badgeData;
+    try {
+      badgeData = await badgeResponse.json();
+    } catch (parseError) {
+      return res.status(400).json({
+        valid: false,
+        error: `Invalid JSON in badge: ${parseError.message}`,
+        details: { url: badgeUrl }
+      });
+    }
+    
+    // Determine badge version and validate structure
+    const isV3 = Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential');
+    const verificationResults = await verifyBadgeStructure(badgeData, isV3);
+    
+    // Verify issuer if present
+    let issuerVerification = null;
+    if (isV3 && badgeData.issuer?.id) {
+      issuerVerification = await verifyIssuerFromBadge(badgeData.issuer.id);
+    } else if (!isV3 && badgeData.issuer) {
+      issuerVerification = await verifyIssuerFromBadge(badgeData.issuer);
+    }
+    
+    // Verify cryptographic signature if present
+    let signatureVerification = null;
+    if (badgeData.proof && issuerVerification && issuerVerification.valid) {
+      signatureVerification = await verifyCryptographicSignature(badgeData, issuerVerification);
+    }
+    
+    // Compile verification results
+    const overallValid = verificationResults.valid && 
+                        (!issuerVerification || issuerVerification.valid) &&
+                        (!signatureVerification || signatureVerification.valid);
+    
+    res.json({
+      valid: overallValid,
+      badgeUrl: badgeUrl,
+      badgeData: badgeData,
+      version: isV3 ? 'v3.0' : 'v2.0',
+      structure: verificationResults,
+      issuer: issuerVerification,
+      signature: signatureVerification,
+      verifiedAt: new Date().toISOString(),
+      verificationLevel: determineVerificationLevel(verificationResults, issuerVerification, signatureVerification)
+    });
+    
+  } catch (error) {
+    console.error(`Error verifying badge ${badgeUrl}:`, error);
+    res.status(500).json({
+      valid: false,
+      error: `Verification failed: ${error.message}`,
+      details: { badgeUrl }
+    });
+  }
+});
+
+app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
+  const issuerUrl = req.params.issuerUrl;
+  
+  if (!issuerUrl) {
+    return res.status(400).json({ error: 'Issuer URL is required' });
+  }
+  
+  try {
+    console.log(`🔍 Verifying issuer: ${issuerUrl}`);
+    
+    const verification = await verifyIssuerFromBadge(issuerUrl);
+    
+    res.json({
+      valid: verification.valid,
+      issuerUrl: issuerUrl,
+      verification: verification,
+      verifiedAt: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error(`Error verifying issuer ${issuerUrl}:`, error);
+    res.status(500).json({
+      valid: false,
+      error: `Verification failed: ${error.message}`,
+      details: { issuerUrl }
+    });
+  }
+});
+
+// Helper function to verify badge structure
+async function verifyBadgeStructure(badgeData, isV3) {
+  const errors = [];
+  const warnings = [];
+  
+  // Check required fields based on version
+  if (isV3) {
+    // Open Badges v3.0 validation
+    if (!badgeData['@context'] || !Array.isArray(badgeData['@context'])) {
+      errors.push('Missing or invalid @context');
+    }
+    if (!badgeData.type || !Array.isArray(badgeData.type) || !badgeData.type.includes('OpenBadgeCredential')) {
+      errors.push('Invalid type - must include OpenBadgeCredential');
+    }
+    if (!badgeData.issuer?.id) {
+      errors.push('Missing issuer.id');
+    }
+    if (!badgeData.credentialSubject?.achievement?.id) {
+      errors.push('Missing credentialSubject.achievement.id');
+    }
+    if (!badgeData.validFrom) {
+      warnings.push('Missing validFrom date');
+    }
+  } else {
+    // Open Badges v2.0 validation
+    if (!badgeData['@context']) {
+      errors.push('Missing @context');
+    }
+    if (badgeData.type !== 'Assertion') {
+      errors.push('Invalid type - must be Assertion');
+    }
+    if (!badgeData.badge) {
+      errors.push('Missing badge reference');
+    }
+    if (!badgeData.recipient) {
+      errors.push('Missing recipient information');
+    }
+    if (!badgeData.issuedOn) {
+      warnings.push('Missing issuedOn date');
+    }
+  }
+  
+  // URL validation
+  if (badgeData.id && !isValidUrl(badgeData.id)) {
+    errors.push('Invalid badge ID URL');
+  }
+  
+  return {
+    valid: errors.length === 0,
+    errors: errors,
+    warnings: warnings,
+    fields_checked: isV3 ? ['@context', 'type', 'issuer.id', 'credentialSubject'] : ['@context', 'type', 'badge', 'recipient'],
+    version: isV3 ? 'v3.0' : 'v2.0'
+  };
+}
+
+// Helper function to verify issuer from badge
+async function verifyIssuerFromBadge(issuerUrl) {
+  try {
+    // First check if we have this issuer verified locally
+    const urlObj = new URL(issuerUrl);
+    const domain = urlObj.hostname;
+    const localIssuer = getVerifiedIssuer(domain);
+    
+    if (localIssuer && localIssuer.status === 'verified') {
+      return {
+        valid: true,
+        type: 'locally_verified',
+        issuer: localIssuer,
+        message: `Issuer verified locally: ${localIssuer.displayName}`
+      };
+    }
+    
+    // Try to fetch issuer data directly
+    const issuerResponse = await fetch(issuerUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Badge-Generator-Verifier/1.0' }
+    });
+    
+    if (!issuerResponse.ok) {
+      return {
+        valid: false,
+        error: `Failed to fetch issuer: HTTP ${issuerResponse.status}`,
+        details: { url: issuerUrl, status: issuerResponse.status }
+      };
+    }
+    
+    let issuerData;
+    try {
+      issuerData = await issuerResponse.json();
+    } catch (parseError) {
+      return {
+        valid: false,
+        error: `Invalid JSON in issuer: ${parseError.message}`,
+        details: { url: issuerUrl }
+      };
+    }
+    
+    // Validate issuer structure
+    const isV3Issuer = issuerData.type === 'Profile';
+    const requiredFields = isV3Issuer ? ['id', 'type', 'name'] : ['@context', 'type', 'name', 'url'];
+    const missingFields = requiredFields.filter(field => !issuerData[field]);
+    
+    if (missingFields.length > 0) {
+      return {
+        valid: false,
+        error: `Missing required fields: ${missingFields.join(', ')}`,
+        details: { url: issuerUrl, missingFields }
+      };
+    }
+    
+    // Check if issuer ID matches the URL
+    if (issuerData.id !== issuerUrl) {
+      return {
+        valid: false,
+        error: `Issuer ID '${issuerData.id}' does not match URL '${issuerUrl}'`,
+        details: { url: issuerUrl, issuerId: issuerData.id }
+      };
+    }
+    
+    return {
+      valid: true,
+      type: 'remote_verified',
+      issuer: issuerData,
+      message: `Issuer verified from remote URL: ${issuerData.name}`
+    };
+    
+  } catch (error) {
+    return {
+      valid: false,
+      error: `Issuer verification failed: ${error.message}`,
+      details: { url: issuerUrl }
+    };
+  }
+}
+
+// Helper function to determine verification level
+function determineVerificationLevel(structureVerification, issuerVerification, signatureVerification) {
+  if (!structureVerification.valid) {
+    return 'invalid';
+  }
+  
+  if (!issuerVerification) {
+    return 'structure_only';
+  }
+  
+  if (!issuerVerification.valid) {
+    return 'structure_valid_issuer_invalid';
+  }
+  
+  if (signatureVerification && signatureVerification.valid) {
+    return 'cryptographically_verified';
+  }
+  
+  if (issuerVerification.type === 'locally_verified') {
+    return 'fully_verified';
+  }
+  
+  if (issuerVerification.type === 'remote_verified') {
+    return 'remote_verified';
+  }
+  
+  return 'basic_verified';
+}
+
+// Helper function to validate URLs
+function isValidUrl(string) {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+// Cryptographic signature verification functions
+function signBadgeData(badgeData, privateKeyPem) {
+  try {
+    // Create a canonical string representation for signing
+    const canonicalData = JSON.stringify(badgeData, null, 0);
+    const dataBuffer = Buffer.from(canonicalData, 'utf8');
+    
+    // Create private key object
+    const privateKey = crypto.createPrivateKey(privateKeyPem);
+    
+    // Sign the data
+    const signature = crypto.sign(null, dataBuffer, privateKey);
+    
+    // Convert to base64url for JSON-LD
+    return signature.toString('base64url');
+  } catch (error) {
+    throw new Error(`Failed to sign badge data: ${error.message}`);
+  }
+}
+
+function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
+  try {
+    // Remove proof from badge data for verification
+    const dataToVerify = { ...badgeData };
+    delete dataToVerify.proof;
+    
+    // Create canonical string representation
+    const canonicalData = JSON.stringify(dataToVerify, null, 0);
+    const dataBuffer = Buffer.from(canonicalData, 'utf8');
+    
+    // Create public key object
+    const publicKey = crypto.createPublicKey(publicKeyPem);
+    
+    // Convert signature from base64url
+    const signatureBuffer = Buffer.from(signature, 'base64url');
+    
+    // Verify the signature
+    return crypto.verify(null, dataBuffer, publicKey, signatureBuffer);
+  } catch (error) {
+    console.error('Signature verification error:', error);
+    return false;
+  }
+}
+
+async function getBadgeSigningKey(domain) {
+  // Try to find signing keys for the domain
+  const keyPaths = [
+    path.join('issuer-verification-files', 'private-key.pem'),
+    path.join('uploads', `${domain}-private-key.pem`),
+    path.join('keys', `${domain}.pem`)
+  ];
+  
+  for (const keyPath of keyPaths) {
+    if (fs.existsSync(keyPath)) {
+      try {
+        return fs.readFileSync(keyPath, 'utf8');
+      } catch (error) {
+        console.warn(`Failed to read key from ${keyPath}:`, error.message);
+      }
+    }
+  }
+  
+  return null;
+}
+
+async function getBadgeVerificationKey(issuerData, issuerUrl) {
+  // Try to get public key from issuer data
+  if (issuerData.publicKey) {
+    if (typeof issuerData.publicKey === 'string') {
+      return issuerData.publicKey;
+    }
+    if (issuerData.publicKey.publicKeyPem) {
+      return issuerData.publicKey.publicKeyPem;
+    }
+    if (issuerData.publicKey.publicKeyMultibase) {
+      // Convert multibase to PEM if needed
+      try {
+        const keyBuffer = Buffer.from(issuerData.publicKey.publicKeyMultibase.slice(1), 'base64url');
+        return crypto.createPublicKey({
+          key: keyBuffer,
+          format: 'der',
+          type: 'spki'
+        }).export({ type: 'spki', format: 'pem' });
+      } catch (error) {
+        console.warn('Failed to convert multibase key:', error.message);
+      }
+    }
+  }
+  
+  // Try to find public key files
+  const urlObj = new URL(issuerUrl);
+  const domain = urlObj.hostname;
+  
+  const keyPaths = [
+    path.join('issuer-verification-files', 'public-key.pem'),
+    path.join('uploads', `${domain}-public-key.pem`),
+    path.join('keys', `${domain}-public.pem`)
+  ];
+  
+  for (const keyPath of keyPaths) {
+    if (fs.existsSync(keyPath)) {
+      try {
+        return fs.readFileSync(keyPath, 'utf8');
+      } catch (error) {
+        console.warn(`Failed to read public key from ${keyPath}:`, error.message);
+      }
+    }
+  }
+  
+  return null;
+}
+
+async function verifyCryptographicSignature(badgeData, issuerVerification) {
+  try {
+    // Check if badge has a proof/signature
+    if (!badgeData.proof) {
+      return {
+        valid: false,
+        type: 'no_signature',
+        message: 'Badge has no cryptographic proof/signature'
+      };
+    }
+    
+    // Extract signature from proof
+    let signature = null;
+    if (typeof badgeData.proof === 'string') {
+      signature = badgeData.proof;
+    } else if (badgeData.proof.jws) {
+      signature = badgeData.proof.jws;
+    } else if (badgeData.proof.proofValue) {
+      signature = badgeData.proof.proofValue;
+    }
+    
+    if (!signature) {
+      return {
+        valid: false,
+        type: 'invalid_proof_format',
+        message: 'Unable to extract signature from proof'
+      };
+    }
+    
+    // Get the issuer's public key
+    const issuerUrl = issuerVerification.issuer.id || issuerVerification.issuer.url;
+    const publicKey = await getBadgeVerificationKey(issuerVerification.issuer, issuerUrl);
+    
+    if (!publicKey) {
+      return {
+        valid: false,
+        type: 'no_public_key',
+        message: 'No public key found for issuer'
+      };
+    }
+    
+    // Verify the signature
+    const isValidSignature = verifyBadgeSignature(badgeData, signature, publicKey);
+    
+    if (isValidSignature) {
+      return {
+        valid: true,
+        type: 'signature_verified',
+        message: 'Cryptographic signature is valid',
+        signatureType: badgeData.proof.type || 'Ed25519Signature2020',
+        verificationMethod: badgeData.proof.verificationMethod || 'unknown'
+      };
+    } else {
+      return {
+        valid: false,
+        type: 'signature_invalid',
+        message: 'Cryptographic signature verification failed'
+      };
+    }
+    
+  } catch (error) {
+    return {
+      valid: false,
+      type: 'verification_error',
+      error: error.message,
+      message: 'Error during signature verification'
+    };
+  }
+}
+
+// Badge signing endpoint
+app.post('/api/sign-badge', requireApiKey, async (req, res) => {
+  const { badgeData, domain } = req.body;
+  
+  if (!badgeData || !domain) {
+    return res.status(400).json({ error: 'Badge data and domain are required' });
+  }
+  
+  try {
+    // Get the signing key for the domain
+    const privateKey = await getBadgeSigningKey(domain);
+    if (!privateKey) {
+      return res.status(400).json({ 
+        error: `No signing key found for domain: ${domain}`,
+        suggestion: 'Use the CLI tool to generate verification files: badge-cli generate-keys'
+      });
+    }
+    
+    // Sign the badge data
+    const signature = signBadgeData(badgeData, privateKey);
+    
+    // Add proof to badge data
+    const signedBadge = {
+      ...badgeData,
+      proof: {
+        type: 'Ed25519Signature2020',
+        created: new Date().toISOString(),
+        verificationMethod: `https://${domain}/.well-known/issuer.json#key`,
+        proofPurpose: 'assertionMethod',
+        jws: signature
+      }
+    };
+    
+    res.json({
+      message: 'Badge signed successfully',
+      signedBadge: signedBadge,
+      signature: signature,
+      verificationMethod: `https://${domain}/.well-known/issuer.json#key`
+    });
+    
+  } catch (error) {
+    console.error(`Error signing badge:`, error);
+    res.status(500).json({
+      error: `Failed to sign badge: ${error.message}`
     });
   }
 });

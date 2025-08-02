@@ -26,6 +26,11 @@ const testSuites = [
     name: 'Integration Tests (End-to-End)',
     script: 'integration-test.js', 
     description: 'Tests full HTTP request/response cycle'
+  },
+  {
+    name: 'Verification Tests (Badge & Issuer Verification)',
+    script: 'verification-test.js',
+    description: 'Tests badge verification, issuer validation, and cryptographic signing'
   }
 ];
 
