@@ -1544,10 +1544,14 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
 
 async function getBadgeSigningKey(domain) {
   // Only support our own domain for signing
-  const ourDomain = req?.get?.('host') || process.env.DOMAIN || 'localhost:3000';
+  // Note: req is not available in this context, so we'll be more flexible
+  const isOurDomain = domain.includes('railway.app') || 
+                     domain.includes('localhost') || 
+                     domain === 'localhost:3000' ||
+                     domain === process.env.DOMAIN;
   
-  if (domain !== ourDomain && !domain.includes('railway.app') && !domain.includes('localhost')) {
-    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our own domain: ${ourDomain}`);
+  if (!isOurDomain) {
+    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for Railway/localhost domains.`);
     return null;
   }
   
@@ -2045,9 +2049,26 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Badge Generator server running on port ${PORT}`);
   console.log(`Upload page: http://localhost:${PORT}/upload`);
   console.log(`Upload password: ${process.env.UPLOAD_PASSWORD}`);
   console.log(`API key: ${process.env.API_KEY}`);
+});
+
+// Graceful shutdown handling
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed. Process terminating.');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received. Shutting down gracefully...');
+  server.close(() => {
+    console.log('Server closed. Process terminating.');
+    process.exit(0);
+  });
 });
