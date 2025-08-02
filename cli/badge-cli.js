@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Configuration
-const DEFAULT_BASE_URL = 'https://badge-generator-production.up.railway.app';
+const DEFAULT_BASE_URL = process.env.BADGE_CLI_BASE_URL || 'http://localhost:3000';
 const CONFIG_FILE = path.join(process.cwd(), '.badge-cli-config.json');
 
 class BadgeCLI {

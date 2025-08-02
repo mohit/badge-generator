@@ -35,7 +35,7 @@ Add this to your Claude Desktop MCP configuration file:
       "command": "node",
       "args": ["/path/to/badge-generator/mcp-server/index.js"],
       "env": {
-        "BADGE_API_BASE_URL": "https://badge-generator-production.up.railway.app",
+        "BADGE_API_BASE_URL": "https://your-badge-generator-domain.com",
         "BADGE_API_KEY": "g7nopsRdnf2y2F+i9k3kNe//NRXaEsWWT3j8XaTB4w0="
       }
     }
@@ -121,7 +121,7 @@ When you ask Claude to work with badges, it has access to these tools:
 ## Domain Types & Behavior
 
 ### ✅ Verified Domains
-**Example**: `badge-generator-production.up.railway.app`
+**Example**: `your-badge-generator.com`
 - ✅ Production ready
 - ✅ No warnings
 - ✅ Full functionality
@@ -129,7 +129,7 @@ When you ask Claude to work with badges, it has access to these tools:
 **Claude response:**
 ```
 ✅ Created issuer for Badge Generator Demo Platform
-📍 Domain: badge-generator-production.up.railway.app (verified)
+📍 Domain: your-badge-generator.com (verified)
 🎯 Production ready: Yes
 ```
 
@@ -162,7 +162,7 @@ When you ask Claude to work with badges, it has access to these tools:
 💡 Alternatives:
 • Use demo.example.org for testing
 • Complete domain verification for harvard.edu
-• Use our verified issuer: badge-generator-production.up.railway.app
+• Use a verified domain from your deployment
 ```
 
 ## Natural Language Examples

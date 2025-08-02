@@ -22,7 +22,7 @@ npm install
 2. Set environment variables (recommended):
 ```bash
 export BADGE_API_KEY="your_api_key_here"
-export BADGE_BASE_URL="https://badge-generator-production.up.railway.app"
+export BADGE_BASE_URL="https://your-badge-generator-domain.com"
 ```
 
 Or copy `.env.example` to `.env` and edit:
@@ -84,7 +84,7 @@ Configure connection to your Badge Generator instance (optional if environment v
 
 **Example:**
 ```
-Please configure the MCP server to connect to https://my-badges.railway.app with API key abc123...
+Please configure the MCP server to connect to https://your-badge-generator.com with API key abc123...
 ```
 
 **Note:** If you set `BADGE_BASE_URL` and `BADGE_API_KEY` environment variables, this tool becomes optional.
@@ -199,7 +199,7 @@ The MCP server provides detailed error messages for:
 
 2. **Configure the server (if needed):**
    ```
-   Configure the server to use https://my-badges.com with API key xyz789
+   Configure the server to use https://your-badge-generator.com with API key xyz789
    ```
    
    *Note: Skip this step if you've set environment variables*

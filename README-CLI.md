@@ -177,7 +177,7 @@ node cli/badge-cli.js test-connection
 ### ✅ Allowed Domains
 
 **Verified Domains:**
-- `badge-generator-production.up.railway.app` - Our verified issuer
+- Your deployed domain after completing verification
 
 **Testing Domains:**
 - `example.com`, `example.org`, `example.net`
@@ -308,7 +308,7 @@ Add to your Claude Desktop config:
       "command": "node",
       "args": ["/path/to/badge-generator/mcp-server/index.js"],
       "env": {
-        "BADGE_API_BASE_URL": "https://badge-generator-production.up.railway.app",
+        "BADGE_API_BASE_URL": "https://your-badge-generator.com",
         "BADGE_API_KEY": "your-api-key"
       }
     }

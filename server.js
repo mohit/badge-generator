@@ -12,7 +12,7 @@ import crypto from 'crypto';
 config();
 
 // Domain validation constants
-const VERIFIED_ISSUER_DOMAIN = 'badge-generator-production.up.railway.app';
+const VERIFIED_ISSUER_DOMAIN = process.env.PUBLIC_DOMAIN || 'localhost:3000';
 const SAFE_TEST_DOMAINS = [
   'example.com',
   'example.org', 

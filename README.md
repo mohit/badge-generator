@@ -1,29 +1,33 @@
 # Badge Generator
 
-A secure web application for hosting Open Badges with password-protected file uploads and API endpoints for creating issuers and badge classes.
+A secure, deployable web application for hosting Open Badges with password-protected file uploads, comprehensive verification system, and API endpoints for creating issuers and badge classes.
 
 ## Features
 
 - **Password-protected upload page**: Secure file upload with session-based authentication
 - **JSON file hosting**: Upload and host JSON badge files at accessible URLs
+- **Badge verification system**: Cryptographic signature verification and issuer validation
 - **API endpoints**: Create issuers, badge classes, and credential subjects via API
-- **Open Badges v2 compliant**: Follows Open Badges specification
+- **Open Badges v2 & v3 compliant**: Follows Open Badges specification
+- **Multi-platform deployment**: Deploy anywhere with Docker, cloud platforms, or self-hosted
+- **CLI tools**: Command-line interface for badge operations and verification
+- **MCP integration**: AI assistant integration via Model Context Protocol
 
-## Installation
+## Quick Start
 
-1. Install dependencies:
+1. **Install dependencies:**
 ```bash
 npm install
 ```
 
-2. Copy the environment configuration:
+2. **Copy the environment configuration:**
 ```bash
 cp .env.example .env
 ```
 
-3. Update the `.env` file with your credentials (random passwords have been generated for you)
+3. **Update the `.env` file** with your credentials and domain
 
-4. Start the server:
+4. **Start the server:**
 ```bash
 npm start
 ```
@@ -32,6 +36,17 @@ Or for development with auto-reload:
 ```bash
 npm run dev
 ```
+
+## Deployment
+
+This application can be deployed on any platform. See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive deployment guides including:
+
+- **Docker**: containerized deployment with docker-compose
+- **Railway**: one-click deployment
+- **Heroku**: git-based deployment
+- **DigitalOcean**: droplet or app platform
+- **Self-hosted**: traditional server deployment
+- **Other platforms**: Vercel, Netlify, AWS, etc.
 
 ## Usage
 
@@ -115,9 +130,16 @@ X-API-Key: your_api_key_here
 
 ## Environment Variables
 
+### Required
+- `PUBLIC_DOMAIN` - Your domain (e.g., "yourdomain.com" or "localhost:3000")
 - `UPLOAD_PASSWORD` - Password for accessing the upload page
 - `API_KEY` - API key for creating badges via API
+- `DEFAULT_PRIVATE_KEY` - Base64-encoded Ed25519 private key for signing
+- `DEFAULT_PUBLIC_KEY` - Base64-encoded Ed25519 public key for verification
+
+### Optional
 - `PORT` - Server port (default: 3000)
+- `NODE_ENV` - Environment mode (development/production)
 
 ## MCP Server Integration
 

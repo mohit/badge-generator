@@ -5,7 +5,7 @@
       "args": ["/absolute/path/to/badge-generator/mcp-server/index.js"],
       "env": {
         "BADGE_API_KEY": "your_api_key_here",
-        "BADGE_BASE_URL": "https://badge-generator-production.up.railway.app"
+        "BADGE_BASE_URL": "https://your-badge-generator-domain.com"
       }
     }
   }
