@@ -7,6 +7,14 @@ node_modules/
 .env.*.local
 .env.test
 
+# Cryptographic keys (use environment variables in production)
+*.pem
+*.key
+*.p12
+*.pfx
+issuer-verification-files/
+keys/
+
 # Uploaded badge files (regenerated on deploy)
 uploads/
 

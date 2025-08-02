@@ -1,0 +1,154 @@
+# Railway Deployment & Security Setup Guide
+
+## 🔐 Secure Key Management for Badge Signing
+
+For production deployment on Railway, you **must** store cryptographic keys as environment variables instead of files.
+
+### Step 1: Generate Keys Locally
+
+First, generate your signing keys locally (these will NOT be committed to git):
+
+```bash
+# Use the CLI tool to generate keys
+npm run cli generate-keys \
+  --name "Your Organization Name" \
+  --url "https://your-domain.com" \
+  --email "badges@your-domain.com"
+
+# This creates files in issuer-verification-files/
+# - private-key.pem (NEVER commit this)
+# - public-key.pem 
+# - issuer.json
+```
+
+### Step 2: Set Railway Environment Variables
+
+In your Railway dashboard, add these environment variables:
+
+#### Required Keys:
+```bash
+# Default private key for signing badges
+DEFAULT_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg...
+-----END PRIVATE KEY-----"
+
+# Default public key for verification
+DEFAULT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----
+MCowBQYDK2VwAyEA...
+-----END PUBLIC KEY-----"
+```
+
+#### Domain-Specific Keys (Optional):
+For specific domains, you can add:
+```bash
+# Replace dots and hyphens with underscores and make uppercase
+PRIVATE_KEY_BADGE_GENERATOR_PRODUCTION_UP_RAILWAY_APP="-----BEGIN PRIVATE KEY-----..."
+PUBLIC_KEY_BADGE_GENERATOR_PRODUCTION_UP_RAILWAY_APP="-----BEGIN PUBLIC KEY-----..."
+
+# For custom domains:
+PRIVATE_KEY_MYBADGES_COM="-----BEGIN PRIVATE KEY-----..."
+PUBLIC_KEY_MYBADGES_COM="-----BEGIN PUBLIC KEY-----..."
+```
+
+### Step 3: Production Environment Settings
+
+Also set these Railway environment variables:
+
+```bash
+# Ensure production mode
+NODE_ENV=production
+
+# Your existing API credentials
+API_KEY=your_secure_api_key_here
+UPLOAD_PASSWORD=your_secure_upload_password_here
+
+# Port (Railway auto-sets this)
+PORT=3000
+```
+
+### Step 4: Verify Setup
+
+After deployment, test the signing functionality:
+
+```bash
+# Test badge signing
+curl -X POST "https://your-app.railway.app/api/sign-badge" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your_api_key" \
+  -d '{
+    "badgeData": {
+      "@context": "https://w3id.org/openbadges/v2",
+      "type": "Assertion",
+      "id": "https://your-app.railway.app/badges/test.json",
+      "recipient": {"type": "email", "hashed": false, "identity": "test@example.com"},
+      "badge": "https://your-app.railway.app/badges/test-badge.json",
+      "issuedOn": "2024-01-01T00:00:00Z"
+    },
+    "domain": "your-app.railway.app"
+  }'
+```
+
+## 🔒 Security Best Practices
+
+### ✅ DO:
+- ✅ Store private keys in Railway environment variables
+- ✅ Use strong, randomly generated keys
+- ✅ Set `NODE_ENV=production` in Railway
+- ✅ Use HTTPS for all badge URLs
+- ✅ Regularly rotate signing keys
+
+### ❌ DON'T:
+- ❌ Commit .pem files to git
+- ❌ Share private keys via email/chat
+- ❌ Use the same keys across environments
+- ❌ Store keys in code or config files
+
+## 🚀 Key Rotation Process
+
+To rotate your signing keys:
+
+1. **Generate new keys locally**:
+   ```bash
+   npm run cli generate-keys --name "Your Org" --url "https://your-domain.com" --email "badges@your-domain.com"
+   ```
+
+2. **Update Railway environment variables** with the new keys
+
+3. **Update your issuer profiles** with new public keys:
+   - Host the new `issuer.json` at `https://your-domain.com/.well-known/issuer.json`
+
+4. **Gradually phase out old keys** (keep both for a transition period)
+
+## 🔍 Troubleshooting
+
+### "No signing key found" Error:
+- Check that `DEFAULT_PRIVATE_KEY` is set in Railway
+- Verify the key format (must include `-----BEGIN PRIVATE KEY-----` headers)
+- Ensure no extra spaces or newlines in the environment variable
+
+### "Invalid signature" Error:
+- Verify public/private key pair match
+- Check that the public key is accessible to verifiers
+- Ensure the issuer profile contains the correct public key
+
+### Key Format Issues:
+```bash
+# Keys should be in PEM format like this:
+-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg...
+-----END PRIVATE KEY-----
+```
+
+## 📝 Environment Variable Summary
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DEFAULT_PRIVATE_KEY` | ✅ Yes | Private key for badge signing |
+| `DEFAULT_PUBLIC_KEY` | ✅ Yes | Public key for verification |
+| `NODE_ENV` | ✅ Yes | Set to "production" |
+| `API_KEY` | ✅ Yes | API authentication key |
+| `UPLOAD_PASSWORD` | ✅ Yes | Web interface password |
+| `PRIVATE_KEY_[DOMAIN]` | ⚪ Optional | Domain-specific private key |
+| `PUBLIC_KEY_[DOMAIN]` | ⚪ Optional | Domain-specific public key |
+
+This setup ensures your badge signing keys are secure and never exposed in your codebase! 🔐

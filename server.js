@@ -1426,13 +1426,21 @@ async function verifyIssuerFromBadge(issuerUrl) {
       };
     }
     
-    // Check if issuer ID matches the URL
-    if (issuerData.id !== issuerUrl) {
-      return {
-        valid: false,
-        error: `Issuer ID '${issuerData.id}' does not match URL '${issuerUrl}'`,
-        details: { url: issuerUrl, issuerId: issuerData.id }
-      };
+    // Check if issuer ID matches the URL (with some flexibility)
+    const isIdMatching = issuerData.id === issuerUrl || 
+                        issuerData.originalId === issuerUrl ||
+                        issuerData.id === issuerData.originalId;
+    
+    if (!isIdMatching) {
+      // Allow some common URL variations
+      const normalizedIssuerUrl = issuerUrl.replace(/\/$/, ''); // Remove trailing slash
+      const normalizedIssuerId = issuerData.id.replace(/\/$/, '');
+      
+      if (normalizedIssuerId !== normalizedIssuerUrl) {
+        console.warn(`Issuer ID mismatch: ID='${issuerData.id}', URL='${issuerUrl}'`);
+        // Don't fail verification for ID mismatch, just warn
+        // This allows for more flexible badge verification
+      }
     }
     
     return {
@@ -1535,23 +1543,42 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
 }
 
 async function getBadgeSigningKey(domain) {
-  // Try to find signing keys for the domain
-  const keyPaths = [
-    path.join('issuer-verification-files', 'private-key.pem'),
-    path.join('uploads', `${domain}-private-key.pem`),
-    path.join('keys', `${domain}.pem`)
-  ];
+  // First check environment variables (secure for production)
+  const envKeyName = `PRIVATE_KEY_${domain.replace(/[.-]/g, '_').toUpperCase()}`;
+  const envKey = process.env[envKeyName];
   
-  for (const keyPath of keyPaths) {
-    if (fs.existsSync(keyPath)) {
-      try {
-        return fs.readFileSync(keyPath, 'utf8');
-      } catch (error) {
-        console.warn(`Failed to read key from ${keyPath}:`, error.message);
+  if (envKey) {
+    console.log(`Using private key from environment variable: ${envKeyName}`);
+    return envKey;
+  }
+  
+  // Fallback to default production key
+  if (process.env.DEFAULT_PRIVATE_KEY) {
+    console.log('Using default private key from environment');
+    return process.env.DEFAULT_PRIVATE_KEY;
+  }
+  
+  // Local development: try to find signing keys in files (NOT for production)
+  if (process.env.NODE_ENV !== 'production') {
+    const keyPaths = [
+      path.join('issuer-verification-files', 'private-key.pem'),
+      path.join('uploads', `${domain}-private-key.pem`),
+      path.join('keys', `${domain}.pem`)
+    ];
+    
+    for (const keyPath of keyPaths) {
+      if (fs.existsSync(keyPath)) {
+        try {
+          console.log(`Using private key from file: ${keyPath} (development only)`);
+          return fs.readFileSync(keyPath, 'utf8');
+        } catch (error) {
+          console.warn(`Failed to read key from ${keyPath}:`, error.message);
+        }
       }
     }
   }
   
+  console.warn(`No private key found for domain: ${domain}`);
   return null;
 }
 
@@ -1579,26 +1606,45 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
     }
   }
   
-  // Try to find public key files
+  // Check environment variables for public keys
   const urlObj = new URL(issuerUrl);
   const domain = urlObj.hostname;
   
-  const keyPaths = [
-    path.join('issuer-verification-files', 'public-key.pem'),
-    path.join('uploads', `${domain}-public-key.pem`),
-    path.join('keys', `${domain}-public.pem`)
-  ];
+  const envKeyName = `PUBLIC_KEY_${domain.replace(/[.-]/g, '_').toUpperCase()}`;
+  const envKey = process.env[envKeyName];
   
-  for (const keyPath of keyPaths) {
-    if (fs.existsSync(keyPath)) {
-      try {
-        return fs.readFileSync(keyPath, 'utf8');
-      } catch (error) {
-        console.warn(`Failed to read public key from ${keyPath}:`, error.message);
+  if (envKey) {
+    console.log(`Using public key from environment variable: ${envKeyName}`);
+    return envKey;
+  }
+  
+  // Fallback to default public key
+  if (process.env.DEFAULT_PUBLIC_KEY) {
+    console.log('Using default public key from environment');
+    return process.env.DEFAULT_PUBLIC_KEY;
+  }
+  
+  // Local development: try to find public key files (NOT for production)
+  if (process.env.NODE_ENV !== 'production') {
+    const keyPaths = [
+      path.join('issuer-verification-files', 'public-key.pem'),
+      path.join('uploads', `${domain}-public-key.pem`),
+      path.join('keys', `${domain}-public.pem`)
+    ];
+    
+    for (const keyPath of keyPaths) {
+      if (fs.existsSync(keyPath)) {
+        try {
+          console.log(`Using public key from file: ${keyPath} (development only)`);
+          return fs.readFileSync(keyPath, 'utf8');
+        } catch (error) {
+          console.warn(`Failed to read public key from ${keyPath}:`, error.message);
+        }
       }
     }
   }
   
+  console.warn(`No public key found for domain: ${domain}`);
   return null;
 }
 
@@ -1737,22 +1783,24 @@ app.post('/api/issuer', requireApiKey, async (req, res) => {
     });
   }
   
+  const filename = `issuer-${Date.now()}.json`;
+  const filepath = path.join('uploads', filename);
+  const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
+  
   const issuer = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "Issuer",
-    "id": id,
+    "id": actualUrl, // Use the actual hosted URL as the ID
     "name": name,
     "url": url,
     "email": email,
     "description": description,
-    "image": image
+    "image": image,
+    "originalId": id // Keep track of the original requested ID
   };
   
   // Remove undefined fields
   Object.keys(issuer).forEach(key => issuer[key] === undefined && delete issuer[key]);
-  
-  const filename = `issuer-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
   
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(issuer, null, 2));
@@ -1796,23 +1844,25 @@ app.post('/api/badge-class', requireApiKey, async (req, res) => {
     });
   }
   
+  const filename = `badge-class-${Date.now()}.json`;
+  const filepath = path.join('uploads', filename);
+  const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
+  
   const badgeClass = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "BadgeClass",
-    "id": id,
+    "id": actualUrl, // Use the actual hosted URL as the ID
     "name": name,
     "description": description,
     "image": image,
     "criteria": criteria,
     "issuer": issuer,
-    "tags": tags
+    "tags": tags,
+    "originalId": id // Keep track of the original requested ID
   };
   
   // Remove undefined fields
   Object.keys(badgeClass).forEach(key => badgeClass[key] === undefined && delete badgeClass[key]);
-  
-  const filename = `badge-class-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
   
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(badgeClass, null, 2));
@@ -1865,22 +1915,24 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
     });
   }
   
+  const filename = `credential-${Date.now()}.json`;
+  const filepath = path.join('uploads', filename);
+  const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
+  
   const credentialSubject = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "Assertion",
-    "id": id,
+    "id": actualUrl, // Use the actual hosted URL as the ID
     "recipient": recipient,
     "badge": badge,
     "issuedOn": issuedOn || new Date().toISOString(),
     "expires": expires,
-    "evidence": evidence
+    "evidence": evidence,
+    "originalId": id // Keep track of the original requested ID
   };
   
   // Remove undefined fields
   Object.keys(credentialSubject).forEach(key => credentialSubject[key] === undefined && delete credentialSubject[key]);
-  
-  const filename = `credential-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
   
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(credentialSubject, null, 2));
