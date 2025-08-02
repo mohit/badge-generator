@@ -1,0 +1,22 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://badge-generator-production.up.railway.app/.well-known/issuer.json",
+  "type": "Profile",
+  "name": "Badge Generator Demo Platform",
+  "url": "https://badge-generator-production.up.railway.app",
+  "email": "demo@badge-generator-demo.example.com",
+  "description": "A demonstration platform for creating and hosting Open Badges. This is a verified default issuer for testing and demonstration purposes.",
+  "image": "https://badge-generator-production.up.railway.app/logo.png",
+  "official": true,
+  "verified": true,
+  "created": "2025-08-02T00:00:00Z",
+  "publicKey": {
+    "id": "https://badge-generator-production.up.railway.app/.well-known/issuer.json#key",
+    "type": "Ed25519VerificationKey2020",
+    "controller": "https://badge-generator-production.up.railway.app/.well-known/issuer.json",
+    "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnYuYByT1S"
+  }
+}

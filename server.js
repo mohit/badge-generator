@@ -4,7 +4,82 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const dns = require('dns').promises;
 require('dotenv').config();
+
+// Domain validation constants
+const VERIFIED_ISSUER_DOMAIN = 'badge-generator-production.up.railway.app';
+const SAFE_TEST_DOMAINS = [
+  'example.com',
+  'example.org', 
+  'example.net',
+  'test.example.com',
+  'demo.example.org',
+  'localhost',
+  '127.0.0.1'
+];
+
+// Domain validation function
+async function validateIssuerDomain(url) {
+  try {
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname.toLowerCase();
+    
+    // Check if it's our verified issuer
+    if (domain === VERIFIED_ISSUER_DOMAIN) {
+      return {
+        valid: true,
+        type: 'verified',
+        warnings: [],
+        message: 'Using verified Badge Generator issuer'
+      };
+    }
+    
+    // Check if it's a safe testing domain
+    const isSafeTestDomain = SAFE_TEST_DOMAINS.some(safeDomain => 
+      domain === safeDomain || domain.endsWith('.' + safeDomain)
+    );
+    
+    if (isSafeTestDomain) {
+      return {
+        valid: true,
+        type: 'testing',
+        warnings: ['Using example.com domain - safe for testing only'],
+        message: 'Safe testing domain'
+      };
+    }
+    
+    // Check if domain is registered (block real domains for now)
+    try {
+      await dns.lookup(domain);
+      // Domain exists - block it unless it's in our allowlist
+      return {
+        valid: false,
+        type: 'blocked',
+        warnings: [],
+        message: `Domain '${domain}' appears to be registered. Please use example.com domains for testing or our verified issuer.`,
+        error: 'DOMAIN_REGISTERED'
+      };
+    } catch (err) {
+      // Domain doesn't exist - allow it (might be local/test domain)
+      return {
+        valid: true,
+        type: 'unregistered',
+        warnings: ['Using unregistered domain - ensure this is intentional'],
+        message: 'Unregistered domain allowed'
+      };
+    }
+    
+  } catch (err) {
+    return {
+      valid: false,
+      type: 'invalid',
+      warnings: [],
+      message: 'Invalid URL format',
+      error: 'INVALID_URL'
+    };
+  }
+}
 
 // Helper function to ensure uploads directory exists
 function ensureUploadsDir() {
@@ -242,64 +317,64 @@ app.get('/upload', requireAuth, (req, res) => {
             'issuer': {
               "@context": "https://w3id.org/openbadges/v2",
               "type": "Issuer",
-              "id": "https://example.com/issuer/1",
-              "name": "Example Organization",
-              "url": "https://example.com",
-              "email": "contact@example.com",
-              "description": "An example organization that issues badges",
-              "image": "https://example.com/logo.png"
+              "id": "https://demo.example.org/issuer/1",
+              "name": "Demo Training Institute",
+              "url": "https://demo.example.org",
+              "email": "badges@demo.example.org",
+              "description": "A demonstration training institute for testing badge issuance",
+              "image": "https://demo.example.org/logo.png"
             },
             'badge-class': {
               "@context": "https://w3id.org/openbadges/v2",
               "type": "BadgeClass",
-              "id": "https://example.com/badge/excellence",
+              "id": "https://demo.example.org/badge/excellence",
               "name": "Excellence Badge",
-              "description": "Awarded for demonstrating excellence",
-              "image": "https://example.com/badge.png",
-              "criteria": "https://example.com/criteria/excellence",
-              "issuer": "https://example.com/issuer/1",
-              "tags": ["excellence", "achievement"]
+              "description": "Awarded for demonstrating excellence in learning",
+              "image": "https://demo.example.org/badge.png",
+              "criteria": "https://demo.example.org/criteria/excellence",
+              "issuer": "https://demo.example.org/issuer/1",
+              "tags": ["excellence", "achievement", "demo"]
             },
             'assertion': {
               "@context": "https://w3id.org/openbadges/v2",
               "type": "Assertion",
-              "id": "https://example.com/assertion/123",
+              "id": "https://demo.example.org/assertion/123",
               "recipient": {
                 "type": "email",
                 "hashed": false,
-                "identity": "recipient@example.com"
+                "identity": "learner@test.example.com"
               },
-              "badge": "https://example.com/badge/excellence",
+              "badge": "https://demo.example.org/badge/excellence",
               "issuedOn": new Date().toISOString(),
-              "evidence": "https://example.com/evidence/123"
+              "evidence": "https://test.example.com/portfolio/123"
             },
             'issuer-v3': {
               "@context": [
                 "https://www.w3.org/ns/credentials/v2",
                 "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
               ],
-              "id": "https://example.com/issuers/1",
+              "id": "https://demo.example.org/issuers/1",
               "type": "Profile",
-              "name": "Example Organization",
-              "url": "https://example.com",
-              "email": "contact@example.com",
-              "description": "An example organization that issues badges"
+              "name": "Demo Training Institute",
+              "url": "https://demo.example.org",
+              "email": "badges@demo.example.org",
+              "description": "A demonstration training institute for testing v3.0 badge issuance"
             },
             'achievement-v3': {
               "@context": [
                 "https://www.w3.org/ns/credentials/v2",
                 "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
               ],
-              "id": "https://example.com/achievements/excellence",
+              "id": "https://demo.example.org/achievements/excellence",
               "type": "Achievement",
               "name": "Excellence Achievement",
-              "description": "Awarded for demonstrating excellence in learning",
+              "description": "Awarded for demonstrating excellence in learning and skill development",
               "achievementType": "Certificate",
               "criteria": {
-                "narrative": "Demonstrates mastery of core competencies"
+                "narrative": "Demonstrates mastery of core competencies and sustained excellence"
               },
               "image": {
-                "id": "https://example.com/badge.png",
+                "id": "https://demo.example.org/badge.png",
                 "type": "Image"
               }
             },
@@ -308,12 +383,12 @@ app.get('/upload', requireAuth, (req, res) => {
                 "https://www.w3.org/ns/credentials/v2",
                 "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
               ],
-              "id": "https://example.com/credentials/123",
+              "id": "https://demo.example.org/credentials/123",
               "type": ["VerifiableCredential", "OpenBadgeCredential"],
               "issuer": {
-                "id": "https://example.com/issuers/1",
+                "id": "https://demo.example.org/issuers/1",
                 "type": "Profile",
-                "name": "Example Organization"
+                "name": "Demo Training Institute"
               },
               "validFrom": new Date().toISOString(),
               "name": "Excellence Badge",
@@ -323,10 +398,10 @@ app.get('/upload', requireAuth, (req, res) => {
                   "type": "IdentityObject",
                   "hashed": false,
                   "identityType": "email",
-                  "identity": "recipient@example.com"
+                  "identity": "learner@test.example.com"
                 },
                 "achievement": {
-                  "id": "https://example.com/achievements/excellence",
+                  "id": "https://demo.example.org/achievements/excellence",
                   "type": "Achievement",
                   "name": "Excellence Achievement"
                 }
@@ -355,33 +430,33 @@ app.get('/upload', requireAuth, (req, res) => {
           const exampleV2 = \`{
   "@context": "https://w3id.org/openbadges/v2",
   "type": "Issuer",
-  "id": "https://example.com/issuer/1",
-  "name": "Example University",
-  "url": "https://example.com",
-  "email": "badges@example.com"
+  "id": "https://demo.example.org/issuer/1",
+  "name": "Demo Tech Academy",
+  "url": "https://demo.example.org",
+  "email": "badges@demo.example.org"
 }
 
 {
   "@context": "https://w3id.org/openbadges/v2",
   "type": "BadgeClass",
-  "id": "https://example.com/badge/web-development",
+  "id": "https://demo.example.org/badge/web-development",
   "name": "Web Development Certificate",
-  "description": "Demonstrates proficiency in modern web development",
-  "image": "https://example.com/badge-image.png",
-  "criteria": "https://example.com/criteria/web-dev",
-  "issuer": "https://example.com/issuer/1"
+  "description": "Demonstrates proficiency in modern web development technologies",
+  "image": "https://demo.example.org/badge-image.png",
+  "criteria": "https://demo.example.org/criteria/web-dev",
+  "issuer": "https://demo.example.org/issuer/1"
 }
 
 {
   "@context": "https://w3id.org/openbadges/v2",
   "type": "Assertion",
-  "id": "https://example.com/assertion/123",
+  "id": "https://demo.example.org/assertion/123",
   "recipient": {
     "type": "email",
     "hashed": false,
-    "identity": "student@example.com"
+    "identity": "student@test.example.com"
   },
-  "badge": "https://example.com/badge/web-development",
+  "badge": "https://demo.example.org/badge/web-development",
   "issuedOn": "2024-01-15T10:00:00Z"
 }\`;
           
@@ -390,11 +465,11 @@ app.get('/upload', requireAuth, (req, res) => {
     "https://www.w3.org/ns/credentials/v2",
     "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
   ],
-  "id": "https://example.com/issuers/1",
+  "id": "https://demo.example.org/issuers/1",
   "type": "Profile",
-  "name": "Example University",
-  "url": "https://example.com",
-  "email": "badges@example.com"
+  "name": "Demo Tech Academy",
+  "url": "https://demo.example.org",
+  "email": "badges@demo.example.org"
 }
 
 {
@@ -402,13 +477,13 @@ app.get('/upload', requireAuth, (req, res) => {
     "https://www.w3.org/ns/credentials/v2",
     "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
   ],
-  "id": "https://example.com/achievements/web-development",
+  "id": "https://demo.example.org/achievements/web-development",
   "type": "Achievement",
   "name": "Web Development Certificate",
-  "description": "Demonstrates proficiency in modern web development",
+  "description": "Demonstrates proficiency in modern web development technologies",
   "achievementType": "Certificate",
   "criteria": {
-    "narrative": "Complete web development course with 80% score"
+    "narrative": "Complete comprehensive web development course with 80% score"
   }
 }
 
@@ -417,12 +492,12 @@ app.get('/upload', requireAuth, (req, res) => {
     "https://www.w3.org/ns/credentials/v2",
     "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
   ],
-  "id": "https://example.com/credentials/123",
+  "id": "https://demo.example.org/credentials/123",
   "type": ["VerifiableCredential", "OpenBadgeCredential"],
   "issuer": {
-    "id": "https://example.com/issuers/1",
+    "id": "https://demo.example.org/issuers/1",
     "type": "Profile",
-    "name": "Example University"
+    "name": "Demo Tech Academy"
   },
   "validFrom": "2024-01-15T10:00:00Z",
   "name": "Web Development Certificate",
@@ -432,10 +507,10 @@ app.get('/upload', requireAuth, (req, res) => {
       "type": "IdentityObject",
       "hashed": false,
       "identityType": "email",
-      "identity": "student@example.com"
+      "identity": "student@test.example.com"
     },
     "achievement": {
-      "id": "https://example.com/achievements/web-development",
+      "id": "https://demo.example.org/achievements/web-development",
       "type": "Achievement",
       "name": "Web Development Certificate"
     }
@@ -830,12 +905,33 @@ app.get('/api/badge-files', requireApiKey, (req, res) => {
   });
 });
 
+// Domain validation endpoint
+app.get('/api/validate-issuer-domain', requireApiKey, async (req, res) => {
+  const { url } = req.query;
+  
+  if (!url) {
+    return res.status(400).json({ error: 'URL parameter is required' });
+  }
+  
+  const validation = await validateIssuerDomain(url);
+  res.json(validation);
+});
+
 // API endpoints for creating issuers and badge classes
-app.post('/api/issuer', requireApiKey, (req, res) => {
+app.post('/api/issuer', requireApiKey, async (req, res) => {
   const { id, name, url, email, description, image } = req.body;
   
   if (!id || !name || !url) {
     return res.status(400).json({ error: 'Missing required fields: id, name, url' });
+  }
+  
+  // Validate the issuer domain
+  const domainValidation = await validateIssuerDomain(id);
+  if (!domainValidation.valid) {
+    return res.status(400).json({ 
+      error: domainValidation.message,
+      domain_validation: domainValidation
+    });
   }
   
   const issuer = {
@@ -862,15 +958,39 @@ app.post('/api/issuer', requireApiKey, (req, res) => {
     message: 'Issuer created successfully',
     filename: filename,
     url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
-    issuer: issuer
+    issuer: issuer,
+    warnings: domainValidation.warnings,
+    domain_info: {
+      type: domainValidation.type,
+      message: domainValidation.message,
+      is_production_ready: domainValidation.type === 'verified'
+    }
   });
 });
 
-app.post('/api/badge-class', requireApiKey, (req, res) => {
+app.post('/api/badge-class', requireApiKey, async (req, res) => {
   const { id, name, description, image, criteria, issuer, tags } = req.body;
   
   if (!id || !name || !description || !criteria || !issuer) {
     return res.status(400).json({ error: 'Missing required fields: id, name, description, criteria, issuer' });
+  }
+  
+  // Validate both the badge class ID and issuer domains
+  const badgeValidation = await validateIssuerDomain(id);
+  const issuerValidation = await validateIssuerDomain(issuer);
+  
+  if (!badgeValidation.valid) {
+    return res.status(400).json({ 
+      error: `Badge class domain validation failed: ${badgeValidation.message}`,
+      domain_validation: badgeValidation
+    });
+  }
+  
+  if (!issuerValidation.valid) {
+    return res.status(400).json({ 
+      error: `Issuer domain validation failed: ${issuerValidation.message}`,
+      domain_validation: issuerValidation
+    });
   }
   
   const badgeClass = {
@@ -894,20 +1014,52 @@ app.post('/api/badge-class', requireApiKey, (req, res) => {
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(badgeClass, null, 2));
   
+  const allWarnings = [...badgeValidation.warnings, ...issuerValidation.warnings];
+  
   res.json({
     message: 'Badge class created successfully',
     filename: filename,
     url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
-    badgeClass: badgeClass
+    badgeClass: badgeClass,
+    warnings: allWarnings,
+    domain_info: {
+      badge_domain: {
+        type: badgeValidation.type,
+        message: badgeValidation.message
+      },
+      issuer_domain: {
+        type: issuerValidation.type,
+        message: issuerValidation.message
+      },
+      is_production_ready: badgeValidation.type === 'verified' && issuerValidation.type === 'verified'
+    }
   });
 });
 
 // API endpoint to create credential subject (badge assertion)
-app.post('/api/credential-subject', requireApiKey, (req, res) => {
+app.post('/api/credential-subject', requireApiKey, async (req, res) => {
   const { id, recipient, badge, issuedOn, expires, evidence } = req.body;
   
   if (!id || !recipient || !badge) {
     return res.status(400).json({ error: 'Missing required fields: id, recipient, badge' });
+  }
+  
+  // Validate credential and badge domains
+  const credentialValidation = await validateIssuerDomain(id);
+  const badgeValidation = await validateIssuerDomain(badge);
+  
+  if (!credentialValidation.valid) {
+    return res.status(400).json({ 
+      error: `Credential domain validation failed: ${credentialValidation.message}`,
+      domain_validation: credentialValidation
+    });
+  }
+  
+  if (!badgeValidation.valid) {
+    return res.status(400).json({ 
+      error: `Badge domain validation failed: ${badgeValidation.message}`,
+      domain_validation: badgeValidation
+    });
   }
   
   const credentialSubject = {
@@ -930,11 +1082,25 @@ app.post('/api/credential-subject', requireApiKey, (req, res) => {
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(credentialSubject, null, 2));
   
+  const allWarnings = [...credentialValidation.warnings, ...badgeValidation.warnings];
+  
   res.json({
     message: 'Credential subject created successfully',
     filename: filename,
     url: `${req.protocol}://${req.get('host')}/badges/${filename}`,
-    credentialSubject: credentialSubject
+    credentialSubject: credentialSubject,
+    warnings: allWarnings,
+    domain_info: {
+      credential_domain: {
+        type: credentialValidation.type,
+        message: credentialValidation.message
+      },
+      badge_domain: {
+        type: badgeValidation.type,
+        message: badgeValidation.message
+      },
+      is_production_ready: credentialValidation.type === 'verified' && badgeValidation.type === 'verified'
+    }
   });
 });
 
