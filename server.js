@@ -1544,14 +1544,10 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
 
 async function getBadgeSigningKey(domain) {
   // Only support our own domain for signing
-  // Note: req is not available in this context, so we'll be more flexible
-  const isOurDomain = domain.includes('railway.app') || 
-                     domain.includes('localhost') || 
-                     domain === 'localhost:3000' ||
-                     domain === process.env.DOMAIN;
+  const ourDomain = process.env.PUBLIC_DOMAIN || 'localhost:3000';
   
-  if (!isOurDomain) {
-    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for Railway/localhost domains.`);
+  if (domain !== ourDomain) {
+    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our domain: ${ourDomain}`);
     return null;
   }
   
@@ -1627,7 +1623,8 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   }
   
   // Fallback to our default public key (for our own domain)
-  if (process.env.DEFAULT_PUBLIC_KEY && (domain.includes('railway.app') || domain.includes('localhost'))) {
+  const ourDomain = process.env.PUBLIC_DOMAIN || 'localhost:3000';
+  if (process.env.DEFAULT_PUBLIC_KEY && domain === ourDomain) {
     console.log('Using default public key from environment');
     return process.env.DEFAULT_PUBLIC_KEY;
   }

@@ -53,6 +53,9 @@ Also set these Railway environment variables:
 # Ensure production mode
 NODE_ENV=production
 
+# Your domain (IMPORTANT: Set this to your Railway domain)
+PUBLIC_DOMAIN=badge-generator-production.up.railway.app
+
 # Your existing API credentials
 API_KEY=your_secure_api_key_here
 UPLOAD_PASSWORD=your_secure_upload_password_here
@@ -60,6 +63,8 @@ UPLOAD_PASSWORD=your_secure_upload_password_here
 # Port (Railway auto-sets this)
 PORT=3000
 ```
+
+**Important**: Set `PUBLIC_DOMAIN` to your actual Railway domain (without https://). This ensures the system only signs badges for your domain.
 
 ### Step 4: Verify Setup
 
@@ -140,10 +145,10 @@ MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQg...
 |----------|----------|-------------|
 | `DEFAULT_PRIVATE_KEY` | ✅ Yes | Private key for badge signing |
 | `DEFAULT_PUBLIC_KEY` | ✅ Yes | Public key for verification |
+| `PUBLIC_DOMAIN` | ✅ Yes | Your domain (e.g., your-app.railway.app) |
 | `NODE_ENV` | ✅ Yes | Set to "production" |
 | `API_KEY` | ✅ Yes | API authentication key |
 | `UPLOAD_PASSWORD` | ✅ Yes | Web interface password |
-| `PRIVATE_KEY_[DOMAIN]` | ⚪ Optional | Domain-specific private key |
-| `PUBLIC_KEY_[DOMAIN]` | ⚪ Optional | Domain-specific public key |
+| `PORT` | ⚪ Optional | Server port (Railway auto-sets) |
 
 This setup ensures your badge signing keys are secure and never exposed in your codebase! 🔐
