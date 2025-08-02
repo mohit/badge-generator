@@ -258,6 +258,21 @@ class BadgeGeneratorMCPServer {
             },
           },
           {
+            name: 'validate_issuer_domain',
+            description: 'Validate an issuer domain before creating badges',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                url: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'Issuer URL to validate',
+                },
+              },
+              required: ['url'],
+            },
+          },
+          {
             name: 'configure_server',
             description: 'Configure the MCP server connection settings (optional if environment variables are set)',
             inputSchema: {
@@ -287,6 +302,8 @@ class BadgeGeneratorMCPServer {
         switch (name) {
           case 'test_server':
             return await this.testServer();
+          case 'validate_issuer_domain':
+            return await this.validateIssuerDomain(args);
           case 'configure_server':
             return await this.configureServer(args);
           case 'create_issuer':
@@ -357,6 +374,53 @@ class BadgeGeneratorMCPServer {
     };
   }
 
+  async validateIssuerDomain(args) {
+    if (!this.apiKey) {
+      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
+    }
+    
+    const { url } = args;
+    
+    const response = await fetch(`${this.baseUrl}/api/validate-issuer-domain?url=${encodeURIComponent(url)}`, {
+      headers: {
+        'X-API-Key': this.apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+
+    const validation = await response.json();
+    
+    const statusIcon = validation.valid ? '✅' : '❌';
+    const typeInfo = {
+      'verified': '🔒 Verified (production-ready)',
+      'testing': '🧪 Testing domain (safe for demos)',
+      'blocked': '🚫 Blocked (registered domain)',
+      'unregistered': '⚠️ Unregistered domain',
+      'invalid': '❌ Invalid URL format'
+    };
+    
+    let warningsText = '';
+    if (validation.warnings && validation.warnings.length > 0) {
+      warningsText = `\n\n⚠️ Warnings:\n${validation.warnings.map(w => `• ${w}`).join('\n')}`;
+    }
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `${statusIcon} Domain Validation: ${url}\n\n` +
+                `Status: ${typeInfo[validation.type] || validation.type}\n` +
+                `Message: ${validation.message}\n` +
+                `Production Ready: ${validation.type === 'verified' ? 'Yes' : 'No'}` +
+                warningsText,
+        },
+      ],
+    };
+  }
+
   async configureServer(args) {
     const { baseUrl, apiKey } = args;
     this.baseUrl = baseUrl;
@@ -395,11 +459,22 @@ class BadgeGeneratorMCPServer {
 
     const result = await response.json();
     
+    let warningsText = '';
+    if (result.warnings && result.warnings.length > 0) {
+      warningsText = `\n\n⚠️ Warnings:\n${result.warnings.map(w => `• ${w}`).join('\n')}`;
+    }
+    
+    let domainInfoText = '';
+    if (result.domain_info) {
+      const productionReady = result.domain_info.is_production_ready ? '✅ Yes' : '❌ No';
+      domainInfoText = `\n\nDomain Info:\n• Type: ${result.domain_info.type}\n• Message: ${result.domain_info.message}\n• Production Ready: ${productionReady}`;
+    }
+    
     return {
       content: [
         {
           type: 'text',
-          text: `✅ Issuer created successfully!\n\nFilename: ${result.filename}\nURL: ${result.url}\n\nIssuer Details:\n${JSON.stringify(result.issuer, null, 2)}`,
+          text: `✅ Issuer created successfully!\n\nFilename: ${result.filename}\nURL: ${result.url}${warningsText}${domainInfoText}\n\nIssuer Details:\n${JSON.stringify(result.issuer, null, 2)}`,
         },
       ],
     };
