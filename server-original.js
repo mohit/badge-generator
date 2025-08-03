@@ -288,6 +288,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/badges', express.static('uploads'));
 app.use(express.static('public'));
 
+
+
 // Middleware to check API key
 const requireApiKey = (req, res, next) => {
   const apiKey = req.headers['x-api-key'];
@@ -297,6 +299,703 @@ const requireApiKey = (req, res, next) => {
     res.status(401).json({ error: 'Invalid API key' });
   }
 };
+
+// Routes
+// Root route now serves static index.html via express.static
+
+// Login routes removed - no password-protected interface needed
+
+app.get('/upload', requireAuth, (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Badge Generator - Upload</title>
+      <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input[type="file"], input[type="text"] { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        textarea { width: 100%; height: 300px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        button { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px; }
+        button:hover { background: #218838; }
+        .logout { float: right; background: #dc3545; margin-right: 0; }
+        .logout:hover { background: #c82333; }
+        .success { color: green; margin-top: 10px; }
+        .error { color: red; margin-top: 10px; }
+        .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid #ddd; }
+        .tab { padding: 10px 20px; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab.active { border-bottom-color: #28a745; font-weight: bold; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .json-editor { border: 1px solid #ddd; border-radius: 4px; padding: 15px; background: #f8f9fa; }
+        .template-buttons { margin-bottom: 15px; }
+        .template-btn { background: #6c757d; font-size: 12px; padding: 5px 10px; }
+        .template-btn:hover { background: #5a6268; }
+      </style>
+    </head>
+    <body>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2>Badge Generator</h2>
+        <a href="/logout"><button class="logout">Logout</button></a>
+      </div>
+      
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('upload')">File Upload</div>
+        <div class="tab" onclick="switchTab('editor')">JSON Editor</div>
+        <div class="tab" onclick="switchTab('smart')">Smart Badge Creator</div>
+      </div>
+      
+      <div id="upload-tab" class="tab-content active">
+        <h3>Upload JSON File</h3>
+        <form method="POST" action="/upload" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="filename">Custom Filename (optional):</label>
+            <input type="text" id="filename" name="filename" placeholder="badge.json">
+          </div>
+          <div class="form-group">
+            <label for="file">JSON File:</label>
+            <input type="file" id="file" name="file" accept=".json,application/json" required>
+          </div>
+          <button type="submit">Upload File</button>
+        </form>
+      </div>
+      
+      <div id="editor-tab" class="tab-content">
+        <h3>Create JSON Directly</h3>
+        <div class="json-editor">
+          <div class="template-buttons">
+            <strong>v2.0 Templates:</strong><br>
+            <button type="button" class="template-btn" onclick="loadTemplate('issuer')">Issuer</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('badge-class')">Badge Class</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('assertion')">Assertion</button>
+            <br><br>
+            <strong>v3.0 Templates:</strong><br>
+            <button type="button" class="template-btn" onclick="loadTemplate('issuer-v3')">Profile (Issuer)</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('achievement-v3')">Achievement</button>
+            <button type="button" class="template-btn" onclick="loadTemplate('credential-v3')">OpenBadgeCredential</button>
+            <br><br>
+            <button type="button" class="template-btn" onclick="clearEditor()">Clear</button>
+          </div>
+          <form method="POST" action="/create-json">
+            <div class="form-group">
+              <label for="json-filename">Filename:</label>
+              <input type="text" id="json-filename" name="filename" placeholder="my-badge.json" required>
+            </div>
+            <div class="form-group">
+              <label for="json-content">JSON Content:</label>
+              <textarea id="json-content" name="content" placeholder="Enter your JSON here..." required></textarea>
+            </div>
+            <button type="submit">Create JSON File</button>
+            <button type="button" onclick="validateJSON()">Validate JSON</button>
+          </form>
+        </div>
+      </div>
+      
+      <div id="smart-tab" class="tab-content">
+        <h3>Smart Badge Creator</h3>
+        <p>Paste your Issuer, Badge Class, and Assertion JSON objects below. The system will automatically link them together and save them with proper references.</p>
+        <form method="POST" action="/create-smart-badge">
+          <div class="form-group">
+            <label for="badge-title">Badge Title/Prefix:</label>
+            <input type="text" id="badge-title" name="title" placeholder="my-awesome-badge" required>
+            <small>Files will be saved as: {title}-issuer.json, {title}-badge.json, {title}-assertion.json</small>
+          </div>
+          <div class="form-group">
+            <label for="smart-content">JSON Objects (paste all together):</label>
+            <textarea id="smart-content" name="content" placeholder="Paste your Issuer, Badge Class, and Assertion JSON objects here. You can paste them all together - the system will separate and link them automatically." required style="height: 400px;"></textarea>
+          </div>
+          <button type="submit">Create Smart Badge</button>
+          <button type="button" onclick="loadSmartExample()">Load Example</button>
+          <button type="button" onclick="validateSmartJSON()">Validate JSON</button>
+        </form>
+      </div>
+      
+      <h3>Uploaded Files</h3>
+      <div id="file-list"></div>
+      
+      <script>
+        function switchTab(tabName) {
+          document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+          document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+          
+          document.querySelector(\`[onclick="switchTab('\${tabName}')"]\`).classList.add('active');
+          document.getElementById(\`\${tabName}-tab\`).classList.add('active');
+        }
+        
+        function loadTemplate(type) {
+          const templates = {
+            'issuer': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "Issuer",
+              "id": "https://demo.example.org/issuer/1",
+              "name": "Demo Training Institute",
+              "url": "https://demo.example.org",
+              "email": "badges@demo.example.org",
+              "description": "A demonstration training institute for testing badge issuance",
+              "image": "https://demo.example.org/logo.png"
+            },
+            'badge-class': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "BadgeClass",
+              "id": "https://demo.example.org/badge/excellence",
+              "name": "Excellence Badge",
+              "description": "Awarded for demonstrating excellence in learning",
+              "image": "https://demo.example.org/badge.png",
+              "criteria": "https://demo.example.org/criteria/excellence",
+              "issuer": "https://demo.example.org/issuer/1",
+              "tags": ["excellence", "achievement", "demo"]
+            },
+            'assertion': {
+              "@context": "https://w3id.org/openbadges/v2",
+              "type": "Assertion",
+              "id": "https://demo.example.org/assertion/123",
+              "recipient": {
+                "type": "email",
+                "hashed": false,
+                "identity": "learner@test.example.com"
+              },
+              "badge": "https://demo.example.org/badge/excellence",
+              "issuedOn": new Date().toISOString(),
+              "evidence": "https://test.example.com/portfolio/123"
+            },
+            'issuer-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://demo.example.org/issuers/1",
+              "type": "Profile",
+              "name": "Demo Training Institute",
+              "url": "https://demo.example.org",
+              "email": "badges@demo.example.org",
+              "description": "A demonstration training institute for testing v3.0 badge issuance"
+            },
+            'achievement-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://demo.example.org/achievements/excellence",
+              "type": "Achievement",
+              "name": "Excellence Achievement",
+              "description": "Awarded for demonstrating excellence in learning and skill development",
+              "achievementType": "Certificate",
+              "criteria": {
+                "narrative": "Demonstrates mastery of core competencies and sustained excellence"
+              },
+              "image": {
+                "id": "https://demo.example.org/badge.png",
+                "type": "Image"
+              }
+            },
+            'credential-v3': {
+              "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+              ],
+              "id": "https://demo.example.org/credentials/123",
+              "type": ["VerifiableCredential", "OpenBadgeCredential"],
+              "issuer": {
+                "id": "https://demo.example.org/issuers/1",
+                "type": "Profile",
+                "name": "Demo Training Institute"
+              },
+              "validFrom": new Date().toISOString(),
+              "name": "Excellence Badge",
+              "credentialSubject": {
+                "type": "AchievementSubject",
+                "identifier": {
+                  "type": "IdentityObject",
+                  "hashed": false,
+                  "identityType": "email",
+                  "identity": "learner@test.example.com"
+                },
+                "achievement": {
+                  "id": "https://demo.example.org/achievements/excellence",
+                  "type": "Achievement",
+                  "name": "Excellence Achievement"
+                }
+              }
+            }
+          };
+          
+          document.getElementById('json-content').value = JSON.stringify(templates[type], null, 2);
+        }
+        
+        function clearEditor() {
+          document.getElementById('json-content').value = '';
+        }
+        
+        function validateJSON() {
+          const content = document.getElementById('json-content').value;
+          try {
+            JSON.parse(content);
+            alert('Valid JSON!');
+          } catch (e) {
+            alert('Invalid JSON: ' + e.message);
+          }
+        }
+        
+        function loadSmartExample() {
+          const exampleV2 = \`{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "Issuer",
+  "id": "https://demo.example.org/issuer/1",
+  "name": "Demo Tech Academy",
+  "url": "https://demo.example.org",
+  "email": "badges@demo.example.org"
+}
+
+{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "BadgeClass",
+  "id": "https://demo.example.org/badge/web-development",
+  "name": "Web Development Certificate",
+  "description": "Demonstrates proficiency in modern web development technologies",
+  "image": "https://demo.example.org/badge-image.png",
+  "criteria": "https://demo.example.org/criteria/web-dev",
+  "issuer": "https://demo.example.org/issuer/1"
+}
+
+{
+  "@context": "https://w3id.org/openbadges/v2",
+  "type": "Assertion",
+  "id": "https://demo.example.org/assertion/123",
+  "recipient": {
+    "type": "email",
+    "hashed": false,
+    "identity": "student@test.example.com"
+  },
+  "badge": "https://demo.example.org/badge/web-development",
+  "issuedOn": "2024-01-15T10:00:00Z"
+}\`;
+          
+          const exampleV3 = \`{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://demo.example.org/issuers/1",
+  "type": "Profile",
+  "name": "Demo Tech Academy",
+  "url": "https://demo.example.org",
+  "email": "badges@demo.example.org"
+}
+
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://demo.example.org/achievements/web-development",
+  "type": "Achievement",
+  "name": "Web Development Certificate",
+  "description": "Demonstrates proficiency in modern web development technologies",
+  "achievementType": "Certificate",
+  "criteria": {
+    "narrative": "Complete comprehensive web development course with 80% score"
+  }
+}
+
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://demo.example.org/credentials/123",
+  "type": ["VerifiableCredential", "OpenBadgeCredential"],
+  "issuer": {
+    "id": "https://demo.example.org/issuers/1",
+    "type": "Profile",
+    "name": "Demo Tech Academy"
+  },
+  "validFrom": "2024-01-15T10:00:00Z",
+  "name": "Web Development Certificate",
+  "credentialSubject": {
+    "type": "AchievementSubject",
+    "identifier": {
+      "type": "IdentityObject",
+      "hashed": false,
+      "identityType": "email",
+      "identity": "student@test.example.com"
+    },
+    "achievement": {
+      "id": "https://demo.example.org/achievements/web-development",
+      "type": "Achievement",
+      "name": "Web Development Certificate"
+    }
+  }
+}\`;
+          
+          // Ask user which version they want
+          const version = prompt("Which version would you like to load?\\n\\n1. Open Badges v2.0 (classic)\\n2. Open Badges v3.0 (with Verifiable Credentials)\\n\\nEnter 1 or 2:");
+          
+          if (version === "2" || version === "3.0" || version === "v3") {
+            document.getElementById('smart-content').value = exampleV3;
+          } else {
+            document.getElementById('smart-content').value = exampleV2;
+          }
+        }
+        
+        function validateSmartJSON() {
+          const content = document.getElementById('smart-content').value;
+          
+          if (!content.trim()) {
+            alert('Please paste some JSON content first.');
+            return;
+          }
+          
+          try {
+            // Try to parse as individual JSON objects
+            const objects = content.trim().split('\\n\\n').map(obj => obj.trim()).filter(obj => obj);
+            
+            if (objects.length === 0) {
+              alert('No JSON objects found. Please separate multiple objects with blank lines.');
+              return;
+            }
+            
+            let issuer = null, badgeClass = null, assertion = null;
+            let isV3 = false;
+            
+            objects.forEach((obj, index) => {
+              try {
+                const parsed = JSON.parse(obj);
+                
+                // Detect object types
+                if (parsed.type === 'Issuer') issuer = parsed;
+                else if (parsed.type === 'BadgeClass') badgeClass = parsed;
+                else if (parsed.type === 'Assertion') assertion = parsed;
+                else if (parsed.type === 'Profile') { issuer = parsed; isV3 = true; }
+                else if (parsed.type === 'Achievement') { badgeClass = parsed; isV3 = true; }
+                else if (Array.isArray(parsed.type) && parsed.type.includes('OpenBadgeCredential')) { assertion = parsed; isV3 = true; }
+                
+              } catch (e) {
+                // Enhanced error message with position info
+                let errorMsg = \`Object \${index + 1}: \${e.message}\`;
+                
+                const posMatch = e.message.match(/position (\\d+)/);
+                if (posMatch) {
+                  const pos = parseInt(posMatch[1]);
+                  const char = obj[pos] || 'EOF';
+                  const context = obj.substring(Math.max(0, pos - 10), pos + 11);
+                  errorMsg += \`\\n\\nCharacter at position \${pos}: "\${char}"\\nContext: "\${context}"\`;
+                  
+                  // Show which line has the error
+                  const lines = obj.substring(0, pos).split('\\n');
+                  errorMsg += \`\\nLine \${lines.length} in object \${index + 1}\`;
+                }
+                
+                throw new Error(errorMsg);
+              }
+            });
+            
+            // Check if we have all required objects
+            const missing = [];
+            if (!issuer) missing.push('Issuer/Profile');
+            if (!badgeClass) missing.push('BadgeClass/Achievement');
+            if (!assertion) missing.push('Assertion/OpenBadgeCredential');
+            
+            let message = \`✅ Valid JSON! Found \${objects.length} objects\\n\`;
+            message += \`📋 Detected: \${isV3 ? 'Open Badges v3.0' : 'Open Badges v2.0'}\\n\\n\`;
+            message += \`Objects found:\\n\`;
+            if (issuer) message += \`• \${isV3 ? 'Profile' : 'Issuer'}: \${issuer.name || 'Unnamed'}\\n\`;
+            if (badgeClass) message += \`• \${isV3 ? 'Achievement' : 'BadgeClass'}: \${badgeClass.name || 'Unnamed'}\\n\`;
+            if (assertion) message += \`• \${isV3 ? 'OpenBadgeCredential' : 'Assertion'}: Found\\n\`;
+            
+            if (missing.length > 0) {
+              message += \`\\n⚠️ Missing required objects: \${missing.join(', ')}\`;
+              message += \`\\n\\nFor a complete badge system, you need all three objects.\`;
+            } else {
+              message += \`\\n🎉 Complete badge system ready to create!\`;
+            }
+            
+            alert(message);
+            
+          } catch (e) {
+            alert('❌ Invalid JSON:\\n\\n' + e.message + '\\n\\nPlease fix the JSON syntax and try again.');
+          }
+        }
+        
+        // Load and display uploaded files
+        function loadFiles() {
+          fetch('/api/files')
+            .then(response => response.json())
+            .then(files => {
+              const fileList = document.getElementById('file-list');
+              if (files.length === 0) {
+                fileList.innerHTML = '<p>No files uploaded yet.</p>';
+              } else {
+                fileList.innerHTML = files.map(file => 
+                  \`<div style="margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <strong>\${file.name}</strong><br>
+                    <a href="/badges/\${file.name}" target="_blank">View JSON</a> | 
+                    <a href="/badges/\${file.name}" download>Download</a>
+                    <br><small>URL: \${window.location.origin}/badges/\${file.name}</small>
+                  </div>\`
+                ).join('');
+              }
+            });
+        }
+        
+        loadFiles();
+      </script>
+    </body>
+    </html>
+  `);
+});
+
+app.post('/upload', requireAuth, upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).send('No file uploaded');
+  }
+  
+  // Validate JSON
+  try {
+    const fileContent = fs.readFileSync(req.file.path, 'utf8');
+    JSON.parse(fileContent);
+  } catch (error) {
+    fs.unlinkSync(req.file.path); // Delete invalid file
+    return res.status(400).send('Invalid JSON file');
+  }
+  
+  res.redirect('/upload');
+});
+
+// Handle direct JSON creation
+app.post('/create-json', requireAuth, (req, res) => {
+  const { filename, content } = req.body;
+  
+  if (!filename || !content) {
+    return res.status(400).send('Missing filename or content');
+  }
+  
+  // Validate JSON
+  try {
+    JSON.parse(content);
+  } catch (error) {
+    return res.status(400).send('Invalid JSON: ' + error.message);
+  }
+  
+  // Ensure filename ends with .json
+  const jsonFilename = filename.endsWith('.json') ? filename : filename + '.json';
+  const filepath = path.join('uploads', jsonFilename);
+  
+  // Write the JSON file
+  ensureUploadsDir();
+  fs.writeFileSync(filepath, content);
+  
+  res.redirect('/upload');
+});
+
+// Handle smart badge creation
+app.post('/create-smart-badge', requireAuth, (req, res) => {
+  const { title, content } = req.body;
+  
+  if (!title || !content) {
+    return res.status(400).send('Missing title or content');
+  }
+  
+  try {
+    // Smart JSON object parser - handles both separated and concatenated JSON
+    function parseMultipleJSONObjects(content) {
+      const trimmed = content.trim();
+      
+      // First try: split by blank lines (preferred format)
+      let objects = trimmed.split('\n\n').map(obj => obj.trim()).filter(obj => obj);
+      
+      // If we only got one object but it looks like multiple concatenated JSONs, try smart parsing
+      if (objects.length === 1 && (objects[0].includes('}{') || objects[0].includes('} {'))) {
+        console.log('Detected concatenated JSON objects, attempting smart parsing...');
+        objects = smartSplitJSON(objects[0]);
+      }
+      
+      return objects;
+    }
+    
+    // Smart JSON splitter for concatenated objects
+    function smartSplitJSON(text) {
+      const results = [];
+      let current = '';
+      let braceDepth = 0;
+      let inString = false;
+      let escapeNext = false;
+      
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        
+        if (escapeNext) {
+          escapeNext = false;
+          current += char;
+          continue;
+        }
+        
+        if (char === '\\') {
+          escapeNext = true;
+          current += char;
+          continue;
+        }
+        
+        if (char === '"' && !escapeNext) {
+          inString = !inString;
+        }
+        
+        if (!inString) {
+          if (char === '{') {
+            braceDepth++;
+          } else if (char === '}') {
+            braceDepth--;
+          }
+        }
+        
+        current += char;
+        
+        // If we've closed a complete JSON object and we're not in a string
+        if (braceDepth === 0 && current.trim() && !inString) {
+          results.push(current.trim());
+          current = '';
+        }
+      }
+      
+      // Add any remaining content
+      if (current.trim()) {
+        results.push(current.trim());
+      }
+      
+      return results;
+    }
+    
+    const objects = parseMultipleJSONObjects(content);
+    
+    if (objects.length === 0) {
+      return res.status(400).send('No JSON objects found. Please paste valid JSON objects. Objects can be separated by blank lines or concatenated together.');
+    }
+    
+    console.log(`Smart Badge Creator: Processing ${objects.length} JSON objects for title "${title}"`);
+    
+    const parsedObjects = [];
+    objects.forEach((obj, index) => {
+      try {
+        const parsed = JSON.parse(obj);
+        parsedObjects.push(parsed);
+        console.log(`✅ Object ${index + 1} parsed: ${parsed.type || 'Unknown type'}`);
+      } catch (parseError) {
+        console.log(`❌ Error parsing object ${index + 1}: ${parseError.message}`);
+        
+        // Create detailed error message with context
+        let errorMsg = `JSON parsing error in object ${index + 1}: ${parseError.message}`;
+        
+        // Try to find position information
+        const posMatch = parseError.message.match(/position (\d+)/);
+        if (posMatch) {
+          const pos = parseInt(posMatch[1]);
+          const char = obj[pos] || 'EOF';
+          const context = obj.substring(Math.max(0, pos - 20), pos + 21);
+          errorMsg += `\n\nCharacter at position ${pos}: "${char}"\nContext: "${context}"`;
+          
+          // Show line information
+          const lines = obj.substring(0, pos).split('\n');
+          const lineNum = lines.length;
+          const charInLine = lines[lines.length - 1].length;
+          errorMsg += `\nLine ${lineNum}, Character ${charInLine}`;
+        }
+        
+        errorMsg += `\n\nObject ${index + 1} content preview:\n${obj.substring(0, 200)}${obj.length > 200 ? '...' : ''}`;
+        
+        throw new Error(errorMsg);
+      }
+    });
+    
+    // Identify object types (support both v2.0 and v3.0)
+    let issuer = null, badgeClass = null, assertion = null;
+    let isV3 = false;
+    
+    parsedObjects.forEach(obj => {
+      // v2.0 types
+      if (obj.type === 'Issuer') issuer = obj;
+      else if (obj.type === 'BadgeClass') badgeClass = obj;
+      else if (obj.type === 'Assertion') assertion = obj;
+      // v3.0 types
+      else if (obj.type === 'Profile') { issuer = obj; isV3 = true; }
+      else if (obj.type === 'Achievement') { badgeClass = obj; isV3 = true; }
+      else if (Array.isArray(obj.type) && obj.type.includes('OpenBadgeCredential')) { assertion = obj; isV3 = true; }
+    });
+    
+    if (!issuer || !badgeClass || !assertion) {
+      return res.status(400).send('Missing required objects. Please include Issuer/Profile, BadgeClass/Achievement, and Assertion/OpenBadgeCredential.');
+    }
+    
+    // Generate new URLs based on the domain and title
+    const baseUrl = `${req.protocol}://${req.get('host')}/badges`;
+    const issuerUrl = `${baseUrl}/${title}-${isV3 ? 'profile' : 'issuer'}.json`;
+    const badgeUrl = `${baseUrl}/${title}-${isV3 ? 'achievement' : 'badge'}.json`;
+    const assertionUrl = `${baseUrl}/${title}-${isV3 ? 'credential' : 'assertion'}.json`;
+    
+    // Update IDs and references based on version
+    if (isV3) {
+      // v3.0 linking
+      issuer.id = issuerUrl;
+      badgeClass.id = badgeUrl;
+      assertion.id = assertionUrl;
+      
+      // Update issuer reference in credential
+      if (assertion.issuer) {
+        assertion.issuer.id = issuerUrl;
+      }
+      
+      // Update achievement reference in credential subject
+      if (assertion.credentialSubject && assertion.credentialSubject.achievement) {
+        assertion.credentialSubject.achievement.id = badgeUrl;
+      }
+    } else {
+      // v2.0 linking
+      issuer.id = issuerUrl;
+      badgeClass.id = badgeUrl;
+      badgeClass.issuer = issuerUrl;
+      assertion.id = assertionUrl;
+      assertion.badge = badgeUrl;
+    }
+    
+    // Ensure uploads directory exists
+    ensureUploadsDir();
+    
+    // Save all three files with appropriate names
+    const issuerFilename = `${title}-${isV3 ? 'profile' : 'issuer'}.json`;
+    const badgeFilename = `${title}-${isV3 ? 'achievement' : 'badge'}.json`;
+    const assertionFilename = `${title}-${isV3 ? 'credential' : 'assertion'}.json`;
+    
+    fs.writeFileSync(path.join('uploads', issuerFilename), JSON.stringify(issuer, null, 2));
+    fs.writeFileSync(path.join('uploads', badgeFilename), JSON.stringify(badgeClass, null, 2));
+    fs.writeFileSync(path.join('uploads', assertionFilename), JSON.stringify(assertion, null, 2));
+    
+    res.redirect('/upload');
+  } catch (error) {
+    return res.status(400).send('Error processing badge: ' + error.message);
+  }
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.redirect('/login');
+});
+
+// API endpoint to list uploaded files (web session auth)
+app.get('/api/files', requireAuth, (req, res) => {
+  fs.readdir('uploads', (err, files) => {
+    if (err) {
+      return res.status(500).json({ error: 'Unable to read files' });
+    }
+    
+    const fileList = files
+      .filter(file => file.endsWith('.json'))
+      .map(file => ({
+        name: file,
+        url: `/badges/${file}`
+      }));
+    
+    res.json(fileList);
+  });
+});
 
 // API endpoint to list uploaded files (API key auth)
 app.get('/api/badge-files', requireApiKey, (req, res) => {
@@ -1272,8 +1971,9 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
 
 const server = app.listen(PORT, () => {
   console.log(`Badge Generator server running on port ${PORT}`);
-  console.log(`API documentation: https://github.com/mohit/badge-generator`);
-  console.log(`API key: ${process.env.API_KEY ? '***configured***' : 'NOT SET'}`);
+  console.log(`Upload page: http://localhost:${PORT}/upload`);
+  console.log(`Upload password: ${process.env.UPLOAD_PASSWORD}`);
+  console.log(`API key: ${process.env.API_KEY}`);
 });
 
 // Graceful shutdown handling
