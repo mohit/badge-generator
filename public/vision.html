@@ -6,433 +6,42 @@
     <title>Our Vision - Creating the Let's Encrypt Moment for Digital Credentials</title>
     <meta name="description" content="Our vision to democratize digital credentialing through open standards, making verifiable credentials as ubiquitous as HTTPS.">
     
-    <!-- Modern CSS Reset and Typography -->
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="/styles.css">
+    
+    <!-- Vision page specific styles -->
     <style>
-        /* Import shared styles from landing page */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --primary: #2563eb;
-            --primary-dark: #1d4ed8;
-            --secondary: #10b981;
-            --accent: #f59e0b;
-            --warning: #ef4444;
-            --text-primary: #111827;
-            --text-secondary: #6b7280;
-            --background: #ffffff;
-            --surface: #f9fafb;
-            --border: #e5e7eb;
-            --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        }
-
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            line-height: 1.6;
-            color: var(--text-primary);
-            background: var(--background);
-        }
-
-        /* Header */
-        header {
-            background: var(--background);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 50;
-            backdrop-filter: blur(8px);
-        }
-
-        nav {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            text-decoration: none;
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            text-decoration: none;
-            color: var(--text-secondary);
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .nav-links a:hover, .nav-links a.active {
-            color: var(--primary);
-        }
-
-        /* Hero Section */
-        .hero {
+        .vision-hero {
             background: linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%);
             color: white;
             padding: 6rem 2rem 4rem;
             text-align: center;
         }
-
-        .hero-container {
+        
+        .vision-hero-container {
             max-width: 1000px;
             margin: 0 auto;
         }
-
-        .hero h1 {
+        
+        .vision-hero h1 {
             font-size: clamp(2.5rem, 5vw, 4rem);
             font-weight: 700;
             line-height: 1.1;
             margin-bottom: 1.5rem;
         }
-
-        .hero-subtitle {
+        
+        .vision-hero-subtitle {
             font-size: 1.25rem;
             opacity: 0.9;
             margin-bottom: 2rem;
             max-width: 700px;
             margin-left: auto;
             margin-right: auto;
-        }
-
-        /* Content Sections */
-        .content-section {
-            padding: 4rem 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .section-title {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
-            color: var(--text-primary);
-        }
-
-        .section-subtitle {
-            font-size: 1.125rem;
-            color: var(--text-secondary);
-            margin-bottom: 3rem;
-            line-height: 1.7;
-        }
-
-        .prose {
-            font-size: 1.125rem;
-            line-height: 1.8;
-            color: var(--text-primary);
-        }
-
-        .prose h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin: 2rem 0 1rem;
-            color: var(--text-primary);
-        }
-
-        .prose ul {
-            margin: 1.5rem 0;
-            padding-left: 2rem;
-        }
-
-        .prose li {
-            margin-bottom: 0.5rem;
-            color: var(--text-secondary);
-        }
-
-        .prose strong {
-            color: var(--text-primary);
-            font-weight: 600;
-        }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: var(--text-secondary);
-            font-weight: 500;
-        }
-
-        /* Timeline */
-        .timeline {
-            background: var(--surface);
-            padding: 4rem 2rem;
-        }
-
-        .timeline-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .timeline-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 3rem;
-        }
-
-        .timeline-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-            position: relative;
-        }
-
-        .timeline-period {
-            background: var(--primary);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            display: inline-block;
-            margin-bottom: 1rem;
-        }
-
-        .timeline-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-primary);
-        }
-
-        .timeline-content {
-            color: var(--text-secondary);
-            line-height: 1.6;
-        }
-
-        /* Problem/Solution Grid */
-        .problem-solution {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 3rem;
-            margin: 3rem 0;
-        }
-
-        .problem-card, .solution-card {
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-        }
-
-        .problem-card {
-            background: #fef2f2;
-            border-color: #fca5a5;
-        }
-
-        .solution-card {
-            background: #f0fdf4;
-            border-color: #86efac;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .problem-card .card-title {
-            color: var(--warning);
-        }
-
-        .solution-card .card-title {
-            color: var(--secondary);
-        }
-
-        /* Partners Grid */
-        .partners-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin: 3rem 0;
-        }
-
-        .partner-category {
-            background: white;
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: var(--shadow);
-            border: 1px solid var(--border);
-        }
-
-        .partner-category h4 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .partner-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .partner-list li {
-            padding: 0.5rem 0;
-            color: var(--text-secondary);
-            border-bottom: 1px solid var(--border);
-        }
-
-        .partner-list li:last-child {
-            border-bottom: none;
-        }
-
-        /* Call to Action */
-        .cta-section {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 4rem 2rem;
-            text-align: center;
-            margin-top: 4rem;
-        }
-
-        .cta-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .cta-title {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .cta-description {
-            font-size: 1.125rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-        }
-
-        .btn {
-            padding: 0.875rem 2rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            text-decoration: none;
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            display: inline-block;
-        }
-
-        .btn-white {
-            background: white;
-            color: var(--primary);
-        }
-
-        .btn-white:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        /* Footer */
-        footer {
-            background: var(--text-primary);
-            color: white;
-            padding: 3rem 2rem 2rem;
-            text-align: center;
-        }
-
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .footer-links {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .footer-links a {
-            color: #d1d5db;
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-links a:hover {
-            color: white;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-            
-            .hero {
-                padding: 4rem 1rem 3rem;
-            }
-            
-            .content-section, .timeline {
-                padding: 3rem 1rem;
-            }
-            
-            .problem-solution {
-                grid-template-columns: 1fr;
-                gap: 2rem;
-            }
-        }
-
-        /* Animations */
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .animate-fade-in {
-            animation: fadeInUp 0.6s ease-out;
         }
     </style>
 </head>
@@ -446,16 +55,16 @@
                 <li><a href="/#features">Features</a></li>
                 <li><a href="/#getting-started">Get Started</a></li>
                 <li><a href="/vision.html" class="active">Vision</a></li>
-                <li><a href="https://github.com/yourusername/badge-generator" target="_blank">GitHub</a></li>
+                <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a></li>
             </ul>
         </nav>
     </header>
 
     <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-container">
+    <section class="vision-hero">
+        <div class="vision-hero-container">
             <h1 class="animate-fade-in">Creating the Let's Encrypt Moment for Digital Credentials</h1>
-            <p class="hero-subtitle animate-fade-in">
+            <p class="vision-hero-subtitle animate-fade-in">
                 We're at a tipping point for digital credentials. Just like Let's Encrypt democratized HTTPS, 
                 we're building the infrastructure to make verifiable credentials free, open, and ubiquitous.
             </p>
@@ -469,19 +78,19 @@
             <p>Digital badges and credentials are rapidly gaining traction across industries:</p>
             
             <div class="stats-grid">
-                <div class="stat-card">
+                <div class="stat-card scroll-animate">
                     <div class="stat-number">73%</div>
                     <div class="stat-label">of employers favor skills-based hiring</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card scroll-animate">
                     <div class="stat-number">$15B</div>
                     <div class="stat-label">projected digital credentialing market by 2030</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card scroll-animate">
                     <div class="stat-number">2.5x</div>
                     <div class="stat-label">faster hiring with verified micro-credentials</div>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card scroll-animate">
                     <div class="stat-number">89%</div>
                     <div class="stat-label">of learning providers want badge interoperability</div>
                 </div>
@@ -505,7 +114,7 @@
         </p>
         
         <div class="problem-solution">
-            <div class="problem-card">
+            <div class="problem-card scroll-animate">
                 <h3 class="card-title">
                     <span>❌</span>
                     Current Problems
@@ -519,7 +128,7 @@
                 </ul>
             </div>
             
-            <div class="solution-card">
+            <div class="solution-card scroll-animate">
                 <h3 class="card-title">
                     <span>✅</span>
                     Our Solution
@@ -569,7 +178,7 @@
             </p>
             
             <div class="timeline-grid">
-                <div class="timeline-card">
+                <div class="timeline-card scroll-animate">
                     <div class="timeline-period">Short-Term (1–2 Years)</div>
                     <h3 class="timeline-title">Foundation & Adoption</h3>
                     <div class="timeline-content">
@@ -583,7 +192,7 @@
                     </div>
                 </div>
                 
-                <div class="timeline-card">
+                <div class="timeline-card scroll-animate">
                     <div class="timeline-period">Medium-Term (3–5 Years)</div>
                     <h3 class="timeline-title">Ecosystem Transformation</h3>
                     <div class="timeline-content">
@@ -597,7 +206,7 @@
                     </div>
                 </div>
                 
-                <div class="timeline-card">
+                <div class="timeline-card scroll-animate">
                     <div class="timeline-period">Long-Term (5–10 Years)</div>
                     <h3 class="timeline-title">Paradigm Shift</h3>
                     <div class="timeline-content">
@@ -622,7 +231,7 @@
         </p>
         
         <div class="partners-grid">
-            <div class="partner-category">
+            <div class="partner-category scroll-animate">
                 <h4>🏢 Technology Leaders</h4>
                 <ul class="partner-list">
                     <li>Mozilla Foundation</li>
@@ -633,7 +242,7 @@
                 </ul>
             </div>
             
-            <div class="partner-category">
+            <div class="partner-category scroll-animate">
                 <h4>🎓 Education Initiatives</h4>
                 <ul class="partner-list">
                     <li>Gates Foundation</li>
@@ -644,7 +253,7 @@
                 </ul>
             </div>
             
-            <div class="partner-category">
+            <div class="partner-category scroll-animate">
                 <h4>🏛️ Government Agencies</h4>
                 <ul class="partner-list">
                     <li>Department of Labor</li>
@@ -655,7 +264,7 @@
                 </ul>
             </div>
             
-            <div class="partner-category">
+            <div class="partner-category scroll-animate">
                 <h4>🏭 Industry Associations</h4>
                 <ul class="partner-list">
                     <li>IEEE Professional Development</li>
@@ -689,54 +298,18 @@
         <div class="footer-content">
             <div class="footer-links">
                 <a href="/">Home</a>
-                <a href="https://github.com/yourusername/badge-generator">GitHub</a>
-                <a href="https://openbadges.org/">Open Badges</a>
-                <a href="https://www.w3.org/TR/vc-data-model/">W3C Standards</a>
-                <a href="https://letsencrypt.org/">Let's Encrypt</a>
+                <a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a>
+                <a href="https://openbadges.org/" target="_blank">Open Badges</a>
+                <a href="https://www.w3.org/TR/vc-data-model/" target="_blank">W3C Standards</a>
+                <a href="https://letsencrypt.org/" target="_blank">Let's Encrypt</a>
             </div>
-            <p style="color: #9ca3af; font-size: 0.875rem;">
+            <p class="footer-copyright">
                 © 2024 Badge Generator. Building the infrastructure for democratized digital credentials.
             </p>
         </div>
     </footer>
 
-    <script>
-        // Simple scroll animations
-        const observerOptions = {
-            threshold: 0.1,
-            rootMargin: '0px 0px -50px 0px'
-        };
-
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        }, observerOptions);
-
-        // Observe all cards
-        document.querySelectorAll('.stat-card, .timeline-card, .partner-category, .problem-card, .solution-card').forEach(el => {
-            el.style.opacity = '0';
-            el.style.transform = 'translateY(20px)';
-            el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(el);
-        });
-
-        // Smooth scrolling for anchor links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-    </script>
+    <!-- JavaScript -->
+    <script src="/scripts.js"></script>
 </body>
 </html>

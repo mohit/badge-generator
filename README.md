@@ -2,6 +2,14 @@
 
 A secure, deployable web application for hosting Open Badges with password-protected file uploads, comprehensive verification system, and API endpoints for creating issuers and badge classes.
 
+## 📚 Documentation
+
+- **[CLI Documentation](README-CLI.md)** - Command-line interface for badge operations and verification
+- **[Claude Integration Guide](README-CLAUDE-INTEGRATION.md)** - Using Badge Generator with Claude Desktop via MCP
+- **[Deployment Guide](DEPLOYMENT.md)** - Comprehensive deployment instructions for all platforms
+- **[Domain Validation](DOMAIN_VALIDATION.md)** - Understanding domain verification and security
+- **[Our Vision](public/vision.html)** - The long-term vision for democratizing digital credentials
+
 ## Features
 
 - **Password-protected upload page**: Secure file upload with session-based authentication
