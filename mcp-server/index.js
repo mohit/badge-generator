@@ -46,11 +46,6 @@ const CredentialSubjectSchema = z.object({
   evidence: z.string().url().optional(),
 });
 
-const SmartBadgeSchema = z.object({
-  title: z.string(),
-  content: z.string(),
-});
-
 class BadgeGeneratorMCPServer {
   constructor() {
     this.server = new Server(
@@ -210,24 +205,6 @@ class BadgeGeneratorMCPServer {
             },
           },
           {
-            name: 'create_smart_badge',
-            description: 'Create a complete badge system (issuer, badge class, and assertion) from combined JSON objects',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                title: {
-                  type: 'string',
-                  description: 'Title/prefix for the badge files (e.g., "web-development")',
-                },
-                content: {
-                  type: 'string',
-                  description: 'Combined JSON objects for issuer, badge class, and assertion (separated by blank lines)',
-                },
-              },
-              required: ['title', 'content'],
-            },
-          },
-          {
             name: 'list_badges',
             description: 'List all uploaded badge files',
             inputSchema: {
@@ -375,8 +352,6 @@ class BadgeGeneratorMCPServer {
             return await this.createBadgeClass(args);
           case 'create_credential_subject':
             return await this.createCredentialSubject(args);
-          case 'create_smart_badge':
-            return await this.createSmartBadge(args);
           case 'list_badges':
             return await this.listBadges();
           case 'get_badge':
@@ -615,38 +590,6 @@ class BadgeGeneratorMCPServer {
     };
   }
 
-  async createSmartBadge(args) {
-    const validatedData = SmartBadgeSchema.parse(args);
-    
-    // Note: This endpoint requires authentication but uses form data
-    const formData = new URLSearchParams();
-    formData.append('title', validatedData.title);
-    formData.append('content', validatedData.content);
-    
-    const response = await fetch(`${this.baseUrl}/create-smart-badge`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        // Note: Smart badge creation requires web session authentication
-        // This would need to be handled differently in a real implementation
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}. Note: Smart badge creation requires web session authentication.`);
-    }
-    
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `✅ Smart Badge created successfully!\n\nTitle: ${validatedData.title}\nFiles created: ${validatedData.title}-issuer.json, ${validatedData.title}-badge.json, ${validatedData.title}-assertion.json`,
-        },
-      ],
-    };
-  }
-
   async listBadges() {
     if (!this.apiKey) {
       throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
@@ -670,14 +613,11 @@ class BadgeGeneratorMCPServer {
                     `The /api/badge-files endpoint is not available.\n\n` +
                     `🔧 Alternative approaches:\n` +
                     `• Use get_badge with specific filenames\n` +
-                    `• Check the web interface at ${this.baseUrl}/upload\n` +
+                    `• Check the public badges directory at ${this.baseUrl}/badges\n` +
                     `• Recently created files follow these patterns:\n` +
                     `  - issuer-[timestamp].json\n` +
                     `  - badge-class-[timestamp].json\n` +
-                    `  - credential-[timestamp].json\n` +
-                    `  - [title]-issuer.json (from smart badges)\n` +
-                    `  - [title]-badge.json (from smart badges)\n` +
-                    `  - [title]-assertion.json (from smart badges)\n\n` +
+                    `  - credential-[timestamp].json\n\n` +
                     `💡 Tip: The create_* tools return the exact filename and URL of created badges.`,
             },
           ],
