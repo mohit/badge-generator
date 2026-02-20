@@ -61,11 +61,21 @@ async function validatePublicUrl(urlString) {
     throw new Error('Requests to localhost are not allowed from public endpoints');
   }
 
-  // Resolve DNS and check all IPs
+  // Resolve DNS and check all IPs (supports A-only, AAAA-only, and dual-stack)
   try {
-    const addresses = net.isIP(hostname)
-      ? [hostname]
-      : (await dns.resolve4(hostname)).concat(await dns.resolve6(hostname).catch(() => []));
+    let addresses;
+    if (net.isIP(hostname)) {
+      addresses = [hostname];
+    } else {
+      const [v4, v6] = await Promise.all([
+        dns.resolve4(hostname).catch(() => []),
+        dns.resolve6(hostname).catch(() => [])
+      ]);
+      addresses = v4.concat(v6);
+      if (addresses.length === 0) {
+        throw new Error(`Cannot resolve hostname: ${hostname}`);
+      }
+    }
 
     for (const addr of addresses) {
       if (isPrivateIp(addr)) {
@@ -73,8 +83,7 @@ async function validatePublicUrl(urlString) {
       }
     }
   } catch (err) {
-    if (err.message.includes('private') || err.message.includes('localhost')) throw err;
-    // DNS resolution failure
+    if (err.message.includes('private') || err.message.includes('localhost') || err.message.includes('Cannot resolve')) throw err;
     throw new Error(`Cannot resolve hostname: ${hostname}`);
   }
 
@@ -513,7 +522,7 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
 });
 
 // Badge and Issuer Verification endpoints
-async function verifyBadgeByUrlInternal(badgeUrl) {
+async function verifyBadgeByUrlInternal(badgeUrl, options = {}) {
   try {
     console.log(`🔍 Verifying badge: ${badgeUrl}`);
 
@@ -549,7 +558,7 @@ async function verifyBadgeByUrlInternal(badgeUrl) {
 
     return {
       status: 200,
-      body: await verifyBadgeDataInternal(badgeData, badgeUrl)
+      body: await verifyBadgeDataInternal(badgeData, badgeUrl, options)
     };
   } catch (error) {
     console.error(`Error verifying badge ${badgeUrl}:`, error);
@@ -564,9 +573,17 @@ async function verifyBadgeByUrlInternal(badgeUrl) {
   }
 }
 
-async function verifyBadgeDataInternal(badgeData, badgeUrl = null) {
+async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl } = {}) {
   const isV3 = Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential');
   const verificationResults = await verifyBadgeStructure(badgeData, isV3);
+
+  // Extract issuer URL from badge data
+  const issuerRef = isV3 ? badgeData.issuer?.id : badgeData.issuer;
+
+  // If a URL validator is provided (public routes), validate before fetching
+  if (issuerRef && typeof issuerRef === 'string' && validateUrl) {
+    await validateUrl(issuerRef);
+  }
 
   let issuerVerification = null;
   if (isV3 && badgeData.issuer?.id) {
@@ -621,7 +638,7 @@ app.get('/public/api/verify/badge/:badgeUrl(*)', async (req, res) => {
     return res.status(400).json({ error: `Blocked: ${err.message}` });
   }
 
-  const result = await verifyBadgeByUrlInternal(badgeUrl);
+  const result = await verifyBadgeByUrlInternal(badgeUrl, { validateUrl: validatePublicUrl });
   res.status(result.status).json(result.body);
 });
 
@@ -710,7 +727,7 @@ app.post('/public/api/verify/json', async (req, res) => {
   }
 
   try {
-    const result = await verifyBadgeDataInternal(badgeData);
+    const result = await verifyBadgeDataInternal(badgeData, null, { validateUrl: validatePublicUrl });
     res.json(result);
   } catch (error) {
     res.status(500).json({
