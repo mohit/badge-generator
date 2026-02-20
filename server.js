@@ -9,6 +9,11 @@ import crypto from 'crypto';
 
 config();
 
+if (process.env.NODE_ENV !== 'test' && !process.env.API_KEY) {
+  console.error('Missing required environment variable: API_KEY');
+  process.exit(1);
+}
+
 // Domain validation constants
 const VERIFIED_ISSUER_DOMAIN = process.env.PUBLIC_DOMAIN || 'localhost:3000';
 const SAFE_TEST_DOMAINS = [
@@ -289,7 +294,11 @@ app.use('/badges', express.static('uploads'));
 app.use(express.static('public'));
 
 // Middleware to check API key
-const requireApiKey = (req, res, next) => {
+export const requireApiKey = (req, res, next) => {
+  if (!process.env.API_KEY) {
+    return res.status(500).json({ error: 'Server API key is not configured' });
+  }
+
   const apiKey = req.headers['x-api-key'];
   if (apiKey === process.env.API_KEY) {
     next();
@@ -1270,25 +1279,29 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
   });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`Badge Generator server running on port ${PORT}`);
-  console.log(`API documentation: https://github.com/mohit/badge-generator`);
-  console.log(`API key: ${process.env.API_KEY ? '***configured***' : 'NOT SET'}`);
-});
+let server = null;
 
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed. Process terminating.');
-    process.exit(0);
+if (process.env.NODE_ENV !== 'test') {
+  server = app.listen(PORT, () => {
+    console.log(`Badge Generator server running on port ${PORT}`);
+    console.log(`API documentation: https://github.com/mohit/badge-generator`);
+    console.log(`API key: ${process.env.API_KEY ? '***configured***' : 'NOT SET'}`);
   });
-});
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received. Shutting down gracefully...');
-  server.close(() => {
-    console.log('Server closed. Process terminating.');
-    process.exit(0);
+  // Graceful shutdown handling
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received. Shutting down gracefully...');
+    server.close(() => {
+      console.log('Server closed. Process terminating.');
+      process.exit(0);
+    });
   });
-});
+
+  process.on('SIGINT', () => {
+    console.log('SIGINT received. Shutting down gracefully...');
+    server.close(() => {
+      console.log('Server closed. Process terminating.');
+      process.exit(0);
+    });
+  });
+}
