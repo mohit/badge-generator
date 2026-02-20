@@ -9,6 +9,7 @@
     "dev": "nodemon server.js",
     "lint": "echo 'No linting configured'",
     "test": "node run-tests.js",
+    "test:api-key": "node --test tests/api-key-config.test.js",
     "test:domain": "node tests/domain-validation.test.js",
     "test:mcp": "node mcp-server/test.js",
     "cli": "node cli/badge-cli.js"
