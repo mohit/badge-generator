@@ -1133,10 +1133,17 @@ app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
 
 // Badge signing endpoint
 app.post('/api/sign-badge', requireApiKey, async (req, res) => {
-  const { badgeData, domain } = req.body;
+  const { badgeData } = req.body;
+  let { domain } = req.body;
   
   if (!badgeData || !domain) {
     return res.status(400).json({ error: 'Badge data and domain are required' });
+  }
+
+  // Strip any scheme prefix to prevent malformed URLs like https://https://...
+  domain = domain.replace(/^[a-z]+:\/\//i, '').replace(/\/+$/, '');
+  if (domain.includes('/')) {
+    return res.status(400).json({ error: 'Domain must be a bare host (e.g. example.com or example.com:3000), not a URL' });
   }
   
   try {

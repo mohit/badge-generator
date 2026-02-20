@@ -607,7 +607,11 @@ program
 
 export { BadgeCLI };
 
-// Parse command line arguments when run directly
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  program.parse();
+// Parse command line arguments when run directly (handles symlinks/npm bin shims)
+if (process.argv[1]) {
+  const realArgv = fs.realpathSync(process.argv[1]);
+  const realSelf = fileURLToPath(import.meta.url);
+  if (realArgv === realSelf) {
+    program.parse();
+  }
 }
