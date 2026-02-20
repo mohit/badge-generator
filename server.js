@@ -430,84 +430,110 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
 });
 
 // Badge and Issuer Verification endpoints
+async function verifyBadgeByUrlInternal(badgeUrl) {
+  try {
+    console.log(`🔍 Verifying badge: ${badgeUrl}`);
+
+    const badgeResponse = await fetch(badgeUrl, {
+      timeout: 10000,
+      headers: { 'User-Agent': 'Badge-Generator-Verifier/1.0' }
+    });
+
+    if (!badgeResponse.ok) {
+      return {
+        status: 400,
+        body: {
+          valid: false,
+          error: `Failed to fetch badge: HTTP ${badgeResponse.status}`,
+          details: { url: badgeUrl, status: badgeResponse.status }
+        }
+      };
+    }
+
+    let badgeData;
+    try {
+      badgeData = await badgeResponse.json();
+    } catch (parseError) {
+      return {
+        status: 400,
+        body: {
+          valid: false,
+          error: `Invalid JSON in badge: ${parseError.message}`,
+          details: { url: badgeUrl }
+        }
+      };
+    }
+
+    return {
+      status: 200,
+      body: await verifyBadgeDataInternal(badgeData, badgeUrl)
+    };
+  } catch (error) {
+    console.error(`Error verifying badge ${badgeUrl}:`, error);
+    return {
+      status: 500,
+      body: {
+        valid: false,
+        error: `Verification failed: ${error.message}`,
+        details: { badgeUrl }
+      }
+    };
+  }
+}
+
+async function verifyBadgeDataInternal(badgeData, badgeUrl = null) {
+  const isV3 = Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential');
+  const verificationResults = await verifyBadgeStructure(badgeData, isV3);
+
+  let issuerVerification = null;
+  if (isV3 && badgeData.issuer?.id) {
+    issuerVerification = await verifyIssuerFromBadge(badgeData.issuer.id);
+  } else if (!isV3 && badgeData.issuer) {
+    issuerVerification = await verifyIssuerFromBadge(badgeData.issuer);
+  }
+
+  let signatureVerification = null;
+  if (badgeData.proof && issuerVerification && issuerVerification.valid) {
+    signatureVerification = await verifyCryptographicSignature(badgeData, issuerVerification);
+  }
+
+  const overallValid = verificationResults.valid &&
+                      (!issuerVerification || issuerVerification.valid) &&
+                      (!signatureVerification || signatureVerification.valid);
+
+  return {
+    valid: overallValid,
+    badgeUrl: badgeUrl,
+    badgeData: badgeData,
+    version: isV3 ? 'v3.0' : 'v2.0',
+    structure: verificationResults,
+    issuer: issuerVerification,
+    signature: signatureVerification,
+    verifiedAt: new Date().toISOString(),
+    verificationLevel: determineVerificationLevel(verificationResults, issuerVerification, signatureVerification)
+  };
+}
+
 app.get('/api/verify/badge/:badgeUrl(*)', requireApiKey, async (req, res) => {
   const badgeUrl = req.params.badgeUrl;
   
   if (!badgeUrl) {
     return res.status(400).json({ error: 'Badge URL is required' });
   }
-  
-  try {
-    console.log(`🔍 Verifying badge: ${badgeUrl}`);
-    
-    // Fetch the badge JSON
-    const badgeResponse = await fetch(badgeUrl, {
-      timeout: 10000,
-      headers: { 'User-Agent': 'Badge-Generator-Verifier/1.0' }
-    });
-    
-    if (!badgeResponse.ok) {
-      return res.status(400).json({
-        valid: false,
-        error: `Failed to fetch badge: HTTP ${badgeResponse.status}`,
-        details: { url: badgeUrl, status: badgeResponse.status }
-      });
-    }
-    
-    let badgeData;
-    try {
-      badgeData = await badgeResponse.json();
-    } catch (parseError) {
-      return res.status(400).json({
-        valid: false,
-        error: `Invalid JSON in badge: ${parseError.message}`,
-        details: { url: badgeUrl }
-      });
-    }
-    
-    // Determine badge version and validate structure
-    const isV3 = Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential');
-    const verificationResults = await verifyBadgeStructure(badgeData, isV3);
-    
-    // Verify issuer if present
-    let issuerVerification = null;
-    if (isV3 && badgeData.issuer?.id) {
-      issuerVerification = await verifyIssuerFromBadge(badgeData.issuer.id);
-    } else if (!isV3 && badgeData.issuer) {
-      issuerVerification = await verifyIssuerFromBadge(badgeData.issuer);
-    }
-    
-    // Verify cryptographic signature if present
-    let signatureVerification = null;
-    if (badgeData.proof && issuerVerification && issuerVerification.valid) {
-      signatureVerification = await verifyCryptographicSignature(badgeData, issuerVerification);
-    }
-    
-    // Compile verification results
-    const overallValid = verificationResults.valid && 
-                        (!issuerVerification || issuerVerification.valid) &&
-                        (!signatureVerification || signatureVerification.valid);
-    
-    res.json({
-      valid: overallValid,
-      badgeUrl: badgeUrl,
-      badgeData: badgeData,
-      version: isV3 ? 'v3.0' : 'v2.0',
-      structure: verificationResults,
-      issuer: issuerVerification,
-      signature: signatureVerification,
-      verifiedAt: new Date().toISOString(),
-      verificationLevel: determineVerificationLevel(verificationResults, issuerVerification, signatureVerification)
-    });
-    
-  } catch (error) {
-    console.error(`Error verifying badge ${badgeUrl}:`, error);
-    res.status(500).json({
-      valid: false,
-      error: `Verification failed: ${error.message}`,
-      details: { badgeUrl }
-    });
+
+  const result = await verifyBadgeByUrlInternal(badgeUrl);
+  res.status(result.status).json(result.body);
+});
+
+app.get('/public/api/verify/badge/:badgeUrl(*)', async (req, res) => {
+  const badgeUrl = req.params.badgeUrl;
+
+  if (!badgeUrl) {
+    return res.status(400).json({ error: 'Badge URL is required' });
   }
+
+  const result = await verifyBadgeByUrlInternal(badgeUrl);
+  res.status(result.status).json(result.body);
 });
 
 app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
@@ -535,6 +561,53 @@ app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
       valid: false,
       error: `Verification failed: ${error.message}`,
       details: { issuerUrl }
+    });
+  }
+});
+
+app.get('/public/api/verify/issuer/:issuerUrl(*)', async (req, res) => {
+  const issuerUrl = req.params.issuerUrl;
+  
+  if (!issuerUrl) {
+    return res.status(400).json({ error: 'Issuer URL is required' });
+  }
+  
+  try {
+    console.log(`🔍 Verifying issuer: ${issuerUrl}`);
+    
+    const verification = await verifyIssuerFromBadge(issuerUrl);
+    
+    res.json({
+      valid: verification.valid,
+      issuerUrl: issuerUrl,
+      verification: verification,
+      verifiedAt: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error(`Error verifying issuer ${issuerUrl}:`, error);
+    res.status(500).json({
+      valid: false,
+      error: `Verification failed: ${error.message}`,
+      details: { issuerUrl }
+    });
+  }
+});
+
+app.post('/public/api/verify/json', async (req, res) => {
+  const badgeData = req.body?.badgeData || req.body;
+
+  if (!badgeData || typeof badgeData !== 'object' || Array.isArray(badgeData)) {
+    return res.status(400).json({ error: 'Badge JSON object is required' });
+  }
+
+  try {
+    const result = await verifyBadgeDataInternal(badgeData);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({
+      valid: false,
+      error: `Verification failed: ${error.message}`
     });
   }
 });
