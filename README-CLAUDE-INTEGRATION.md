@@ -8,8 +8,8 @@ The Badge Generator MCP server allows Claude to:
 - ✅ Create and manage badge issuers
 - ✅ Create badge classes and credentials
 - ✅ Validate domains for security
-- ✅ Handle issuer verification
-- ✅ Generate cryptographic keys
+- ✅ Verify issuers and badges
+- ✅ Sign badges and cache issuer public keys
 - ✅ Access hosted badge files
 
 ## Quick Setup
@@ -35,7 +35,7 @@ Add this to your Claude Desktop MCP configuration file:
       "command": "node",
       "args": ["/path/to/badge-generator/mcp-server/index.js"],
       "env": {
-        "BADGE_API_BASE_URL": "https://your-badge-generator-domain.com",
+        "BADGE_BASE_URL": "https://your-badge-generator-domain.com",
         "BADGE_API_KEY": "<YOUR_BADGE_API_KEY>"
       }
     }
@@ -88,28 +88,22 @@ Check if I can create badges for harvard.edu
 
 **Ask Claude:**
 ```
-Help me set up verified issuer status for myuniversity.edu
+Help me verify my issuer domain myuniversity.edu
 ```
 
 **Claude will:**
-1. Generate cryptographic keys
-2. Create the well-known issuer file
-3. Show you where to host it
-4. Explain the verification process
+1. Validate domain status
+2. Verify issuer metadata via the verification endpoints
+3. Explain how to fix verification errors
+4. Confirm when the domain is ready for production badges
 
 ## Available MCP Tools
 
 When you ask Claude to work with badges, it has access to these tools:
 
-### Core Creation Tools
-- `create_issuer_v2` - Create Open Badges 2.0 issuer
-- `create_issuer_v3` - Create Open Badges 3.0 issuer  
-- `create_badge_class_v2` - Create Open Badges 2.0 badge class
-- `create_badge_class_v3` - Create Open Badges 3.0 badge class
-- `create_assertion_v2` - Create Open Badges 2.0 assertion
-- `create_assertion_v3` - Create Open Badges 3.0 assertion
-
-### Validation & Security
+### Available Tool Names (from MCP `ListTools`)
+- `test_server` - Test connection and show current MCP configuration
+- `configure_server` - Set base URL and API key dynamically
 - `validate_issuer_domain` - Check domain validity and security
 - `get_domain_info` - Get detailed domain information
 
@@ -209,9 +203,9 @@ To use your real domain with Claude:
 ```
 
 ### 2. Host the Well-Known File
-Claude will create an `issuer.json` file. Upload it to:
+Claude will create an `openbadges-issuer.json` file. Upload it to:
 ```
-https://myuniversity.edu/.well-known/issuer.json
+https://myuniversity.edu/.well-known/openbadges-issuer.json
 ```
 
 ### 3. Ask Claude to Verify

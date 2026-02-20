@@ -145,7 +145,7 @@ node cli/badge-cli.js generate-keys \
 ```
 
 **Output Files (in `./issuer-verification-files/`):**
-- `issuer.json` - Host at `/.well-known/issuer.json`
+- `openbadges-issuer.json` - Host at `/.well-known/openbadges-issuer.json`
 - `private-key.pem` - Keep secure for signing
 - `public-key.pem` - Public verification key
 
@@ -204,9 +204,9 @@ node cli/badge-cli.js generate-keys \
 
 ### Step 2: Host the Well-Known File
 
-Upload `issuer.json` to your website at:
+Upload `openbadges-issuer.json` to your website at:
 ```
-https://yourdomain.com/.well-known/issuer.json
+https://yourdomain.com/.well-known/openbadges-issuer.json
 ```
 
 ### Step 3: Verify Your Domain
@@ -281,7 +281,7 @@ node cli/badge-cli.js generate-keys \
   --url "https://university.edu" \
   --email "badges@university.edu"
 
-# Host issuer.json at https://university.edu/.well-known/issuer.json
+# Host openbadges-issuer.json at https://university.edu/.well-known/openbadges-issuer.json
 
 # Verify domain
 node cli/badge-cli.js verify "university.edu"
