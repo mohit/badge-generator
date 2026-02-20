@@ -10,7 +10,7 @@ The Badge Generator now validates all issuer domains to prevent users from creat
 
 ### 🔒 Verified Domains
 - **badge-generator-production.up.railway.app** - Our verified issuer
-- Hosted at `/.well-known/issuer.json` with cryptographic profile
+- Hosted at `/.well-known/openbadges-issuer.json` with cryptographic profile
 - Production-ready for real badge issuance
 - No warnings or restrictions
 
@@ -70,7 +70,7 @@ All creation endpoints now include domain validation:
 ## Well-Known Issuer Profile
 
 Our verified issuer profile is hosted at:
-**https://badge-generator-production.up.railway.app/.well-known/issuer.json**
+**https://badge-generator-production.up.railway.app/.well-known/openbadges-issuer.json**
 
 ```json
 {
@@ -78,7 +78,7 @@ Our verified issuer profile is hosted at:
     "https://www.w3.org/ns/credentials/v2",
     "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
   ],
-  "id": "https://badge-generator-production.up.railway.app/.well-known/issuer.json",
+  "id": "https://badge-generator-production.up.railway.app/.well-known/openbadges-issuer.json",
   "type": "Profile",
   "name": "Badge Generator Demo Platform",
   "url": "https://badge-generator-production.up.railway.app",
@@ -87,9 +87,9 @@ Our verified issuer profile is hosted at:
   "official": true,
   "verified": true,
   "publicKey": {
-    "id": "https://badge-generator-production.up.railway.app/.well-known/issuer.json#key",
+    "id": "https://badge-generator-production.up.railway.app/.well-known/openbadges-issuer.json#key",
     "type": "Ed25519VerificationKey2020",
-    "controller": "https://badge-generator-production.up.railway.app/.well-known/issuer.json",
+    "controller": "https://badge-generator-production.up.railway.app/.well-known/openbadges-issuer.json",
     "publicKeyMultibase": "z6MkhaXgBZDvotDkL5257faiztiGiC2QtKLGpbnnYuYByT1S"
   }
 }
@@ -122,7 +122,7 @@ All templates now use safe demo domains:
 
 ### Web Verification (Planned)
 - Allow real domains with web verification
-- Check for `/.well-known/issuer.json` at claiming domain
+- Check for `/.well-known/openbadges-issuer.json` at claiming domain
 - Require proof of domain ownership
 - Enable legitimate organizations to verify themselves
 

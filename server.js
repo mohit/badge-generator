@@ -6,6 +6,7 @@ import { promises as dns } from 'dns';
 import { config } from 'dotenv';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
+import { normalizePublicDomain } from './lib/domain-utils.js';
 
 config();
 
@@ -15,7 +16,7 @@ if (process.env.NODE_ENV !== 'test' && !process.env.API_KEY) {
 }
 
 // Domain validation constants
-const VERIFIED_ISSUER_DOMAIN = process.env.PUBLIC_DOMAIN || 'localhost:3000';
+const VERIFIED_ISSUER_DOMAIN = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
 const SAFE_TEST_DOMAINS = [
   'example.com',
   'example.org', 
@@ -25,15 +26,25 @@ const SAFE_TEST_DOMAINS = [
   'localhost',
   '127.0.0.1'
 ];
+const WELL_KNOWN_ISSUER_PATH = '/.well-known/openbadges-issuer.json';
+const LEGACY_WELL_KNOWN_ISSUER_PATH = '/.well-known/issuer.json';
+
+function getWellKnownIssuerUrls(domain) {
+  return [
+    `https://${domain}${WELL_KNOWN_ISSUER_PATH}`,
+    `https://${domain}${LEGACY_WELL_KNOWN_ISSUER_PATH}`
+  ];
+}
 
 // Domain validation function
 async function validateIssuerDomain(url) {
   try {
     const urlObj = new URL(url);
     const domain = urlObj.hostname.toLowerCase();
+    const host = urlObj.host.toLowerCase();
     
     // Check if it's our verified issuer
-    if (domain === VERIFIED_ISSUER_DOMAIN) {
+    if (host === VERIFIED_ISSUER_DOMAIN.host || domain === VERIFIED_ISSUER_DOMAIN.hostname) {
       return {
         valid: true,
         type: 'verified',
@@ -157,27 +168,33 @@ function setVerifiedIssuer(domain, issuerData) {
 // Verify issuer by fetching their well-known file
 async function verifyIssuerDomain(domain) {
   try {
-    const wellKnownUrl = `https://${domain}/.well-known/openbadges-issuer.json`;
-    
     console.log(`Verifying issuer domain: ${domain}`);
-    console.log(`Fetching: ${wellKnownUrl}`);
+    const wellKnownUrls = getWellKnownIssuerUrls(domain);
+    let response = null;
+    let wellKnownUrl = null;
     
-    // Fetch the well-known file
-    const response = await fetch(wellKnownUrl, {
-      timeout: 10000,
-      headers: {
-        'User-Agent': 'Badge-Generator-Verifier/1.0'
+    for (const candidateUrl of wellKnownUrls) {
+      console.log(`Fetching: ${candidateUrl}`);
+      const candidateResponse = await fetch(candidateUrl, {
+        timeout: 10000,
+        headers: {
+          'User-Agent': 'Badge-Generator-Verifier/1.0'
+        }
+      });
+
+      if (candidateResponse.ok) {
+        response = candidateResponse;
+        wellKnownUrl = candidateUrl;
+        break;
       }
-    });
+    }
     
-    if (!response.ok) {
+    if (!response || !wellKnownUrl) {
       return {
         success: false,
-        error: `Failed to fetch well-known file: HTTP ${response.status}`,
+        error: 'Failed to fetch issuer well-known file from supported paths',
         details: { 
-          url: wellKnownUrl,
-          status: response.status,
-          statusText: response.statusText
+          urls: wellKnownUrls
         }
       };
     }
@@ -219,7 +236,8 @@ async function verifyIssuerDomain(domain) {
       wellKnownUrl,
       `https://${domain}`,
       `https://${domain}/`,
-      `https://${domain}/.well-known/openbadges-issuer.json`
+      `https://${domain}${WELL_KNOWN_ISSUER_PATH}`,
+      `https://${domain}${LEGACY_WELL_KNOWN_ISSUER_PATH}`
     ];
     
     if (!validIds.includes(issuerData.id)) {
@@ -850,10 +868,11 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
 
 async function getBadgeSigningKey(domain) {
   // Only support our own domain for signing
-  const ourDomain = process.env.PUBLIC_DOMAIN || 'localhost:3000';
+  const ourDomain = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
+  const requestedDomain = normalizePublicDomain(domain);
   
-  if (domain !== ourDomain) {
-    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our domain: ${ourDomain}`);
+  if (requestedDomain.host !== ourDomain.host && requestedDomain.hostname !== ourDomain.hostname) {
+    console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our domain: ${ourDomain.host}`);
     return null;
   }
   
@@ -917,6 +936,7 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   // Check cached public keys in uploads volume
   const urlObj = new URL(issuerUrl);
   const domain = urlObj.hostname;
+  const issuerHost = urlObj.host;
   const cachedKeyPath = path.join('uploads', `cached-public-keys`, `${domain}.pem`);
   
   if (fs.existsSync(cachedKeyPath)) {
@@ -929,8 +949,8 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   }
   
   // Fallback to our default public key (for our own domain)
-  const ourDomain = process.env.PUBLIC_DOMAIN || 'localhost:3000';
-  if (process.env.DEFAULT_PUBLIC_KEY && domain === ourDomain) {
+  const ourDomain = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
+  if (process.env.DEFAULT_PUBLIC_KEY && (issuerHost === ourDomain.host || domain === ourDomain.hostname)) {
     console.log('Using default public key from environment');
     return process.env.DEFAULT_PUBLIC_KEY;
   }
@@ -1138,7 +1158,7 @@ app.post('/api/sign-badge', requireApiKey, async (req, res) => {
       proof: {
         type: 'Ed25519Signature2020',
         created: new Date().toISOString(),
-        verificationMethod: `https://${domain}/.well-known/issuer.json#key`,
+        verificationMethod: `https://${domain}${WELL_KNOWN_ISSUER_PATH}#key`,
         proofPurpose: 'assertionMethod',
         jws: signature
       }
@@ -1148,7 +1168,7 @@ app.post('/api/sign-badge', requireApiKey, async (req, res) => {
       message: 'Badge signed successfully',
       signedBadge: signedBadge,
       signature: signature,
-      verificationMethod: `https://${domain}/.well-known/issuer.json#key`
+      verificationMethod: `https://${domain}${WELL_KNOWN_ISSUER_PATH}#key`
     });
     
   } catch (error) {

@@ -5,7 +5,7 @@ import fetch from 'node-fetch';
 import fs from 'fs/promises';
 import crypto from 'crypto';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -185,15 +185,23 @@ class BadgeCLI {
     
     try {
       const result = await this.makeRequest(`/api/issuers/${encodeURIComponent(domain)}`);
+      const issuer = result.issuer || {};
+      const status = result.status || issuer.status || 'unknown';
+      const isVerified = status === 'verified';
+      const addedAt = issuer.lastVerified || issuer.lastUpdated || null;
       
       console.log(`✅ Verified issuer found:`);
-      console.log(`   Name: ${result.displayName}`);
-      console.log(`   Status: ${result.status}`);
-      console.log(`   Verified: ${result.verified ? 'Yes' : 'No'}`);
-      console.log(`   Added: ${new Date(result.dateAdded).toLocaleDateString()}`);
+      console.log(`   Name: ${issuer.displayName || issuer.name || 'Unknown'}`);
+      console.log(`   Status: ${status}`);
+      console.log(`   Verified: ${isVerified ? 'Yes' : 'No'}`);
+      console.log(`   Added: ${addedAt ? new Date(addedAt).toLocaleDateString() : 'Unknown'}`);
       
-      if (result.profileUrl) {
-        console.log(`   Profile URL: ${result.profileUrl}`);
+      if (issuer.url) {
+        console.log(`   URL: ${issuer.url}`);
+      }
+
+      if (issuer.wellKnownUrl) {
+        console.log(`   Well-Known URL: ${issuer.wellKnownUrl}`);
       }
       
       return result;
@@ -326,7 +334,7 @@ class BadgeCLI {
   }
 
   async generateWellKnownFile(issuerData) {
-    console.log(`📄 Generating .well-known/issuer.json file`);
+    console.log(`📄 Generating .well-known/openbadges-issuer.json file`);
     
     const { publicKey, privateKey } = this.generateKeyPair();
     
@@ -342,7 +350,7 @@ class BadgeCLI {
         "https://www.w3.org/ns/credentials/v2",
         "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
       ],
-      "id": `${issuerData.url}/.well-known/issuer.json`,
+      "id": `${issuerData.url}/.well-known/openbadges-issuer.json`,
       "type": "Profile",
       "name": issuerData.name,
       "url": issuerData.url,
@@ -351,9 +359,9 @@ class BadgeCLI {
       "official": true,
       "verified": true,
       "publicKey": {
-        "id": `${issuerData.url}/.well-known/issuer.json#key`,
+        "id": `${issuerData.url}/.well-known/openbadges-issuer.json#key`,
         "type": "Ed25519VerificationKey2020",
-        "controller": `${issuerData.url}/.well-known/issuer.json`,
+        "controller": `${issuerData.url}/.well-known/openbadges-issuer.json`,
         "publicKeyMultibase": publicKeyMultibase
       }
     };
@@ -363,7 +371,7 @@ class BadgeCLI {
     await fs.mkdir(outputDir, { recursive: true });
     
     await fs.writeFile(
-      path.join(outputDir, 'issuer.json'),
+      path.join(outputDir, 'openbadges-issuer.json'),
       JSON.stringify(wellKnownFile, null, 2)
     );
     
@@ -378,11 +386,11 @@ class BadgeCLI {
     );
     
     console.log(`✅ Generated verification files in ${outputDir}/:`);
-    console.log(`   - issuer.json (host at /.well-known/issuer.json)`);
+    console.log(`   - openbadges-issuer.json (host at /.well-known/openbadges-issuer.json)`);
     console.log(`   - private-key.pem (keep secure!)`);
     console.log(`   - public-key.pem`);
     console.log(`\n📋 Next steps:`);
-    console.log(`   1. Host issuer.json at ${issuerData.url}/.well-known/issuer.json`);
+    console.log(`   1. Host openbadges-issuer.json at ${issuerData.url}/.well-known/openbadges-issuer.json`);
     console.log(`   2. Run: badge-cli verify ${issuerData.url.replace(/https?:\/\//, '')}`);
     console.log(`   3. Keep private-key.pem secure for badge signing`);
     
@@ -597,5 +605,9 @@ program
     }
   });
 
-// Parse command line arguments
-program.parse();
+export { BadgeCLI };
+
+// Parse command line arguments when run directly
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  program.parse();
+}
