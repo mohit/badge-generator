@@ -186,7 +186,6 @@ npm install
 - `create_issuer` - Create badge-issuing organizations
 - `create_badge_class` - Define badge types and criteria
 - `create_credential_subject` - Award badges to recipients
-- `create_smart_badge` - Process complete badge systems
 - `list_badges` - Browse created badges
 - `get_badge` - Retrieve specific badge files
 

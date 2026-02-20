@@ -7,7 +7,6 @@ An MCP (Model Context Protocol) server that allows AI assistants like Claude or 
 - 🏆 **Create Issuers** - Set up badge-issuing organizations
 - 🎖️ **Create Badge Classes** - Define badge types and criteria  
 - 📜 **Create Credentials** - Award badges to recipients
-- 🚀 **Smart Badge Creation** - Process complete badge systems from combined JSON
 - 📋 **List & View Badges** - Browse and inspect created badges
 - 🔧 **Configuration** - Dynamic server and API key setup
 
@@ -138,18 +137,6 @@ Award a badge to a recipient.
 Award the Web Development Certificate to student@example.com with evidence at https://portfolio.example.com
 ```
 
-### `create_smart_badge`
-Create a complete badge system from combined JSON objects.
-
-**Parameters:**
-- `title` (required) - File prefix (e.g., "web-dev")
-- `content` (required) - Combined JSON objects separated by blank lines
-
-**Example:**
-```
-Create a smart badge system called "excellence-2024" with the following combined JSON objects: [paste issuer, badge class, and assertion JSON]
-```
-
 ### `list_badges`
 List all uploaded badge files.
 
@@ -179,7 +166,7 @@ The MCP server supports both Open Badges v2.0 and v3.0 formats:
 ## Authentication Notes
 
 - API endpoints (`create_issuer`, `create_badge_class`, `create_credential_subject`) use API key authentication
-- Web endpoints (`create_smart_badge`, `list_badges`) require session authentication
+- API endpoints (`list_badges`, `verify_badge`, `verify_issuer`, `sign_badge`, `cache_public_key`) use API key authentication
 - Public badge files (`get_badge`) require no authentication
 
 ## Error Handling

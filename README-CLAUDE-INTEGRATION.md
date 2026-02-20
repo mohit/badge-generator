@@ -16,9 +16,9 @@ The Badge Generator MCP server allows Claude to:
 
 ### 1. Get Your API Key
 
-Contact the Badge Generator platform administrator or use the test API key:
+Contact the Badge Generator platform administrator and use your own API key:
 ```
-g7nopsRdnf2y2F+i9k3kNe//NRXaEsWWT3j8XaTB4w0=
+<YOUR_BADGE_API_KEY>
 ```
 
 ### 2. Configure Claude Desktop
@@ -36,7 +36,7 @@ Add this to your Claude Desktop MCP configuration file:
       "args": ["/path/to/badge-generator/mcp-server/index.js"],
       "env": {
         "BADGE_API_BASE_URL": "https://your-badge-generator-domain.com",
-        "BADGE_API_KEY": "g7nopsRdnf2y2F+i9k3kNe//NRXaEsWWT3j8XaTB4w0="
+        "BADGE_API_KEY": "<YOUR_BADGE_API_KEY>"
       }
     }
   }
@@ -116,7 +116,6 @@ When you ask Claude to work with badges, it has access to these tools:
 ### File Management
 - `list_badge_files` - Browse created badges
 - `get_badge_file` - Read specific badge files
-- `smart_badge_creator` - Interactive badge creation wizard
 
 ## Domain Types & Behavior
 
@@ -225,20 +224,6 @@ https://myuniversity.edu/.well-known/issuer.json
 "Now create a badge for Computer Science Degree from My University"
 ```
 
-## Smart Badge Creator
-
-For complex badge creation, ask Claude:
-```
-"Use the smart badge creator to help me design a comprehensive badge"
-```
-
-This launches an interactive wizard that guides you through:
-- Badge specification version selection
-- Issuer creation or selection
-- Badge class design
-- Credential assertions
-- File hosting and sharing
-
 ## Best Practices
 
 ### Testing Phase
@@ -276,7 +261,7 @@ This launches an interactive wizard that guides you through:
 ### "Connection failed"
 - Verify internet connection
 - Check if the API endpoint is accessible
-- Try the test API key first
+- Confirm your personal API key is set correctly
 
 ## Advanced Features
 

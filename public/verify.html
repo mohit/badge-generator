@@ -464,9 +464,13 @@
             try {
                 showLoading(button, buttonText, spinner);
                 
-                const response = await fetch(`/api/verify/badge/${encodeURIComponent(url)}`);
+                const response = await fetch(`/public/api/verify/badge/${encodeURIComponent(url)}`);
                 const result = await response.json();
-                
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP ${response.status}`);
+                }
+
                 showResult(result, 'badge');
             } catch (error) {
                 showError(`Failed to verify badge: ${error.message}`);
@@ -485,16 +489,20 @@
                 
                 // Parse and validate JSON first
                 const badgeData = JSON.parse(jsonStr);
-                
-                // TODO: Send to backend for verification
-                // For now, show basic structure validation
-                const result = {
-                    valid: true,
-                    verificationLevel: 'structure_only',
-                    message: 'JSON structure appears valid',
-                    structure: { valid: true, errors: [], warnings: [] }
-                };
-                
+
+                const response = await fetch('/public/api/verify/json', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ badgeData })
+                });
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP ${response.status}`);
+                }
+
                 showResult(result, 'badge');
             } catch (error) {
                 if (error instanceof SyntaxError) {
@@ -515,9 +523,13 @@
             try {
                 showLoading(button, buttonText, spinner);
                 
-                const response = await fetch(`/api/verify/issuer/${encodeURIComponent(url)}`);
+                const response = await fetch(`/public/api/verify/issuer/${encodeURIComponent(url)}`);
                 const result = await response.json();
-                
+
+                if (!response.ok) {
+                    throw new Error(result.error || `HTTP ${response.status}`);
+                }
+
                 showResult(result, 'issuer');
             } catch (error) {
                 showError(`Failed to verify issuer: ${error.message}`);
