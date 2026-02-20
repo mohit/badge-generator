@@ -5,13 +5,14 @@ import fs from 'fs';
 import path from 'path';
 import { config } from 'dotenv';
 
+config({ path: 'mcp-server/.env.test' });
 config();
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const API_KEY = process.env.API_KEY;
+const BASE_URL = process.env.TEST_BASE_URL || process.env.BASE_URL || 'http://localhost:3000';
+const API_KEY = process.env.TEST_API_KEY || process.env.API_KEY;
 
 if (!API_KEY) {
-  console.error('❌ API_KEY environment variable is required');
+  console.error('❌ Missing API key. Set TEST_API_KEY in mcp-server/.env.test (preferred) or API_KEY in your environment.');
   process.exit(1);
 }
 
