@@ -3,10 +3,93 @@ import path from 'path';
 import fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { promises as dns } from 'dns';
+import net from 'net';
 import { config } from 'dotenv';
 import fetch from 'node-fetch';
 import crypto from 'crypto';
 import { normalizePublicDomain } from './lib/domain-utils.js';
+
+// ---------------------------------------------------------------------------
+// SSRF protection: block requests to private/internal networks from public
+// verification endpoints that accept user-controlled URLs.
+// ---------------------------------------------------------------------------
+const SSRF_BLOCKED_CIDRS = [
+  // IPv4 private ranges
+  { prefix: '10.', exact: false },
+  { prefix: '172.', test: (ip) => { const b = parseInt(ip.split('.')[1], 10); return b >= 16 && b <= 31; } },
+  { prefix: '192.168.', exact: false },
+  // Loopback
+  { prefix: '127.', exact: false },
+  // Link-local
+  { prefix: '169.254.', exact: false },
+  // Cloud metadata (AWS, GCP, Azure)
+  { prefix: '169.254.169.254', exact: true },
+  { prefix: 'fd00:', exact: false }, // IPv6 ULA
+  { prefix: '::1', exact: true },    // IPv6 loopback
+];
+
+function isPrivateIp(ip) {
+  if (!ip) return true; // fail-closed
+  for (const rule of SSRF_BLOCKED_CIDRS) {
+    if (rule.exact && ip === rule.prefix) return true;
+    if (rule.test && rule.test(ip)) return true;
+    if (!rule.exact && !rule.test && ip.startsWith(rule.prefix)) return true;
+  }
+  return false;
+}
+
+/**
+ * Validate that a URL is safe for server-side fetch from a public endpoint.
+ * Resolves the hostname via DNS and rejects private/internal IPs.
+ */
+async function validatePublicUrl(urlString) {
+  let parsed;
+  try {
+    parsed = new URL(urlString);
+  } catch {
+    throw new Error('Invalid URL');
+  }
+
+  // Only allow http(s)
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('Only http and https URLs are allowed');
+  }
+
+  const hostname = parsed.hostname;
+
+  // Reject obvious private hostnames
+  if (hostname === 'localhost' || hostname === '[::1]') {
+    throw new Error('Requests to localhost are not allowed from public endpoints');
+  }
+
+  // Resolve DNS and check all IPs (supports A-only, AAAA-only, and dual-stack)
+  try {
+    let addresses;
+    if (net.isIP(hostname)) {
+      addresses = [hostname];
+    } else {
+      const [v4, v6] = await Promise.all([
+        dns.resolve4(hostname).catch(() => []),
+        dns.resolve6(hostname).catch(() => [])
+      ]);
+      addresses = v4.concat(v6);
+      if (addresses.length === 0) {
+        throw new Error(`Cannot resolve hostname: ${hostname}`);
+      }
+    }
+
+    for (const addr of addresses) {
+      if (isPrivateIp(addr)) {
+        throw new Error('URL resolves to a private/internal IP address');
+      }
+    }
+  } catch (err) {
+    if (err.message.includes('private') || err.message.includes('localhost') || err.message.includes('Cannot resolve')) throw err;
+    throw new Error(`Cannot resolve hostname: ${hostname}`);
+  }
+
+  return parsed;
+}
 
 config();
 
@@ -457,7 +540,7 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
 });
 
 // Badge and Issuer Verification endpoints
-async function verifyBadgeByUrlInternal(badgeUrl) {
+async function verifyBadgeByUrlInternal(badgeUrl, options = {}) {
   try {
     console.log(`🔍 Verifying badge: ${badgeUrl}`);
 
@@ -493,7 +576,7 @@ async function verifyBadgeByUrlInternal(badgeUrl) {
 
     return {
       status: 200,
-      body: await verifyBadgeDataInternal(badgeData, badgeUrl)
+      body: await verifyBadgeDataInternal(badgeData, badgeUrl, options)
     };
   } catch (error) {
     console.error(`Error verifying badge ${badgeUrl}:`, error);
@@ -508,9 +591,17 @@ async function verifyBadgeByUrlInternal(badgeUrl) {
   }
 }
 
-async function verifyBadgeDataInternal(badgeData, badgeUrl = null) {
+async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl } = {}) {
   const isV3 = Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential');
   const verificationResults = await verifyBadgeStructure(badgeData, isV3);
+
+  // Extract issuer URL from badge data
+  const issuerRef = isV3 ? badgeData.issuer?.id : badgeData.issuer;
+
+  // If a URL validator is provided (public routes), validate before fetching
+  if (issuerRef && typeof issuerRef === 'string' && validateUrl) {
+    await validateUrl(issuerRef);
+  }
 
   let issuerVerification = null;
   if (isV3 && badgeData.issuer?.id) {
@@ -559,7 +650,13 @@ app.get('/public/api/verify/badge/:badgeUrl(*)', async (req, res) => {
     return res.status(400).json({ error: 'Badge URL is required' });
   }
 
-  const result = await verifyBadgeByUrlInternal(badgeUrl);
+  try {
+    await validatePublicUrl(badgeUrl);
+  } catch (err) {
+    return res.status(400).json({ error: `Blocked: ${err.message}` });
+  }
+
+  const result = await verifyBadgeByUrlInternal(badgeUrl, { validateUrl: validatePublicUrl });
   res.status(result.status).json(result.body);
 });
 
@@ -598,6 +695,12 @@ app.get('/public/api/verify/issuer/:issuerUrl(*)', async (req, res) => {
   if (!issuerUrl) {
     return res.status(400).json({ error: 'Issuer URL is required' });
   }
+
+  try {
+    await validatePublicUrl(issuerUrl);
+  } catch (err) {
+    return res.status(400).json({ error: `Blocked: ${err.message}` });
+  }
   
   try {
     console.log(`🔍 Verifying issuer: ${issuerUrl}`);
@@ -628,8 +731,21 @@ app.post('/public/api/verify/json', async (req, res) => {
     return res.status(400).json({ error: 'Badge JSON object is required' });
   }
 
+  // SSRF protection: validate any issuer URL embedded in the badge data
+  // before verifyBadgeDataInternal follows it via server-side fetch.
+  const issuerUrl = (Array.isArray(badgeData.type) && badgeData.type.includes('OpenBadgeCredential'))
+    ? badgeData.issuer?.id
+    : badgeData.issuer;
+  if (issuerUrl && typeof issuerUrl === 'string') {
+    try {
+      await validatePublicUrl(issuerUrl);
+    } catch (err) {
+      return res.status(400).json({ error: `Blocked issuer URL: ${err.message}` });
+    }
+  }
+
   try {
-    const result = await verifyBadgeDataInternal(badgeData);
+    const result = await verifyBadgeDataInternal(badgeData, null, { validateUrl: validatePublicUrl });
     res.json(result);
   } catch (error) {
     res.status(500).json({
