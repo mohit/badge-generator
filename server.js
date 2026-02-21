@@ -540,6 +540,7 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
 });
 
 // Badge and Issuer Verification endpoints
+<<<<<<< HEAD
 async function verifyBadgeByUrlInternal(badgeUrl, options = {}) {
   try {
     console.log(`🔍 Verifying badge: ${badgeUrl}`);
@@ -632,7 +633,7 @@ async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl
   };
 }
 
-app.get('/api/verify/badge/:badgeUrl(*)', requireApiKey, async (req, res) => {
+app.get('/api/verify/badge/:badgeUrl(*)', async (req, res) => {
   const badgeUrl = req.params.badgeUrl;
   
   if (!badgeUrl) {
@@ -660,7 +661,7 @@ app.get('/public/api/verify/badge/:badgeUrl(*)', async (req, res) => {
   res.status(result.status).json(result.body);
 });
 
-app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
+app.get('/api/verify/issuer/:issuerUrl(*)', async (req, res) => {
   const issuerUrl = req.params.issuerUrl;
   
   if (!issuerUrl) {

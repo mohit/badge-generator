@@ -336,9 +336,9 @@
         <div class="examples">
             <h3>Try These Examples</h3>
             <div class="example-links">
-                <a href="#" class="example-link" data-example="badge">Sample Badge</a>
-                <a href="#" class="example-link" data-example="issuer">Sample Issuer</a>
-                <a href="#" class="example-link" data-example="domain">Sample Domain</a>
+                <a href="#" class="example-link" data-example="badge">Sample Badge JSON</a>
+                <a href="#" class="example-link" data-example="issuer">Sample Issuer JSON</a>
+                <a href="#" class="example-link" data-example="domain">Verify openbadges.org</a>
             </div>
         </div>
     </section>
@@ -384,7 +384,7 @@
                 <a href="https://www.w3.org/TR/vc-data-model/" target="_blank">W3C Standards</a>
             </div>
             <p class="footer-copyright">
-                © 2024 Badge Generator. Professional badge verification platform.
+                © 2025 Badge Generator. Professional badge verification platform.
             </p>
         </div>
     </footer>
@@ -412,9 +412,29 @@
 
         // Example data
         const examples = {
-            badge: 'https://example.com/badges/sample-certificate.json',
-            issuer: 'https://example.com/issuer',
-            domain: 'demo.example.org'
+            badge: JSON.stringify({
+                "@context": "https://w3id.org/openbadges/v2",
+                "type": "Assertion",
+                "id": "https://example.com/assertions/123",
+                "recipient": {
+                    "type": "email",
+                    "hashed": false,
+                    "identity": "learner@example.com"
+                },
+                "badge": "https://example.com/badges/web-dev-101",
+                "issuedOn": "2026-01-15T00:00:00Z",
+                "verification": { "type": "hosted" }
+            }, null, 2),
+            issuer: JSON.stringify({
+                "@context": "https://w3id.org/openbadges/v2",
+                "type": "Issuer",
+                "id": "https://example.com/issuer",
+                "name": "Example Learning Academy",
+                "url": "https://example.com",
+                "email": "badges@example.com",
+                "description": "A demonstration badge issuer for testing verification."
+            }, null, 2),
+            domain: 'https://openbadges.org'
         };
 
         // Example link handlers
@@ -422,16 +442,16 @@
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const exampleType = link.dataset.example;
-                const exampleUrl = examples[exampleType];
-                
+
                 if (exampleType === 'domain') {
-                    // Switch to issuer tab and fill domain
                     document.querySelector('[data-tab="issuer"]').click();
-                    document.getElementById('issuer-url').value = exampleUrl;
+                    document.getElementById('issuer-url').value = examples.domain;
+                } else if (exampleType === 'issuer') {
+                    document.querySelector('[data-tab="json"]').click();
+                    document.getElementById('badge-json').value = examples.issuer;
                 } else {
-                    // Switch to URL tab and fill URL
-                    document.querySelector('[data-tab="url"]').click();
-                    document.getElementById('badge-url').value = exampleUrl;
+                    document.querySelector('[data-tab="json"]').click();
+                    document.getElementById('badge-json').value = examples.badge;
                 }
             });
         });
