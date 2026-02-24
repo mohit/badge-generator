@@ -63,6 +63,7 @@ node cli/badge-cli.js get-issuer "demo.example.org"
 
 ```bash
 node cli/badge-cli.js verify-badge "https://example.com/assertion.json"
+node cli/badge-cli.js verify-badge "./sample-badge-v3-signed.json"
 node cli/badge-cli.js verify-issuer-url "https://example.com/issuer.json"
 ```
 

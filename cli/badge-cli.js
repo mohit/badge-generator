@@ -19,6 +19,25 @@ class BadgeCLI {
     this.config = {};
   }
 
+  isHttpUrl(value) {
+    try {
+      const parsed = new URL(value);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  }
+
+  async getLocalBadgePath(badgeSource) {
+    try {
+      const resolvedPath = path.resolve(badgeSource);
+      const stats = await fs.stat(resolvedPath);
+      return stats.isFile() ? resolvedPath : null;
+    } catch {
+      return null;
+    }
+  }
+
   async loadConfig() {
     try {
       const configData = await fs.readFile(CONFIG_FILE, 'utf8');
@@ -212,11 +231,27 @@ class BadgeCLI {
     }
   }
 
-  async verifyBadge(badgeUrl) {
-    console.log(`🔍 Verifying badge: ${badgeUrl}`);
+  async verifyBadge(badgeSource) {
+    console.log(`🔍 Verifying badge: ${badgeSource}`);
     
     try {
-      const result = await this.makeRequest(`/api/verify/badge/${encodeURIComponent(badgeUrl)}`);
+      const localBadgePath = await this.getLocalBadgePath(badgeSource);
+      const isRemoteUrl = this.isHttpUrl(badgeSource);
+      let result;
+      let sourceLabel = badgeSource;
+
+      if (localBadgePath) {
+        const badgeData = JSON.parse(await fs.readFile(localBadgePath, 'utf8'));
+        result = await this.makeRequest('/public/api/verify/json', {
+          method: 'POST',
+          body: JSON.stringify({ badgeData })
+        });
+        sourceLabel = localBadgePath;
+      } else if (isRemoteUrl) {
+        result = await this.makeRequest(`/api/verify/badge/${encodeURIComponent(badgeSource)}`);
+      } else {
+        throw new Error('Badge source must be an http(s) URL or a path to a local JSON file');
+      }
       
       const statusIcon = result.valid ? '✅' : '❌';
       const levelEmojis = {
@@ -230,7 +265,7 @@ class BadgeCLI {
       };
       
       console.log(`${statusIcon} Badge Verification: ${result.valid ? 'VALID' : 'INVALID'}`);
-      console.log(`   Badge URL: ${badgeUrl}`);
+      console.log(`   Badge Source: ${sourceLabel}`);
       console.log(`   Version: ${result.version}`);
       console.log(`   Level: ${levelEmojis[result.verificationLevel] || '❓'} ${result.verificationLevel}`);
       
@@ -560,12 +595,12 @@ program
 
 program
   .command('verify-badge')
-  .description('Verify the authenticity and structure of an Open Badge')
-  .argument('<badgeUrl>', 'URL of the badge to verify')
-  .action(async (badgeUrl) => {
+  .description('Verify an Open Badge from URL or local JSON file')
+  .argument('<badgeSource>', 'Badge URL or local JSON file path')
+  .action(async (badgeSource) => {
     const cli = new BadgeCLI();
     await cli.loadConfig();
-    await cli.verifyBadge(badgeUrl);
+    await cli.verifyBadge(badgeSource);
   });
 
 program
