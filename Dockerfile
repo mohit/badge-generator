@@ -25,8 +25,8 @@ RUN chown -R badge-generator:nodejs uploads
 # Remove development files if accidentally copied
 RUN rm -rf issuer-verification-files/ .badge-cli-config.json
 
-# Switch to non-root user
-USER badge-generator
+# Start as root so mounted volume ownership can be corrected at runtime.
+USER root
 
 # Expose port
 EXPOSE 3000
@@ -35,5 +35,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
 
-# Start the application
-CMD ["npm", "start"]
+# Start the application:
+# 1) ensure configured uploads directory exists and is writable by badge-generator
+# 2) drop privileges and run as badge-generator
+CMD ["sh", "-c", "UPLOADS_PATH=\"${UPLOADS_DIR:-uploads}\" && mkdir -p \"$UPLOADS_PATH\" && chown -R badge-generator:nodejs \"$UPLOADS_PATH\" && exec su badge-generator -s /bin/sh -c 'npm start'"]
