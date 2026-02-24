@@ -12,6 +12,15 @@ import { z } from 'zod';
 // Configuration
 const DEFAULT_BASE_URL = process.env.BADGE_BASE_URL || 'http://localhost:3000';
 const DEFAULT_API_KEY = process.env.BADGE_API_KEY || '';
+const SAFE_TEST_DOMAINS = [
+  'example.com',
+  'example.org',
+  'example.net',
+  'test.example.com',
+  'demo.example.org',
+  'localhost',
+  '127.0.0.1'
+];
 
 // Validation schemas
 const IssuerSchema = z.object({
@@ -46,6 +55,21 @@ const CredentialSubjectSchema = z.object({
   evidence: z.string().url().optional(),
 });
 
+const VerifyIssuerDomainSchema = z.object({
+  domain: z.string().min(1),
+  logTrust: z.boolean().optional(),
+  force: z.boolean().optional(),
+});
+
+const ValidateIssuerDomainSchema = z.object({
+  url: z.string().url(),
+  serverPolicy: z.boolean().optional(),
+});
+
+const VerifyBadgeJsonSchema = z.object({
+  badgeData: z.record(z.any()),
+});
+
 class BadgeGeneratorMCPServer {
   constructor() {
     this.server = new Server(
@@ -62,7 +86,7 @@ class BadgeGeneratorMCPServer {
 
     this.baseUrl = DEFAULT_BASE_URL;
     this.apiKey = DEFAULT_API_KEY;
-    this.isConfigured = !!(DEFAULT_BASE_URL !== 'http://localhost:3000' && DEFAULT_API_KEY);
+    this.isConfigured = DEFAULT_BASE_URL !== 'http://localhost:3000' || !!DEFAULT_API_KEY;
     
     this.setupToolHandlers();
   }
@@ -236,7 +260,7 @@ class BadgeGeneratorMCPServer {
           },
           {
             name: 'validate_issuer_domain',
-            description: 'Validate an issuer domain before creating badges',
+            description: 'Validate an issuer URL locally (optionally check server policy with API key)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -245,13 +269,17 @@ class BadgeGeneratorMCPServer {
                   format: 'uri',
                   description: 'Issuer URL to validate',
                 },
+                serverPolicy: {
+                  type: 'boolean',
+                  description: 'If true, also query authenticated /api/validate-issuer-domain (requires API key)',
+                },
               },
               required: ['url'],
             },
           },
           {
             name: 'configure_server',
-            description: 'Configure the MCP server connection settings (optional if environment variables are set)',
+            description: 'Configure MCP server connection settings (API key optional for public-only flows)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -262,15 +290,15 @@ class BadgeGeneratorMCPServer {
                 },
                 apiKey: {
                   type: 'string',
-                  description: 'API key for authentication',
+                  description: 'API key for authenticated admin/write operations (optional)',
                 },
               },
-              required: ['baseUrl', 'apiKey'],
+              required: ['baseUrl'],
             },
           },
           {
             name: 'verify_badge',
-            description: 'Verify the authenticity and structure of an Open Badge',
+            description: 'Verify a remote Open Badge URL via public verifier endpoint (no API key required)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -285,7 +313,7 @@ class BadgeGeneratorMCPServer {
           },
           {
             name: 'verify_issuer',
-            description: 'Verify an Open Badges issuer',
+            description: 'Verify an issuer profile URL via public verifier endpoint (no API key required)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -299,8 +327,44 @@ class BadgeGeneratorMCPServer {
             },
           },
           {
+            name: 'verify_badge_json',
+            description: 'Verify inline badge JSON via public verifier endpoint (no API key required)',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                badgeData: {
+                  type: 'object',
+                  description: 'Badge JSON object to verify',
+                },
+              },
+              required: ['badgeData'],
+            },
+          },
+          {
+            name: 'verify_issuer_domain',
+            description: 'Verify issuer domain via well-known profile; optionally write trust record',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                domain: {
+                  type: 'string',
+                  description: 'Domain or URL for issuer verification',
+                },
+                logTrust: {
+                  type: 'boolean',
+                  description: 'When true (default), writes verified issuer to trust log',
+                },
+                force: {
+                  type: 'boolean',
+                  description: 'Force re-verification (requires API key admin endpoint)',
+                },
+              },
+              required: ['domain'],
+            },
+          },
+          {
             name: 'sign_badge',
-            description: 'Cryptographically sign a badge with issuer keys',
+            description: 'Cryptographically sign badge data using server-managed issuer keys (requires API key)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -360,6 +424,10 @@ class BadgeGeneratorMCPServer {
             return await this.verifyBadge(args);
           case 'verify_issuer':
             return await this.verifyIssuer(args);
+          case 'verify_badge_json':
+            return await this.verifyBadgeJson(args);
+          case 'verify_issuer_domain':
+            return await this.verifyIssuerDomain(args);
           case 'sign_badge':
             return await this.signBadge(args);
           case 'cache_public_key':
@@ -379,6 +447,97 @@ class BadgeGeneratorMCPServer {
         };
       }
     });
+  }
+
+  normalizeDomainInput(domainInput) {
+    const raw = String(domainInput || '').trim();
+    if (!raw) {
+      throw new Error('Domain is required');
+    }
+
+    let host = raw;
+    if (raw.includes('://')) {
+      host = new URL(raw).host;
+    } else {
+      host = raw.split('/')[0];
+    }
+
+    host = host.trim().toLowerCase();
+    if (!host) {
+      throw new Error('Invalid domain format');
+    }
+
+    const parsed = new URL(`https://${host}`);
+    return parsed.host.toLowerCase();
+  }
+
+  buildWellKnownIssuerUrl(domainInput) {
+    const host = this.normalizeDomainInput(domainInput);
+    return `https://${host}/.well-known/openbadges-issuer.json`;
+  }
+
+  localValidateIssuerDomain(url) {
+    const parsed = new URL(url);
+    const hostname = parsed.hostname.toLowerCase();
+    const protocol = parsed.protocol.toLowerCase();
+
+    if (protocol !== 'http:' && protocol !== 'https:') {
+      return {
+        valid: false,
+        type: 'invalid',
+        message: 'Only http and https URLs are supported',
+        warnings: []
+      };
+    }
+
+    const isSafeDomain = SAFE_TEST_DOMAINS.some((safe) => hostname === safe || hostname.endsWith(`.${safe}`));
+    if (isSafeDomain) {
+      return {
+        valid: true,
+        type: 'testing',
+        message: 'Safe testing domain',
+        warnings: ['Using example/local domain intended for testing']
+      };
+    }
+
+    return {
+      valid: true,
+      type: 'unverified',
+      message: 'URL format is valid (local check only)',
+      warnings: ['No trust log read/write performed in local validation mode']
+    };
+  }
+
+  async requestJson(endpoint, options = {}, requestConfig = {}) {
+    const { requireApiKey = false } = requestConfig;
+    if (requireApiKey && !this.apiKey) {
+      throw new Error('API key not configured. Use configure_server or BADGE_API_KEY for authenticated operations.');
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    };
+    if (this.apiKey) {
+      headers['X-API-Key'] = this.apiKey;
+    }
+
+    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+      ...options,
+      headers
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+    const data = contentType.includes('application/json')
+      ? await response.json()
+      : { message: await response.text() };
+
+    if (!response.ok) {
+      const detail = data.error || data.message || response.statusText;
+      throw new Error(`${response.status} ${detail}`);
+    }
+
+    return data;
   }
 
   async testServer() {
@@ -401,7 +560,8 @@ class BadgeGeneratorMCPServer {
       errorMessage = error.message;
     }
     
-    const configStatus = this.isConfigured ? '✅ Configured via environment' : '⚠️ Default/manual configuration';
+    const usingDefaultBase = this.baseUrl === 'http://localhost:3000';
+    const configStatus = usingDefaultBase ? '⚠️ Using default base URL' : '✅ Base URL configured';
     
     return {
       content: [
@@ -413,71 +573,87 @@ class BadgeGeneratorMCPServer {
                 `API Key: ${this.apiKey ? '[SET]' : '[NOT SET]'}\n` +
                 `Connection: ${connectionStatus}\n` +
                 `${errorMessage ? `Error: ${errorMessage}\n` : ''}\n` +
-                `${!this.isConfigured ? '💡 Tip: Set BADGE_BASE_URL and BADGE_API_KEY environment variables to avoid manual configuration.\n' : ''}` +
-                `${!this.apiKey ? '⚠️ Warning: No API key set. Some operations may fail.\n' : ''}`,
+                `${usingDefaultBase ? '💡 Tip: Set BADGE_BASE_URL or use configure_server to target your deployed instance.\n' : ''}` +
+                `${!this.apiKey ? 'ℹ️ No API key set. Public verification tools work, authenticated issue/sign tools are disabled.\n' : ''}`,
         },
       ],
     };
   }
 
   async validateIssuerDomain(args) {
-    if (!this.apiKey) {
-      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
-    }
-    
-    const { url } = args;
-    
-    const response = await fetch(`${this.baseUrl}/api/validate-issuer-domain?url=${encodeURIComponent(url)}`, {
-      headers: {
-        'X-API-Key': this.apiKey,
-      },
-    });
+    const { url, serverPolicy = false } = ValidateIssuerDomainSchema.parse(args || {});
+    const localValidation = this.localValidateIssuerDomain(url);
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
-    }
-
-    const validation = await response.json();
-    
-    const statusIcon = validation.valid ? '✅' : '❌';
     const typeInfo = {
-      'verified': '🔒 Verified (production-ready)',
-      'testing': '🧪 Testing domain (safe for demos)',
-      'blocked': '🚫 Blocked (registered domain)',
-      'unregistered': '⚠️ Unregistered domain',
-      'invalid': '❌ Invalid URL format'
+      verified: '🔒 Verified (production-ready)',
+      'verified-external': '🔒 Verified external issuer',
+      testing: '🧪 Testing domain (safe for demos)',
+      unverified: '⚠️ Unverified domain',
+      'verification-failed': '⚠️ Verification failed',
+      unregistered: '⚠️ Unregistered domain',
+      invalid: '❌ Invalid URL format'
     };
-    
-    let warningsText = '';
-    if (validation.warnings && validation.warnings.length > 0) {
-      warningsText = `\n\n⚠️ Warnings:\n${validation.warnings.map(w => `• ${w}`).join('\n')}`;
+
+    const localStatusIcon = localValidation.valid ? '✅' : '❌';
+    let localWarningsText = '';
+    if (localValidation.warnings && localValidation.warnings.length > 0) {
+      localWarningsText = `\n\n⚠️ Local warnings:\n${localValidation.warnings.map((w) => `• ${w}`).join('\n')}`;
     }
-    
+
+    if (!serverPolicy) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `${localStatusIcon} Local Domain Validation: ${url}\n\n` +
+              `Status: ${typeInfo[localValidation.type] || localValidation.type}\n` +
+              `Message: ${localValidation.message}\n` +
+              `Server Policy Checked: No${localWarningsText}`
+          }
+        ]
+      };
+    }
+
+    const serverValidation = await this.requestJson(
+      `/api/validate-issuer-domain?url=${encodeURIComponent(url)}`,
+      {},
+      { requireApiKey: true }
+    );
+    const serverStatusIcon = serverValidation.valid ? '✅' : '❌';
+    let serverWarningsText = '';
+    if (serverValidation.warnings && serverValidation.warnings.length > 0) {
+      serverWarningsText = `\n\n⚠️ Server warnings:\n${serverValidation.warnings.map((w) => `• ${w}`).join('\n')}`;
+    }
+
     return {
       content: [
         {
           type: 'text',
-          text: `${statusIcon} Domain Validation: ${url}\n\n` +
-                `Status: ${typeInfo[validation.type] || validation.type}\n` +
-                `Message: ${validation.message}\n` +
-                `Production Ready: ${validation.type === 'verified' ? 'Yes' : 'No'}` +
-                warningsText,
-        },
-      ],
+          text: `${localStatusIcon} Local Domain Validation: ${url}\n\n` +
+            `Status: ${typeInfo[localValidation.type] || localValidation.type}\n` +
+            `Message: ${localValidation.message}${localWarningsText}\n\n` +
+            `${serverStatusIcon} Server Policy Validation:\n` +
+            `Status: ${typeInfo[serverValidation.type] || serverValidation.type}\n` +
+            `Message: ${serverValidation.message}\n` +
+            `Production Ready: ${serverValidation.type === 'verified' ? 'Yes' : 'No'}${serverWarningsText}`
+        }
+      ]
     };
   }
 
   async configureServer(args) {
     const { baseUrl, apiKey } = args;
     this.baseUrl = baseUrl;
-    this.apiKey = apiKey;
+    if (typeof apiKey === 'string') {
+      this.apiKey = apiKey;
+    }
     this.isConfigured = true;
     
     return {
       content: [
         {
           type: 'text',
-          text: `✅ Server configured successfully!\nBase URL: ${baseUrl}\nAPI Key: ${apiKey ? '[SET]' : '[NOT SET]'}\n\n💡 Tip: You can also set BADGE_BASE_URL and BADGE_API_KEY environment variables to avoid manual configuration.`,
+          text: `✅ Server configured successfully!\nBase URL: ${baseUrl}\nAPI Key: ${this.apiKey ? '[SET]' : '[NOT SET]'}\n\n💡 Public verification tools work without API key. Authenticated issue/sign tools require BADGE_API_KEY or configure_server.apiKey.`,
         },
       ],
     };
@@ -662,23 +838,8 @@ class BadgeGeneratorMCPServer {
   }
 
   async verifyBadge(args) {
-    if (!this.apiKey) {
-      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
-    }
-    
     const { badgeUrl } = args;
-    
-    const response = await fetch(`${this.baseUrl}/api/verify/badge/${encodeURIComponent(badgeUrl)}`, {
-      headers: {
-        'X-API-Key': this.apiKey,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Verification API Error: ${response.status} ${response.statusText}`);
-    }
-
-    const verification = await response.json();
+    const verification = await this.requestJson(`/public/api/verify/badge/${encodeURIComponent(badgeUrl)}`);
     
     // Format verification levels with emojis
     const levelEmojis = {
@@ -743,23 +904,8 @@ class BadgeGeneratorMCPServer {
   }
 
   async verifyIssuer(args) {
-    if (!this.apiKey) {
-      throw new Error('API key not configured. Use test_server to check configuration or configure_server to set credentials.');
-    }
-    
     const { issuerUrl } = args;
-    
-    const response = await fetch(`${this.baseUrl}/api/verify/issuer/${encodeURIComponent(issuerUrl)}`, {
-      headers: {
-        'X-API-Key': this.apiKey,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`Issuer Verification API Error: ${response.status} ${response.statusText}`);
-    }
-
-    const result = await response.json();
+    const result = await this.requestJson(`/public/api/verify/issuer/${encodeURIComponent(issuerUrl)}`);
     const verification = result.verification;
     
     const overallStatus = verification.valid ? '✅ VALID' : '❌ INVALID';
@@ -794,6 +940,80 @@ class BadgeGeneratorMCPServer {
           text: `🔍 Issuer Verification Results\n\n${overallStatus}\nIssuer URL: ${issuerUrl}${detailsText}`,
         },
       ],
+    };
+  }
+
+  async verifyBadgeJson(args) {
+    const { badgeData } = VerifyBadgeJsonSchema.parse(args || {});
+    const verification = await this.requestJson('/public/api/verify/json', {
+      method: 'POST',
+      body: JSON.stringify({ badgeData })
+    });
+
+    const overallStatus = verification.valid ? '✅ VALID' : '❌ INVALID';
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `🔍 Inline Badge JSON Verification\n\n${overallStatus}\n` +
+            `Version: ${verification.version}\n` +
+            `Verification Level: ${verification.verificationLevel}\n` +
+            `Verified At: ${verification.verifiedAt}\n\n` +
+            `${JSON.stringify(verification, null, 2)}`
+        }
+      ]
+    };
+  }
+
+  async verifyIssuerDomain(args) {
+    const { domain, logTrust = true, force = false } = VerifyIssuerDomainSchema.parse(args || {});
+    const normalizedDomain = this.normalizeDomainInput(domain);
+    const issuerUrl = this.buildWellKnownIssuerUrl(normalizedDomain);
+
+    if (!logTrust) {
+      return this.verifyIssuer({ issuerUrl });
+    }
+
+    if (this.apiKey) {
+      const result = await this.requestJson('/api/issuers/verify', {
+        method: 'POST',
+        body: JSON.stringify({ domain: normalizedDomain, force })
+      }, { requireApiKey: true });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `✅ Issuer Domain Verified (admin trust write)\n\n` +
+              `Domain: ${normalizedDomain}\n` +
+              `Status: ${result.status}\n` +
+              `Message: ${result.message}\n\n` +
+              `${JSON.stringify(result.issuer, null, 2)}`
+          }
+        ]
+      };
+    }
+
+    if (force) {
+      throw new Error('force=true requires API key (admin endpoint). Configure BADGE_API_KEY and retry.');
+    }
+
+    const result = await this.requestJson('/public/api/issuers/verify', {
+      method: 'POST',
+      body: JSON.stringify({ domain: normalizedDomain })
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Issuer Domain Verified (public trust write)\n\n` +
+            `Domain: ${normalizedDomain}\n` +
+            `Status: ${result.status}\n` +
+            `Message: ${result.message}\n\n` +
+            `${JSON.stringify(result.issuer, null, 2)}`
+        }
+      ]
     };
   }
 

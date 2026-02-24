@@ -17,14 +17,7 @@ class MCPServerTester {
     this.baseUrl = TEST_CONFIG.baseUrl;
     this.apiKey = TEST_CONFIG.apiKey;
     this.testResults = [];
-    
-    if (!this.apiKey) {
-      console.error('❌ No TEST_API_KEY found in environment variables.');
-      console.error('Please create .env.test file with:');
-      console.error('TEST_BASE_URL=your_server_url');
-      console.error('TEST_API_KEY=your_api_key');
-      process.exit(1);
-    }
+    this.hasApiKey = Boolean(this.apiKey);
   }
 
   log(message, type = 'info') {
@@ -52,6 +45,11 @@ class MCPServerTester {
   }
 
   async testListBadgesEndpoint() {
+    if (!this.hasApiKey) {
+      this.log('Skipping list badges endpoint test (no TEST_API_KEY)', 'info');
+      return;
+    }
+
     // Test the /api/badge-files endpoint that list_badges uses
     const response = await fetch(`${this.baseUrl}/api/badge-files`, {
       headers: {
@@ -80,6 +78,11 @@ class MCPServerTester {
   }
 
   async testPublicBadgeAccess() {
+    if (!this.hasApiKey) {
+      this.log('Skipping public badge access test setup (no TEST_API_KEY for listing files)', 'info');
+      return;
+    }
+
     // First get list of files
     const response = await fetch(`${this.baseUrl}/api/badge-files`, {
       headers: {
@@ -115,6 +118,11 @@ class MCPServerTester {
   }
 
   async testCreateIssuer() {
+    if (!this.hasApiKey) {
+      this.log('Skipping create issuer test (no TEST_API_KEY)', 'info');
+      return null;
+    }
+
     const testIssuer = {
       id: `${this.baseUrl}/test-issuer-${Date.now()}`,
       name: 'MCP Test Organization',
@@ -149,6 +157,11 @@ class MCPServerTester {
   }
 
   async testCreateBadgeClass(issuerUrl) {
+    if (!this.hasApiKey) {
+      this.log('Skipping create badge class test (no TEST_API_KEY)', 'info');
+      return null;
+    }
+
     const testBadgeClass = {
       id: `${this.baseUrl}/test-badge-${Date.now()}`,
       name: 'MCP Test Badge',
@@ -179,6 +192,11 @@ class MCPServerTester {
   }
 
   async testCreateCredentialSubject(badgeUrl) {
+    if (!this.hasApiKey) {
+      this.log('Skipping create credential test (no TEST_API_KEY)', 'info');
+      return null;
+    }
+
     const testCredential = {
       id: `${this.baseUrl}/test-credential-${Date.now()}`,
       recipient: {
@@ -213,6 +231,7 @@ class MCPServerTester {
   async runAllTests() {
     this.log('Starting MCP Server Tests', 'info');
     this.log(`Testing against: ${this.baseUrl}`, 'info');
+    this.log(`API key configured: ${this.hasApiKey ? 'yes' : 'no (public-only tests)'}`, 'info');
     
     await this.testEndpoint('Basic Connectivity', () => this.testBasicConnectivity());
     await this.testEndpoint('List Badges Endpoint', () => this.testListBadgesEndpoint());

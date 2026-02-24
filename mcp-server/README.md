@@ -8,6 +8,8 @@ An MCP (Model Context Protocol) server that allows AI assistants like Claude or 
 - 🎖️ **Create Badge Classes** - Define badge types and criteria  
 - 📜 **Create Credentials** - Award badges to recipients
 - 📋 **List & View Badges** - Browse and inspect created badges
+- 🔍 **Public Verification** - Verify badges/issuers without API keys
+- 🌐 **Domain Trust Bootstrap** - Verify `.well-known` issuer domains via public or admin routes
 - 🔧 **Configuration** - Dynamic server and API key setup
 
 ## Installation
@@ -18,17 +20,13 @@ cd mcp-server
 npm install
 ```
 
-2. Set environment variables (recommended):
+2. Set environment variables:
 ```bash
-export BADGE_API_KEY="your_api_key_here"
 export BADGE_BASE_URL="https://your-badge-generator-domain.com"
+export BADGE_API_KEY="your_api_key_here" # optional for authenticated tools
 ```
 
-Or copy `.env.example` to `.env` and edit:
-```bash
-cp .env.example .env
-# Edit .env with your values
-```
+Or set these variables in your MCP client launch configuration.
 
 ## Usage with Claude Desktop
 
@@ -47,6 +45,7 @@ Add this to your Claude Desktop configuration file:
       "command": "node",
       "args": ["/path/to/badge-generator/mcp-server/index.js"],
       "env": {
+        "BADGE_BASE_URL": "https://badges.firmament.works",
         "BADGE_API_KEY": "your_api_key_here"
       }
     }
@@ -79,11 +78,11 @@ Configure connection to your Badge Generator instance (optional if environment v
 
 **Parameters:**
 - `baseUrl` (required) - Badge Generator API URL (e.g., "https://your-domain.com")
-- `apiKey` (required) - API key for authentication
+- `apiKey` (optional) - API key for authenticated operations
 
 **Example:**
 ```
-Please configure the MCP server to connect to https://your-badge-generator.com with API key abc123...
+Please configure the MCP server to connect to https://your-badge-generator.com
 ```
 
 **Note:** If you set `BADGE_BASE_URL` and `BADGE_API_KEY` environment variables, this tool becomes optional.
@@ -137,6 +136,34 @@ Award a badge to a recipient.
 Award the Web Development Certificate to student@example.com with evidence at https://portfolio.example.com
 ```
 
+### `verify_badge`
+Verify a hosted badge URL using public verifier endpoints (no API key required).
+
+### `verify_badge_json`
+Verify inline badge JSON using public verifier endpoints (no API key required).
+
+### `verify_issuer`
+Verify an issuer profile URL using public verifier endpoints (no API key required).
+
+### `verify_issuer_domain`
+Verify a domain’s `.well-known/openbadges-issuer.json`.
+
+**Parameters:**
+- `domain` (required) - Domain or URL for issuer verification
+- `logTrust` (optional, default `true`) - Persist verified issuer to trust log
+- `force` (optional) - Force re-verification (requires API key/admin endpoint)
+
+Behavior:
+- With API key: uses admin trust endpoint (`/api/issuers/verify`)
+- Without API key: uses public rate-limited trust endpoint (`/public/api/issuers/verify`)
+
+### `validate_issuer_domain`
+Validate issuer URL shape locally.
+
+**Parameters:**
+- `url` (required) - Issuer URL to validate
+- `serverPolicy` (optional) - Also query authenticated server policy endpoint (`/api/validate-issuer-domain`)
+
 ### `list_badges`
 List all uploaded badge files.
 
@@ -156,6 +183,12 @@ Retrieve a specific badge file.
 Show me the contents of web-dev-badge.json
 ```
 
+### `sign_badge`
+Sign badge JSON using server-managed issuer keys (requires API key).
+
+### `cache_public_key`
+Fetch and cache an issuer public key to improve signature verification performance (requires API key).
+
 ## Supported Badge Formats
 
 The MCP server supports both Open Badges v2.0 and v3.0 formats:
@@ -165,9 +198,8 @@ The MCP server supports both Open Badges v2.0 and v3.0 formats:
 
 ## Authentication Notes
 
-- API endpoints (`create_issuer`, `create_badge_class`, `create_credential_subject`) use API key authentication
-- API endpoints (`list_badges`, `verify_badge`, `verify_issuer`, `sign_badge`, `cache_public_key`) use API key authentication
-- Public badge files (`get_badge`) require no authentication
+- **No API key required:** `test_server`, `verify_badge`, `verify_badge_json`, `verify_issuer`, `verify_issuer_domain` (public mode), `get_badge`, local `validate_issuer_domain`
+- **API key required:** `create_issuer`, `create_badge_class`, `create_credential_subject`, `list_badges`, `sign_badge`, `cache_public_key`, `verify_issuer_domain` with `force`, `validate_issuer_domain` with `serverPolicy`
 
 ## Error Handling
 
@@ -186,7 +218,7 @@ The MCP server provides detailed error messages for:
 
 2. **Configure the server (if needed):**
    ```
-   Configure the server to use https://your-badge-generator.com with API key xyz789
+   Configure the server to use https://your-badge-generator.com
    ```
    
    *Note: Skip this step if you've set environment variables*
