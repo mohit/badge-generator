@@ -3,6 +3,7 @@
 import { program } from 'commander';
 import fetch from 'node-fetch';
 import fs from 'fs/promises';
+import { realpathSync } from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -609,7 +610,7 @@ export { BadgeCLI };
 
 // Parse command line arguments when run directly (handles symlinks/npm bin shims)
 if (process.argv[1]) {
-  const realArgv = fs.realpathSync(process.argv[1]);
+  const realArgv = realpathSync(process.argv[1]);
   const realSelf = fileURLToPath(import.meta.url);
   if (realArgv === realSelf) {
     program.parse();
