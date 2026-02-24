@@ -36,7 +36,7 @@
         <h1 class="section-title">Issue and verify with explicit trust boundaries</h1>
         <p class="section-lede">
           Authenticated write endpoints live under <code>/api/*</code>. Public verification endpoints live under
-          <code>/public/api/*</code> and enforce SSRF protections.
+          <code>/public/api/*</code>, enforce SSRF protections, and include rate-limited trust-log bootstrap.
         </p>
         <div class="cta-row" style="margin-top: 0.9rem;">
           <a href="#" class="btn btn-primary" data-demo-url-link>Run live verify test</a>
@@ -75,7 +75,7 @@
         <article class="api-group scroll-animate">
           <p class="eyebrow">Authentication</p>
           <h3>Authenticated requests require <code>X-API-Key</code></h3>
-          <p>Attach the key to all write and admin requests, then keep public verification flows keyless.</p>
+          <p>Attach the key to admin and issuance requests. Public verification and public issuer trust bootstrap are keyless.</p>
 
           <div class="code-block">
             <div class="code-block-head">
@@ -128,6 +128,10 @@
                 <li class="endpoint-item">
                   <code>POST /public/api/verify/json</code>
                   <span>Verify inline badge JSON object.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /public/api/issuers/verify</code>
+                  <span>Verify domain well-known profile and add issuer to trust log (rate-limited).</span>
                 </li>
               </ul>
             </section>

@@ -10,6 +10,7 @@ test('server API surface only references supported routes', async () => {
   assert.ok(serverSource.includes("app.post('/api/issuer'"));
   assert.ok(serverSource.includes("app.post('/api/badge-class'"));
   assert.ok(serverSource.includes("app.post('/api/credential-subject'"));
+  assert.ok(serverSource.includes("app.post('/public/api/issuers/verify'"));
   assert.ok(!serverSource.includes("app.post('/login'"));
   assert.ok(!serverSource.includes("app.post('/create-smart-badge'"));
 });

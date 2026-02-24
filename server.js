@@ -109,6 +109,80 @@ export async function validatePublicUrl(urlString) {
   return parsed;
 }
 
+export function normalizeIssuerDomainInput(domainInput) {
+  const raw = String(domainInput || '').trim();
+  if (!raw) {
+    throw new Error('Domain is required');
+  }
+
+  let host = raw;
+  if (raw.includes('://')) {
+    host = new URL(raw).host;
+  } else {
+    host = raw.split('/')[0];
+  }
+
+  host = host.trim().toLowerCase();
+  if (!host) {
+    throw new Error('Invalid domain format');
+  }
+
+  const parsed = new URL(`https://${host}`);
+  return parsed.host.toLowerCase();
+}
+
+function parsePositiveInt(value, fallback) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return parsed;
+}
+
+export function createFixedWindowRateLimiter({ windowMs, maxRequests }) {
+  const bucket = new Map();
+
+  return function consume(key, now = Date.now()) {
+    const current = bucket.get(key);
+    if (!current || now >= current.resetAt) {
+      bucket.set(key, {
+        count: 1,
+        resetAt: now + windowMs
+      });
+      return {
+        allowed: true,
+        remaining: maxRequests - 1,
+        retryAfterSeconds: 0
+      };
+    }
+
+    if (current.count >= maxRequests) {
+      return {
+        allowed: false,
+        remaining: 0,
+        retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000))
+      };
+    }
+
+    current.count += 1;
+    bucket.set(key, current);
+    return {
+      allowed: true,
+      remaining: maxRequests - current.count,
+      retryAfterSeconds: 0
+    };
+  };
+}
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+  if (Array.isArray(forwarded) && forwarded.length > 0) {
+    return String(forwarded[0]).split(',')[0].trim();
+  }
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
+
 config();
 
 if (process.env.NODE_ENV !== 'test' && !process.env.API_KEY) {
@@ -130,6 +204,18 @@ const SAFE_TEST_DOMAINS = [
 const WELL_KNOWN_ISSUER_PATH = '/.well-known/openbadges-issuer.json';
 const LEGACY_WELL_KNOWN_ISSUER_PATH = '/.well-known/issuer.json';
 const UPLOADS_DIR = path.resolve(process.env.UPLOADS_DIR || 'uploads');
+const PUBLIC_ISSUER_VERIFY_WINDOW_MS = parsePositiveInt(
+  process.env.PUBLIC_ISSUER_VERIFY_WINDOW_MS || '3600000',
+  3600000
+);
+const PUBLIC_ISSUER_VERIFY_MAX_REQUESTS = parsePositiveInt(
+  process.env.PUBLIC_ISSUER_VERIFY_MAX_REQUESTS || '10',
+  10
+);
+const publicIssuerVerifyRateLimit = createFixedWindowRateLimiter({
+  windowMs: PUBLIC_ISSUER_VERIFY_WINDOW_MS,
+  maxRequests: PUBLIC_ISSUER_VERIFY_MAX_REQUESTS
+});
 
 function uploadsPath(...parts) {
   return path.join(UPLOADS_DIR, ...parts);
@@ -275,35 +361,68 @@ function setVerifiedIssuer(domain, issuerData) {
 }
 
 // Verify issuer by fetching their well-known file
-async function verifyIssuerDomain(domain) {
+async function verifyIssuerDomain(domain, options = {}) {
+  const { validateUrl } = options;
   try {
     console.log(`Verifying issuer domain: ${domain}`);
     const wellKnownUrls = getWellKnownIssuerUrls(domain);
     let response = null;
     let wellKnownUrl = null;
+    const blockedUrls = [];
+    const fetchErrors = [];
     
     for (const candidateUrl of wellKnownUrls) {
-      console.log(`Fetching: ${candidateUrl}`);
-      const candidateResponse = await fetch(candidateUrl, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Badge-Generator-Verifier/1.0'
+      try {
+        if (validateUrl) {
+          await validateUrl(candidateUrl);
         }
-      });
 
-      if (candidateResponse.ok) {
-        response = candidateResponse;
-        wellKnownUrl = candidateUrl;
-        break;
+        console.log(`Fetching: ${candidateUrl}`);
+        const candidateResponse = await fetch(candidateUrl, {
+          timeout: 10000,
+          headers: {
+            'User-Agent': 'Badge-Generator-Verifier/1.0'
+          }
+        });
+
+        if (candidateResponse.ok) {
+          response = candidateResponse;
+          wellKnownUrl = candidateUrl;
+          break;
+        }
+      } catch (error) {
+        const message = error?.message || 'Unknown error';
+        if (
+          message.includes('private') ||
+          message.includes('localhost') ||
+          message.includes('Cannot resolve')
+        ) {
+          blockedUrls.push({ url: candidateUrl, reason: message });
+        } else {
+          fetchErrors.push({ url: candidateUrl, reason: message });
+        }
       }
     }
     
     if (!response || !wellKnownUrl) {
+      if (blockedUrls.length === wellKnownUrls.length) {
+        return {
+          success: false,
+          error: 'Blocked by public safety policy',
+          details: {
+            domain,
+            blockedUrls
+          }
+        };
+      }
+
       return {
         success: false,
         error: 'Failed to fetch issuer well-known file from supported paths',
         details: { 
-          urls: wellKnownUrls
+          urls: wellKnownUrls,
+          blockedUrls,
+          fetchErrors
         }
       };
     }
@@ -415,6 +534,7 @@ try {
 }
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -500,6 +620,62 @@ app.post('/api/issuers/verify', requireApiKey, async (req, res) => {
       status: 'failed'
     });
   }
+});
+
+// Public issuer verification endpoint (writes verified issuer on success)
+app.post('/public/api/issuers/verify', async (req, res) => {
+  const { domain } = req.body || {};
+
+  if (!domain) {
+    return res.status(400).json({ error: 'Domain is required' });
+  }
+
+  let normalizedDomain;
+  try {
+    normalizedDomain = normalizeIssuerDomainInput(domain);
+  } catch (error) {
+    return res.status(400).json({ error: `Invalid domain format: ${error.message}` });
+  }
+
+  const existingIssuer = getVerifiedIssuer(normalizedDomain);
+  if (existingIssuer && existingIssuer.status === 'verified') {
+    return res.json({
+      message: `Issuer already verified: ${existingIssuer.displayName}`,
+      issuer: existingIssuer,
+      status: 'verified',
+      cached: true
+    });
+  }
+
+  const clientIp = getClientIp(req);
+  const rate = publicIssuerVerifyRateLimit(clientIp);
+  if (!rate.allowed) {
+    res.set('Retry-After', String(rate.retryAfterSeconds));
+    return res.status(429).json({
+      error: 'Rate limit exceeded for public issuer verification',
+      retryAfterSeconds: rate.retryAfterSeconds,
+      limits: {
+        maxRequests: PUBLIC_ISSUER_VERIFY_MAX_REQUESTS,
+        windowMs: PUBLIC_ISSUER_VERIFY_WINDOW_MS
+      }
+    });
+  }
+
+  const result = await verifyIssuerDomain(normalizedDomain, { validateUrl: validatePublicUrl });
+
+  if (result.success) {
+    return res.json({
+      message: result.message,
+      issuer: result.issuer,
+      status: 'verified'
+    });
+  }
+
+  return res.status(400).json({
+    error: result.error,
+    details: result.details,
+    status: 'failed'
+  });
 });
 
 // Get verified issuer info

@@ -67,6 +67,32 @@ test('verify with --log-trust uses trust-log API write and requires API key mode
   assert.equal(capturedRequestConfig.requireApiKey, true);
 });
 
+test('verify with --log-trust uses public trust-write endpoint when API key is absent', async () => {
+  const cli = new BadgeCLI();
+  cli.config = { baseUrl: 'https://badges.firmament.works', apiKey: '' };
+  let capturedEndpoint = null;
+  let capturedOptions = null;
+  let capturedRequestConfig = null;
+
+  cli.makeRequest = async (endpoint, options, requestConfig) => {
+    capturedEndpoint = endpoint;
+    capturedOptions = options;
+    capturedRequestConfig = requestConfig;
+    return { status: 'verified', message: 'ok' };
+  };
+
+  await silenceConsole(async () => {
+    await cli.verifyIssuer('demo.example.org', { logTrust: true });
+  });
+
+  assert.equal(capturedEndpoint, '/public/api/issuers/verify');
+  assert.equal(capturedOptions.method, 'POST');
+  assert.deepEqual(JSON.parse(capturedOptions.body), {
+    domain: 'demo.example.org'
+  });
+  assert.equal(capturedRequestConfig, undefined);
+});
+
 test('makeRequest enforces API key only when required', async () => {
   const cli = new BadgeCLI();
   cli.config = { baseUrl: 'https://badges.firmament.works', apiKey: '' };

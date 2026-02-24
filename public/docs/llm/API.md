@@ -45,6 +45,22 @@ curl -X POST "https://badges.firmament.works/public/api/verify/json" \
   -d '{"badgeData":{"@context":"https://w3id.org/openbadges/v2","type":"Assertion","id":"https://example.com/assertion/1","recipient":{"type":"email","hashed":false,"identity":"learner@example.com"},"badge":"https://example.com/badges/web-dev","issuedOn":"2026-01-15T00:00:00Z"}}'
 ```
 
+### Add Verified Issuer to Trust Log (Public, Rate-Limited)
+
+- `POST /public/api/issuers/verify`
+- Body: `{"domain":"example.com"}`
+- Behavior:
+  - Verifies issuer well-known profile ownership.
+  - Writes issuer to trust log on success.
+  - Rate limited per client IP (defaults: 10 requests / hour).
+- Example:
+
+```bash
+curl -X POST "https://badges.firmament.works/public/api/issuers/verify" \
+  -H "Content-Type: application/json" \
+  -d '{"domain":"example.com"}'
+```
+
 ## Verification Endpoints (Also Available Under `/api`, No API Key Required)
 
 - `GET /api/verify/badge/:badgeUrl(*)`
@@ -77,6 +93,7 @@ Domain result `type` values:
 
 - `POST /api/issuers/verify`
   - Body: `{"domain":"example.com"}`
+  - Admin-authenticated trust write (supports explicit re-verification workflows)
 - `GET /api/issuers/:domain`
 - `GET /api/issuers`
 - `POST /api/issuers/:domain/reverify`

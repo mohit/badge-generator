@@ -66,6 +66,8 @@ node cli/badge-cli.js verify "demo.example.org" --log-trust
 node cli/badge-cli.js get-issuer "demo.example.org"
 node cli/badge-cli.js get-issuer "demo.example.org" --log-trust
 ```
+`verify --log-trust` works without API key via public trust-write API (rate-limited).  
+If API key is configured, CLI uses admin trust-write mode and supports `--force`.
 
 ### Verification
 
@@ -93,4 +95,4 @@ node cli/badge-cli.js sign-badge ./badge.json --local \
 1. `config --base-url`.
 2. `validate` and `verify` (public, no trust log write).
 3. `verify-badge` and `verify-issuer-url`.
-4. Add API key only when you need `--log-trust`, issuing endpoints, or managed server signing.
+4. Add API key when you need trust-log reads, issuing endpoints, or managed server signing.

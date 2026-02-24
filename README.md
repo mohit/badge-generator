@@ -151,6 +151,8 @@ X-API-Key: your_api_key_here
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment mode (development/production)
 - `UPLOADS_DIR` - Writable storage directory for hosted badge files and verifier state (default: `uploads`)
+- `PUBLIC_ISSUER_VERIFY_MAX_REQUESTS` - Max public issuer verify writes per IP per window (default: `10`)
+- `PUBLIC_ISSUER_VERIFY_WINDOW_MS` - Rate-limit window for public issuer verify writes (default: `3600000`)
 
 ## MCP Server Integration
 

@@ -155,7 +155,8 @@ node cli/badge-cli.js generate-keys \
 #### `verify <domain>`
 Verify an issuer domain that hosts a well-known file.
 - Default: public live check, no trust-log write.
-- With `--log-trust`: persists verification result to server trust log (requires API key).
+- With `--log-trust`: persists verification result to server trust log via public API (rate-limited).
+  - If API key is configured, CLI uses admin trust-write endpoint and supports `--force`.
 
 ```bash
 node cli/badge-cli.js verify "university.edu"
@@ -264,7 +265,7 @@ node cli/badge-cli.js create-issuer \
 ```bash
 node cli/badge-cli.js config --api-key "your-key"
 ```
-Only commands that write/read trusted issuer state, create resources, or use managed server signing require an API key.
+Only trust-log reads, creation endpoints, and managed server signing require an API key.
 
 **"Domain appears to be registered"**
 - Use `example.com` domains for testing

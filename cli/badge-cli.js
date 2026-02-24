@@ -273,25 +273,41 @@ class BadgeCLI {
     
     try {
       if (logTrust) {
-        const result = await this.makeRequest('/api/issuers/verify', {
+        if (this.config.apiKey) {
+          const result = await this.makeRequest('/api/issuers/verify', {
+            method: 'POST',
+            body: JSON.stringify({
+              domain: normalizedDomain,
+              force
+            })
+          }, { requireApiKey: true });
+          
+          console.log(`✅ Issuer verification completed (trust logged via admin API):`);
+          console.log(`   Status: ${result.status}`);
+          console.log(`   Message: ${result.message}`);
+          
+          if (result.verificationDetails) {
+            console.log(`📋 Verification Details:`);
+            Object.entries(result.verificationDetails).forEach(([key, value]) => {
+              console.log(`   ${key}: ${value}`);
+            });
+          }
+          
+          return result;
+        }
+
+        if (force) {
+          console.log('ℹ️  --force is only supported when using API-key authenticated trust logging');
+        }
+        const result = await this.makeRequest('/public/api/issuers/verify', {
           method: 'POST',
-          body: JSON.stringify({
-            domain: normalizedDomain,
-            force
-          })
-        }, { requireApiKey: true });
-        
-        console.log(`✅ Issuer verification completed (trust logged):`);
+          body: JSON.stringify({ domain: normalizedDomain })
+        });
+
+        console.log(`✅ Issuer verification completed (trust logged via public API):`);
         console.log(`   Status: ${result.status}`);
         console.log(`   Message: ${result.message}`);
-        
-        if (result.verificationDetails) {
-          console.log(`📋 Verification Details:`);
-          Object.entries(result.verificationDetails).forEach(([key, value]) => {
-            console.log(`   ${key}: ${value}`);
-          });
-        }
-        
+
         return result;
       }
 
