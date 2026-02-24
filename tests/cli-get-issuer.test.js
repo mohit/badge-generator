@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BadgeCLI } from '../cli/badge-cli.js';
 
-test('get-issuer reads nested issuer fields from API response', async () => {
+test('get-issuer with --log-trust reads nested issuer fields from API response', async () => {
   const cli = new BadgeCLI();
 
   cli.makeRequest = async () => ({
@@ -25,7 +25,7 @@ test('get-issuer reads nested issuer fields from API response', async () => {
   };
 
   try {
-    await cli.getVerifiedIssuer('demo.example.org');
+    await cli.getVerifiedIssuer('demo.example.org', { logTrust: true });
   } finally {
     console.log = originalLog;
   }

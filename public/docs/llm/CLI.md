@@ -12,9 +12,14 @@ node cli/badge-cli.js --help
 ## Configure
 
 ```bash
-node cli/badge-cli.js config --api-key "<API_KEY>"
 node cli/badge-cli.js config --base-url "https://badges.firmament.works"
 node cli/badge-cli.js config --show
+```
+
+Optional (only for trust-log writes/reads and issuing/signing APIs):
+
+```bash
+node cli/badge-cli.js config --api-key "<API_KEY>"
 ```
 
 Config file: `.badge-cli-config.json`
@@ -31,6 +36,7 @@ node cli/badge-cli.js test-connection
 
 ```bash
 node cli/badge-cli.js validate "https://demo.example.org/issuer"
+node cli/badge-cli.js validate "https://demo.example.org/issuer" --server-policy
 ```
 
 ### Issuer and Badge Creation
@@ -56,7 +62,9 @@ node cli/badge-cli.js generate-keys \
   --email "badges@demo.example.org"
 
 node cli/badge-cli.js verify "demo.example.org"
+node cli/badge-cli.js verify "demo.example.org" --log-trust
 node cli/badge-cli.js get-issuer "demo.example.org"
+node cli/badge-cli.js get-issuer "demo.example.org" --log-trust
 ```
 
 ### Verification
@@ -75,9 +83,7 @@ node cli/badge-cli.js sign-badge ./badge.json demo.example.org --output ./badge-
 
 ## Typical Workflow
 
-1. `config` with API key and base URL.
-2. `validate` issuer domain.
-3. `create-issuer`.
-4. `create-badge`.
-5. `verify-badge` for resulting hosted JSON.
-6. `sign-badge` when cryptographic proof is required.
+1. `config --base-url`.
+2. `validate` and `verify` (public, no trust log write).
+3. `verify-badge` and `verify-issuer-url`.
+4. Add API key only when you need `--log-trust` or issuing/signing endpoints.

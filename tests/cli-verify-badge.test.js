@@ -80,6 +80,6 @@ test('verify-badge uses URL verification endpoint for remote badge URLs', async 
 
   assert.equal(
     capturedEndpoint,
-    '/api/verify/badge/https%3A%2F%2Fexample.org%2Fbadges%2Fremote-test.json'
+    '/public/api/verify/badge/https%3A%2F%2Fexample.org%2Fbadges%2Fremote-test.json'
   );
 });

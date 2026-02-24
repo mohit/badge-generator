@@ -20,7 +20,10 @@ node cli/badge-cli.js --help
 ### 1. Configure the CLI
 
 ```bash
-# Set your API key
+# Set base URL (required)
+node cli/badge-cli.js config --base-url "https://badges.firmament.works"
+
+# API key is optional; only needed for trust-log writes/reads and create/sign APIs
 node cli/badge-cli.js config --api-key "your-api-key-here"
 
 # Test connection
@@ -77,16 +80,16 @@ node cli/badge-cli.js config --show
 ### Domain Validation
 
 #### `validate <url>`
-Validate an issuer domain for compliance and security.
+Validate an issuer domain locally (no server required by default).
 
 ```bash
 node cli/badge-cli.js validate "https://example.com/issuer"
+node cli/badge-cli.js validate "https://example.com/issuer" --server-policy
 ```
 
 **Response Types:**
-- `verified` - Our verified issuer (production ready)
-- `testing` - Safe testing domains (example.com variants)
-- `blocked` - Real domains without verification
+- `testing` - Safe testing domains (example/local variants)
+- `unverified` - URL is valid but not trust-logged
 - `invalid` - Invalid URL format
 
 ### Issuer Management
@@ -151,16 +154,22 @@ node cli/badge-cli.js generate-keys \
 
 #### `verify <domain>`
 Verify an issuer domain that hosts a well-known file.
+- Default: public live check, no trust-log write.
+- With `--log-trust`: persists verification result to server trust log (requires API key).
 
 ```bash
 node cli/badge-cli.js verify "university.edu"
+node cli/badge-cli.js verify "university.edu" --log-trust
 ```
 
 #### `get-issuer <domain>`
 Get information about a verified issuer.
+- Default: live public check (no trust-log read).
+- With `--log-trust`: read stored issuer from server trust log (requires API key).
 
 ```bash
 node cli/badge-cli.js get-issuer "university.edu"
+node cli/badge-cli.js get-issuer "university.edu" --log-trust
 ```
 
 ### Testing
@@ -212,7 +221,8 @@ https://yourdomain.com/.well-known/openbadges-issuer.json
 ### Step 3: Verify Your Domain
 
 ```bash
-node cli/badge-cli.js verify "yourdomain.com"
+node cli/badge-cli.js verify "yourdomain.com"           # Live check (no write)
+node cli/badge-cli.js verify "yourdomain.com" --log-trust
 ```
 
 ### Step 4: Create Badges
@@ -234,6 +244,7 @@ node cli/badge-cli.js create-issuer \
 ```bash
 node cli/badge-cli.js config --api-key "your-key"
 ```
+Only commands that write/read trusted issuer state or create/sign resources require an API key.
 
 **"Domain appears to be registered"**
 - Use `example.com` domains for testing

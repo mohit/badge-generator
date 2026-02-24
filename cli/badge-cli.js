@@ -6,9 +6,7 @@ import fs from 'fs/promises';
 import { realpathSync } from 'fs';
 import crypto from 'crypto';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { fileURLToPath } from 'url';
 
 // Configuration
 const DEFAULT_BASE_URL = process.env.BADGE_CLI_BASE_URL || 'http://localhost:3000';
@@ -18,6 +16,16 @@ class BadgeCLI {
   constructor() {
     this.config = {};
   }
+
+  static SAFE_TEST_DOMAINS = [
+    'example.com',
+    'example.org',
+    'example.net',
+    'test.example.com',
+    'demo.example.org',
+    'localhost',
+    '127.0.0.1'
+  ];
 
   isHttpUrl(value) {
     try {
@@ -55,23 +63,90 @@ class BadgeCLI {
     await fs.writeFile(CONFIG_FILE, JSON.stringify(this.config, null, 2));
   }
 
-  async makeRequest(endpoint, options = {}) {
+  requireApiKey() {
     if (!this.config.apiKey) {
-      throw new Error('API key not configured. Run: badge-cli config --api-key YOUR_KEY');
+      throw new Error('API key not configured. Run: node cli/badge-cli.js config --api-key YOUR_KEY');
+    }
+  }
+
+  normalizeDomain(domainInput) {
+    const trimmed = String(domainInput || '').trim();
+    const candidate = trimmed.includes('://') ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(candidate);
+    return parsed.host.toLowerCase();
+  }
+
+  getWellKnownIssuerUrls(domainInput) {
+    const host = this.normalizeDomain(domainInput);
+    return [`https://${host}/.well-known/openbadges-issuer.json`];
+  }
+
+  validateDomainLocally(url) {
+    try {
+      const parsed = new URL(url);
+      const protocol = parsed.protocol.toLowerCase();
+      const hostname = parsed.hostname.toLowerCase();
+      const isSafeTestDomain = BadgeCLI.SAFE_TEST_DOMAINS.some((safeDomain) =>
+        hostname === safeDomain || hostname.endsWith(`.${safeDomain}`)
+      );
+
+      if (protocol !== 'http:' && protocol !== 'https:') {
+        return {
+          valid: false,
+          type: 'invalid',
+          message: 'Only http and https URLs are supported',
+          warnings: []
+        };
+      }
+
+      if (isSafeTestDomain) {
+        return {
+          valid: true,
+          type: 'testing',
+          message: 'Safe testing domain',
+          warnings: ['Using an example/local domain intended for testing']
+        };
+      }
+
+      return {
+        valid: true,
+        type: 'unverified',
+        message: 'URL format is valid (local check only)',
+        warnings: ['No trust log read/write performed. Use verify --log-trust to persist trust state.']
+      };
+    } catch {
+      return {
+        valid: false,
+        type: 'invalid',
+        message: 'Invalid URL format',
+        warnings: []
+      };
+    }
+  }
+
+  async makeRequest(endpoint, options = {}, requestConfig = {}) {
+    const { requireApiKey = false } = requestConfig;
+    if (requireApiKey) {
+      this.requireApiKey();
     }
 
     const url = `${this.config.baseUrl}${endpoint}`;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
+    };
+    if (this.config.apiKey) {
+      headers['X-API-Key'] = this.config.apiKey;
+    }
     const requestOptions = {
-      headers: {
-        'X-API-Key': this.config.apiKey,
-        'Content-Type': 'application/json',
-        ...options.headers
-      },
+      headers,
       ...options
     };
 
     const response = await fetch(url, requestOptions);
-    const data = await response.json();
+    const contentType = response.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
+    const data = isJson ? await response.json() : { message: await response.text() };
 
     if (!response.ok) {
       throw new Error(`API Error: ${data.error || data.message || response.statusText}`);
@@ -96,23 +171,44 @@ class BadgeCLI {
     return { publicKey, privateKey };
   }
 
-  async validateDomain(url) {
+  async validateDomain(url, options = {}) {
+    const { serverPolicy = false } = options;
     console.log(`🔍 Validating domain: ${url}`);
     
     try {
-      const result = await this.makeRequest(`/api/validate-issuer-domain?url=${encodeURIComponent(url)}`);
+      const localResult = this.validateDomainLocally(url);
       
-      console.log(`✅ Domain validation result:`);
-      console.log(`   Type: ${result.type}`);
-      console.log(`   Valid: ${result.valid}`);
-      console.log(`   Message: ${result.message}`);
+      console.log(`✅ Local validation result:`);
+      console.log(`   Type: ${localResult.type}`);
+      console.log(`   Valid: ${localResult.valid}`);
+      console.log(`   Message: ${localResult.message}`);
       
-      if (result.warnings && result.warnings.length > 0) {
+      if (localResult.warnings && localResult.warnings.length > 0) {
         console.log(`⚠️  Warnings:`);
-        result.warnings.forEach(warning => console.log(`   - ${warning}`));
+        localResult.warnings.forEach(warning => console.log(`   - ${warning}`));
       }
+
+      if (!serverPolicy) {
+        return localResult;
+      }
+
+      console.log('🌐 Checking server policy (requires API key)...');
+      const serverResult = await this.makeRequest(
+        `/api/validate-issuer-domain?url=${encodeURIComponent(url)}`,
+        {},
+        { requireApiKey: true }
+      );
+      console.log(`✅ Server policy result:`);
+      console.log(`   Type: ${serverResult.type}`);
+      console.log(`   Valid: ${serverResult.valid}`);
+      console.log(`   Message: ${serverResult.message}`);
       
-      return result;
+      if (serverResult.warnings && serverResult.warnings.length > 0) {
+        console.log(`⚠️  Warnings:`);
+        serverResult.warnings.forEach(warning => console.log(`   - ${warning}`));
+      }
+
+      return { local: localResult, server: serverResult };
     } catch (error) {
       console.error(`❌ Domain validation failed: ${error.message}`);
       throw error;
@@ -126,7 +222,7 @@ class BadgeCLI {
       const result = await this.makeRequest('/api/issuer', {
         method: 'POST',
         body: JSON.stringify(issuerData)
-      });
+      }, { requireApiKey: true });
       
       console.log(`✅ Issuer created successfully:`);
       console.log(`   Filename: ${result.filename}`);
@@ -157,7 +253,7 @@ class BadgeCLI {
       const result = await this.makeRequest('/api/badge-class', {
         method: 'POST',
         body: JSON.stringify(badgeData)
-      });
+      }, { requireApiKey: true });
       
       console.log(`✅ Badge class created successfully:`);
       console.log(`   Filename: ${result.filename}`);
@@ -170,47 +266,87 @@ class BadgeCLI {
     }
   }
 
-  async verifyIssuer(domain, verificationData) {
-    console.log(`🔐 Verifying issuer for domain: ${domain}`);
+  async verifyIssuer(domain, options = {}) {
+    const { force = false, logTrust = false } = options;
+    const normalizedDomain = this.normalizeDomain(domain);
+    console.log(`🔐 Verifying issuer for domain: ${normalizedDomain}`);
     
     try {
-      const result = await this.makeRequest('/api/issuers/verify', {
-        method: 'POST',
-        body: JSON.stringify({
-          domain,
-          ...verificationData
-        })
-      });
-      
-      console.log(`✅ Issuer verification completed:`);
-      console.log(`   Status: ${result.status}`);
-      console.log(`   Message: ${result.message}`);
-      
-      if (result.verificationDetails) {
-        console.log(`📋 Verification Details:`);
-        Object.entries(result.verificationDetails).forEach(([key, value]) => {
-          console.log(`   ${key}: ${value}`);
-        });
+      if (logTrust) {
+        const result = await this.makeRequest('/api/issuers/verify', {
+          method: 'POST',
+          body: JSON.stringify({
+            domain: normalizedDomain,
+            force
+          })
+        }, { requireApiKey: true });
+        
+        console.log(`✅ Issuer verification completed (trust logged):`);
+        console.log(`   Status: ${result.status}`);
+        console.log(`   Message: ${result.message}`);
+        
+        if (result.verificationDetails) {
+          console.log(`📋 Verification Details:`);
+          Object.entries(result.verificationDetails).forEach(([key, value]) => {
+            console.log(`   ${key}: ${value}`);
+          });
+        }
+        
+        return result;
       }
-      
-      return result;
+
+      if (force) {
+        console.log('ℹ️  --force has no effect without --log-trust');
+      }
+
+      const candidateUrls = this.getWellKnownIssuerUrls(normalizedDomain);
+      const failures = [];
+      for (const issuerUrl of candidateUrls) {
+        try {
+          const result = await this.makeRequest(`/public/api/verify/issuer/${encodeURIComponent(issuerUrl)}`);
+          const isValid = Boolean(result.verification?.valid ?? result.valid);
+          if (isValid) {
+            console.log(`✅ Issuer verification completed (no trust log write):`);
+            console.log(`   URL: ${issuerUrl}`);
+            console.log(`   Message: ${result.verification?.message || result.message || 'Issuer verified'}`);
+            return result;
+          }
+
+          failures.push(`${issuerUrl}: ${result.verification?.message || 'invalid issuer profile'}`);
+        } catch (error) {
+          failures.push(`${issuerUrl}: ${error.message}`);
+        }
+      }
+
+      throw new Error(`Unable to verify issuer from well-known paths. ${failures.join(' | ')}`);
     } catch (error) {
       console.error(`❌ Issuer verification failed: ${error.message}`);
       throw error;
     }
   }
 
-  async getVerifiedIssuer(domain) {
-    console.log(`📋 Getting verified issuer info for: ${domain}`);
+  async getVerifiedIssuer(domain, options = {}) {
+    const { logTrust = false } = options;
+    const normalizedDomain = this.normalizeDomain(domain);
+    console.log(`📋 Getting issuer info for: ${normalizedDomain}`);
     
     try {
-      const result = await this.makeRequest(`/api/issuers/${encodeURIComponent(domain)}`);
+      if (!logTrust) {
+        console.log('ℹ️  Running live issuer check (no trust-log read). Use --log-trust to read stored issuer state.');
+        return this.verifyIssuer(normalizedDomain, { logTrust: false });
+      }
+
+      const result = await this.makeRequest(
+        `/api/issuers/${encodeURIComponent(normalizedDomain)}`,
+        {},
+        { requireApiKey: true }
+      );
       const issuer = result.issuer || {};
       const status = result.status || issuer.status || 'unknown';
       const isVerified = status === 'verified';
       const addedAt = issuer.lastVerified || issuer.lastUpdated || null;
       
-      console.log(`✅ Verified issuer found:`);
+      console.log(`✅ Verified issuer found (trust log):`);
       console.log(`   Name: ${issuer.displayName || issuer.name || 'Unknown'}`);
       console.log(`   Status: ${status}`);
       console.log(`   Verified: ${isVerified ? 'Yes' : 'No'}`);
@@ -248,7 +384,7 @@ class BadgeCLI {
         });
         sourceLabel = localBadgePath;
       } else if (isRemoteUrl) {
-        result = await this.makeRequest(`/api/verify/badge/${encodeURIComponent(badgeSource)}`);
+        result = await this.makeRequest(`/public/api/verify/badge/${encodeURIComponent(badgeSource)}`);
       } else {
         throw new Error('Badge source must be an http(s) URL or a path to a local JSON file');
       }
@@ -314,7 +450,7 @@ class BadgeCLI {
     console.log(`🔍 Verifying issuer: ${issuerUrl}`);
     
     try {
-      const result = await this.makeRequest(`/api/verify/issuer/${encodeURIComponent(issuerUrl)}`);
+      const result = await this.makeRequest(`/public/api/verify/issuer/${encodeURIComponent(issuerUrl)}`);
       
       const statusIcon = result.verification.valid ? '✅' : '❌';
       
@@ -355,7 +491,7 @@ class BadgeCLI {
       const result = await this.makeRequest('/api/sign-badge', {
         method: 'POST',
         body: JSON.stringify({ badgeData, domain })
-      });
+      }, { requireApiKey: true });
       
       console.log(`✅ Badge signed successfully:`);
       console.log(`   Domain: ${domain}`);
@@ -477,12 +613,13 @@ program
 
 program
   .command('validate')
-  .description('Validate an issuer domain')
+  .description('Validate an issuer domain locally (optional server policy check)')
   .argument('<url>', 'Issuer URL to validate')
-  .action(async (url) => {
+  .option('--server-policy', 'Run server-side policy checks (requires API key)')
+  .action(async (url, options) => {
     const cli = new BadgeCLI();
     await cli.loadConfig();
-    await cli.validateDomain(url);
+    await cli.validateDomain(url, { serverPolicy: options.serverPolicy || false });
   });
 
 program
@@ -551,28 +688,29 @@ program
 
 program
   .command('verify')
-  .description('Verify an issuer domain')
+  .description('Verify an issuer domain (public check by default)')
   .argument('<domain>', 'Domain to verify (e.g., example.com)')
-  .option('--force', 'Force re-verification')
+  .option('--log-trust', 'Persist verification result to server trust log (requires API key)')
+  .option('--force', 'Force re-verification (only with --log-trust)')
   .action(async (domain, options) => {
     const cli = new BadgeCLI();
     await cli.loadConfig();
     
-    const verificationData = {
-      force: options.force || false
-    };
-    
-    await cli.verifyIssuer(domain, verificationData);
+    await cli.verifyIssuer(domain, {
+      force: options.force || false,
+      logTrust: options.logTrust || false
+    });
   });
 
 program
   .command('get-issuer')
-  .description('Get verified issuer information')
+  .description('Get issuer information (live check by default)')
   .argument('<domain>', 'Domain to look up')
-  .action(async (domain) => {
+  .option('--log-trust', 'Read stored issuer from server trust log (requires API key)')
+  .action(async (domain, options) => {
     const cli = new BadgeCLI();
     await cli.loadConfig();
-    await cli.getVerifiedIssuer(domain);
+    await cli.getVerifiedIssuer(domain, { logTrust: options.logTrust || false });
   });
 
 program
@@ -585,7 +723,10 @@ program
     console.log(`🔗 Testing connection to ${cli.config.baseUrl}`);
     
     try {
-      await cli.validateDomain('https://demo.example.org/test');
+      await cli.makeRequest('/public/api/verify/json', {
+        method: 'POST',
+        body: JSON.stringify({})
+      });
       console.log('✅ Connection successful!');
     } catch (error) {
       console.error(`❌ Connection failed: ${error.message}`);
