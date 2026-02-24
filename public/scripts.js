@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const liveDemoCredentialUrl = `${window.location.origin}/samples/demo-openbadge-v3.json`;
+  const liveDemoCredentialUrl = `${window.location.origin}/samples/demo-openbadge-v3-signed.json`;
   document.querySelectorAll('[data-demo-url-link]').forEach((link) => {
     if (!(link instanceof HTMLAnchorElement)) return;
     link.href = `/verify.html?url=${encodeURIComponent(liveDemoCredentialUrl)}&autoverify=1`;

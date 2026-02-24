@@ -18,6 +18,7 @@
 Optional:
 
 - `PORT` (set automatically on most platforms)
+- `UPLOADS_DIR` (writable storage directory, default `uploads`)
 
 ## Key Generation
 
@@ -73,9 +74,10 @@ docker run -p 3000:3000 \
 ## Railway
 
 1. Connect repo.
-2. Set env vars listed above.
-3. Deploy.
-4. Confirm persistent volume for uploads.
+2. Add a Railway Volume and mount it at `/data/uploads`.
+3. Set env vars listed above, including `UPLOADS_DIR=/data/uploads`.
+4. Deploy.
+5. Confirm the mounted volume is writable.
 
 ## Post-Deploy Checks
 

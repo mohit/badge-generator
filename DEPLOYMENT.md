@@ -20,6 +20,7 @@ The Badge Generator is a Node.js application that can be deployed anywhere. It r
 | `API_KEY` | ✅ Yes | API authentication key | `your-secure-api-key` |
 | `UPLOAD_PASSWORD` | ✅ Yes | Web interface password | `your-secure-password` |
 | `PORT` | ⚪ Optional | Server port | `3000` (auto-set on most platforms) |
+| `UPLOADS_DIR` | ⚪ Optional | Writable path for uploaded files + verifier state | `uploads` or `/data/uploads` |
 
 ## 🔐 Generating Signing Keys
 
@@ -102,13 +103,16 @@ volumes:
    API_KEY=<generate secure key>
    UPLOAD_PASSWORD=<generate secure password>
    NODE_ENV=production
+   UPLOADS_DIR=/data/uploads
    ```
-3. **Deploy**: Railway auto-deploys from main branch
+3. **Add a Railway Volume** and mount it at `/data/uploads`
+4. **Deploy**: Railway auto-deploys from main branch
 
 ### Railway-Specific Notes
 - ✅ Uses persistent volumes for uploads
 - ✅ Auto-sets PORT environment variable
 - ✅ Supports custom domains
+- ✅ `UPLOADS_DIR` should point at your mounted volume path (for example `/data/uploads`)
 
 ---
 

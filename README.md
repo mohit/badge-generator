@@ -126,7 +126,7 @@ X-API-Key: your_api_key_here
 ## File Structure
 
 - `server.js` - Main application server
-- `uploads/` - Directory for uploaded JSON files (served at `/badges/`)
+- `uploads/` (or `UPLOADS_DIR`) - Directory for uploaded JSON files and issuer verification state (served at `/badges/`)
 - `public/` - Static files directory
 - `.env` - Environment configuration (not in git)
 - `.env.example` - Example environment configuration
@@ -150,6 +150,7 @@ X-API-Key: your_api_key_here
 ### Optional
 - `PORT` - Server port (default: 3000)
 - `NODE_ENV` - Environment mode (development/production)
+- `UPLOADS_DIR` - Writable storage directory for hosted badge files and verifier state (default: `uploads`)
 
 ## MCP Server Integration
 

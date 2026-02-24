@@ -36,7 +36,7 @@
         <h1 class="section-title" style="margin-bottom: 0.45rem;">Credential trust check</h1>
         <p class="section-lede">One panel for structure, issuer, and signature checks with auditable result details.</p>
         <div class="cta-row" style="margin-top: 0.85rem;">
-          <a href="#" class="btn btn-primary" data-demo-fill-link>Load live test credential</a>
+          <a href="#" class="btn btn-primary" data-demo-fill-link>Load live signed credential</a>
           <a href="/api.html" class="btn btn-secondary">How to issue + verify</a>
         </div>
       </div>
@@ -104,7 +104,7 @@
           <div class="examples">
             <h3>Quick examples</h3>
             <div class="example-links">
-              <a href="#" class="example-link" data-example="live">Live hosted test</a>
+              <a href="#" class="example-link" data-example="live">Live signed test</a>
               <a href="#" class="example-link" data-example="badge">Sample badge</a>
               <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
               <a href="#" class="example-link" data-example="domain">openbadges.org</a>
@@ -182,7 +182,7 @@
         email: 'badges@example.com'
       }, null, 2),
       domain: 'https://openbadges.org',
-      live: `${window.location.origin}/samples/demo-openbadge-v3.json`
+      live: `${window.location.origin}/samples/demo-openbadge-v3-signed.json`
     };
 
     const statusClassMap = {

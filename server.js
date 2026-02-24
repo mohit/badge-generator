@@ -111,6 +111,11 @@ const SAFE_TEST_DOMAINS = [
 ];
 const WELL_KNOWN_ISSUER_PATH = '/.well-known/openbadges-issuer.json';
 const LEGACY_WELL_KNOWN_ISSUER_PATH = '/.well-known/issuer.json';
+const UPLOADS_DIR = path.resolve(process.env.UPLOADS_DIR || 'uploads');
+
+function uploadsPath(...parts) {
+  return path.join(UPLOADS_DIR, ...parts);
+}
 
 function getWellKnownIssuerUrls(domain) {
   return [
@@ -208,14 +213,17 @@ async function validateIssuerDomain(url) {
 
 // Helper function to ensure uploads directory exists
 function ensureUploadsDir() {
-  if (!fs.existsSync('uploads')) {
-    fs.mkdirSync('uploads', { recursive: true });
+  try {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    fs.accessSync(UPLOADS_DIR, fs.constants.W_OK);
+  } catch (error) {
+    throw new Error(`Uploads directory is not writable: ${UPLOADS_DIR} (${error.message})`);
   }
 }
 
 // Helper functions for verified issuer storage
 function loadVerifiedIssuers() {
-  const filePath = path.join('uploads', 'verified-issuers.json');
+  const filePath = uploadsPath('verified-issuers.json');
   if (fs.existsSync(filePath)) {
     try {
       return JSON.parse(fs.readFileSync(filePath, 'utf8'));
@@ -229,7 +237,7 @@ function loadVerifiedIssuers() {
 
 function saveVerifiedIssuers(issuers) {
   ensureUploadsDir();
-  const filePath = path.join('uploads', 'verified-issuers.json');
+  const filePath = uploadsPath('verified-issuers.json');
   fs.writeFileSync(filePath, JSON.stringify(issuers, null, 2));
 }
 
@@ -380,8 +388,13 @@ async function verifyIssuerDomain(domain) {
   }
 }
 
-// Ensure uploads directory exists at startup
-ensureUploadsDir();
+// Ensure uploads directory exists and is writable at startup
+try {
+  ensureUploadsDir();
+} catch (error) {
+  console.error(error.message);
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -391,7 +404,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files
-app.use('/badges', express.static('uploads'));
+app.use('/badges', express.static(UPLOADS_DIR));
 app.use(express.static('public'));
 
 // Middleware to check API key
@@ -410,7 +423,7 @@ export const requireApiKey = (req, res, next) => {
 
 // API endpoint to list uploaded files (API key auth)
 app.get('/api/badge-files', requireApiKey, (req, res) => {
-  fs.readdir('uploads', (err, files) => {
+  fs.readdir(UPLOADS_DIR, (err, files) => {
     if (err) {
       return res.status(500).json({ error: 'Unable to read files' });
     }
@@ -1002,7 +1015,7 @@ async function getBadgeSigningKey(domain) {
   if (process.env.NODE_ENV !== 'production') {
     const keyPaths = [
       path.join('issuer-verification-files', 'private-key.pem'),
-      path.join('uploads', 'default-private-key.pem')
+      uploadsPath('default-private-key.pem')
     ];
     
     for (const keyPath of keyPaths) {
@@ -1053,7 +1066,7 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   const urlObj = new URL(issuerUrl);
   const domain = urlObj.hostname;
   const issuerHost = urlObj.host;
-  const cachedKeyPath = path.join('uploads', `cached-public-keys`, `${domain}.pem`);
+  const cachedKeyPath = uploadsPath('cached-public-keys', `${domain}.pem`);
   
   if (fs.existsSync(cachedKeyPath)) {
     try {
@@ -1075,7 +1088,7 @@ async function getBadgeVerificationKey(issuerData, issuerUrl) {
   if (process.env.NODE_ENV !== 'production') {
     const keyPaths = [
       path.join('issuer-verification-files', 'public-key.pem'),
-      path.join('uploads', 'default-public-key.pem')
+      uploadsPath('default-public-key.pem')
     ];
     
     for (const keyPath of keyPaths) {
@@ -1099,7 +1112,7 @@ async function cachePublicKey(issuerUrl, publicKey) {
   try {
     const urlObj = new URL(issuerUrl);
     const domain = urlObj.hostname;
-    const cacheDir = path.join('uploads', 'cached-public-keys');
+    const cacheDir = uploadsPath('cached-public-keys');
     const cachedKeyPath = path.join(cacheDir, `${domain}.pem`);
     
     // Ensure cache directory exists
@@ -1320,7 +1333,7 @@ app.post('/api/issuer', requireApiKey, async (req, res) => {
   }
   
   const filename = `issuer-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
+  const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
   
   const issuer = {
@@ -1381,7 +1394,7 @@ app.post('/api/badge-class', requireApiKey, async (req, res) => {
   }
   
   const filename = `badge-class-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
+  const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
   
   const badgeClass = {
@@ -1452,7 +1465,7 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
   }
   
   const filename = `credential-${Date.now()}.json`;
-  const filepath = path.join('uploads', filename);
+  const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
   
   const credentialSubject = {
@@ -1502,6 +1515,7 @@ if (process.env.NODE_ENV !== 'test') {
     console.log(`Badge Generator server running on port ${PORT}`);
     console.log(`API documentation: https://github.com/mohit/badge-generator`);
     console.log(`API key: ${process.env.API_KEY ? '***configured***' : 'NOT SET'}`);
+    console.log(`Uploads directory: ${UPLOADS_DIR}`);
   });
 
   // Graceful shutdown handling
