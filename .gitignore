@@ -45,3 +45,6 @@ coverage/
 # Temporary folders
 tmp/
 temp/
+
+# macOS artifacts
+.DS_Store

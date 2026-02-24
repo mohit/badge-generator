@@ -35,6 +35,10 @@
         <p class="kicker">Public Verifier</p>
         <h1 class="section-title" style="margin-bottom: 0.45rem;">Credential trust check</h1>
         <p class="section-lede">One panel for structure, issuer, and signature checks with auditable result details.</p>
+        <div class="cta-row" style="margin-top: 0.85rem;">
+          <a href="#" class="btn btn-primary" data-demo-fill-link>Load live test credential</a>
+          <a href="/api.html" class="btn btn-secondary">How to issue + verify</a>
+        </div>
       </div>
     </section>
 
@@ -100,6 +104,7 @@
           <div class="examples">
             <h3>Quick examples</h3>
             <div class="example-links">
+              <a href="#" class="example-link" data-example="live">Live hosted test</a>
               <a href="#" class="example-link" data-example="badge">Sample badge</a>
               <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
               <a href="#" class="example-link" data-example="domain">openbadges.org</a>
@@ -176,7 +181,8 @@
         url: 'https://example.com',
         email: 'badges@example.com'
       }, null, 2),
-      domain: 'https://openbadges.org'
+      domain: 'https://openbadges.org',
+      live: `${window.location.origin}/samples/demo-openbadge-v3.json`
     };
 
     const statusClassMap = {
@@ -216,6 +222,11 @@
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const type = link.dataset.example;
+        if (type === 'live') {
+          document.querySelector('[data-tab="url"]').click();
+          document.getElementById('badge-url').value = examples.live;
+          return;
+        }
         if (type === 'domain') {
           document.querySelector('[data-tab="issuer"]').click();
           document.getElementById('issuer-url').value = examples.domain;
@@ -240,6 +251,15 @@
     document.getElementById('issuer-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       await verifyIssuer(document.getElementById('issuer-url').value);
+    });
+
+    document.querySelectorAll('[data-demo-fill-link]').forEach((element) => {
+      element.addEventListener('click', (e) => {
+        e.preventDefault();
+        document.querySelector('[data-tab="url"]').click();
+        document.getElementById('badge-url').value = examples.live;
+        verifyByUrl(examples.live);
+      });
     });
 
     async function verifyByUrl(url) {
@@ -413,10 +433,15 @@
       spinner.style.display = 'none';
     }
 
-    const queryUrl = new URLSearchParams(window.location.search).get('url');
+    const params = new URLSearchParams(window.location.search);
+    const queryUrl = params.get('url');
+    const autoVerify = params.get('autoverify') === '1';
     if (queryUrl) {
       document.getElementById('badge-url').value = queryUrl;
       document.querySelector('[data-tab="url"]').click();
+      if (autoVerify) {
+        verifyByUrl(queryUrl);
+      }
     }
   </script>
   <script src="/scripts.js"></script>

@@ -1,0 +1,14 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://badges.firmament.works/samples/demo-achievement.json",
+  "type": "Achievement",
+  "name": "Open Badges Live Verification Demo",
+  "description": "Sample achievement used to test the public verification flow.",
+  "criteria": {
+    "type": "Criteria",
+    "narrative": "Run the public verifier against the hosted demo credential and inspect trust checks."
+  }
+}

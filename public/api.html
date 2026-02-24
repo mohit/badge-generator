@@ -38,6 +38,35 @@
           Authenticated write endpoints live under <code>/api/*</code>. Public verification endpoints live under
           <code>/public/api/*</code> and enforce SSRF protections.
         </p>
+        <div class="cta-row" style="margin-top: 0.9rem;">
+          <a href="#" class="btn btn-primary" data-demo-url-link>Run live verify test</a>
+          <a href="/verify.html" class="btn btn-secondary">Open verifier</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-muted" style="padding-top: 0.9rem; padding-bottom: 1.8rem;">
+      <div class="container">
+        <h2 class="section-title">Issue and verify quickstart</h2>
+        <p class="section-lede">Use this exact sequence to test end-to-end behavior in minutes.</p>
+        <div class="api-steps">
+          <article class="api-step scroll-animate">
+            <h4>1. Validate issuer domain</h4>
+            <code class="code-chip">GET /api/validate-issuer-domain</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>2. Create issuer and badge class</h4>
+            <code class="code-chip">POST /api/issuer<br>POST /api/badge-class</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>3. Issue credential</h4>
+            <code class="code-chip">POST /api/credential-subject</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>4. Verify publicly</h4>
+            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -166,6 +195,29 @@
             <a class="btn btn-secondary" href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank" rel="noreferrer">Full documentation</a>
           </div>
         </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Implementation-specific additions</h2>
+        <div class="grid-3" style="margin-top: 1rem;">
+          <article class="card scroll-animate">
+            <p class="eyebrow">Public safety</p>
+            <h3>SSRF protections by default</h3>
+            <p>Public verification routes validate protocols and block internal/private address ranges.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Issuer trust</p>
+            <h3>Domain verification workflow</h3>
+            <p>Issuer verification and re-verification endpoints enforce well-known profile ownership checks.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Automation</p>
+            <h3>Agent-ready operations</h3>
+            <p>CLI, MCP, and llms.txt support machine-readable issuance and verification workflows.</p>
+          </article>
+        </div>
       </div>
     </section>
   </main>

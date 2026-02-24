@@ -42,6 +42,7 @@
           </p>
           <div class="cta-row">
             <a href="/verify.html" class="btn btn-primary">Verify a Badge</a>
+            <a href="#" class="btn btn-secondary" data-demo-url-link>Run Live Test</a>
             <a href="#issue" class="btn btn-secondary">See issuing flow</a>
           </div>
           <ul class="proof-chips" aria-label="Trust claims">
@@ -101,6 +102,30 @@
       </div>
     </section>
 
+    <section class="section" id="contributions">
+      <div class="container">
+        <h2 class="section-title">What this implementation contributes</h2>
+        <p class="section-lede">Not a new badge category, but a tighter operational stack with stronger default safety and automation.</p>
+        <div class="grid-3" style="margin-top: 1rem;">
+          <article class="card scroll-animate">
+            <p class="eyebrow">Security</p>
+            <h3>SSRF-hardened public verifier</h3>
+            <p>Public verify endpoints block private/internal targets before server-side fetches.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Trust policy</p>
+            <h3>Anti-impersonation domain controls</h3>
+            <p>Well-known issuer verification, verified issuer registry, and safe test-domain handling.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Ops</p>
+            <h3>Self-hosted + agent-friendly</h3>
+            <p>Deploy-anywhere architecture with API, CLI, MCP integration, and llms.txt discovery surface.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="section" id="issue">
       <div class="container">
         <h2 class="section-title">Issue in four API calls</h2>
@@ -123,6 +148,11 @@
             <h4>4. Issue assertion</h4>
             <code class="code-chip">POST /api/credential-subject</code>
           </article>
+        </div>
+
+        <div class="cta-row" style="margin-top: 1rem;">
+          <a href="#" class="btn btn-primary" data-demo-url-link>Run test credential verification</a>
+          <a href="/api.html" class="btn btn-secondary">Open implementation details</a>
         </div>
       </div>
     </section>

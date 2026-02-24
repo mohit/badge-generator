@@ -37,6 +37,10 @@
         <p class="section-lede">
           Credentials should be as easy to verify as HTTPS certificates: open standards, no lock-in, and strong proof by default.
         </p>
+        <div class="cta-row" style="margin-top: 0.9rem;">
+          <a href="#" class="btn btn-primary" data-demo-url-link>Run live verify test</a>
+          <a href="/api.html" class="btn btn-secondary">See implementation details</a>
+        </div>
 
         <div class="manifesto-grid">
           <article class="card scroll-animate">
@@ -53,6 +57,29 @@
             <p class="eyebrow">Method</p>
             <h3>Open infra first</h3>
             <p>Invest in free, standards-aligned tooling so any issuer can publish trustworthy credentials.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-muted">
+      <div class="container">
+        <h2 class="section-title">What is concrete in this implementation</h2>
+        <div class="grid-3" style="margin-top: 1rem;">
+          <article class="card scroll-animate">
+            <p class="eyebrow">Verifier hardening</p>
+            <h3>Public URL safety controls</h3>
+            <p>Public endpoints reject private/internal targets before any server-side fetch occurs.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Issuer integrity</p>
+            <h3>Anti-impersonation checks</h3>
+            <p>Domain ownership flow built around <code>/.well-known/openbadges-issuer.json</code> verification.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Operational path</p>
+            <h3>Issue + verify + test</h3>
+            <p>A single app provides issuance APIs, public verifier APIs, and a live hosted sample for testing.</p>
           </article>
         </div>
       </div>
