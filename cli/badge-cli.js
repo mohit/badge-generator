@@ -505,6 +505,86 @@ class BadgeCLI {
     }
   }
 
+  getIssuerUrlFromBadge(badgeData) {
+    if (!badgeData || typeof badgeData !== 'object') return null;
+
+    // Open Badges v3
+    if (badgeData.issuer && typeof badgeData.issuer === 'object') {
+      if (typeof badgeData.issuer.id === 'string') return badgeData.issuer.id;
+      if (typeof badgeData.issuer.url === 'string') return badgeData.issuer.url;
+    }
+
+    // Open Badges v2
+    if (typeof badgeData.issuer === 'string') return badgeData.issuer;
+    if (badgeData.issuer && typeof badgeData.issuer.id === 'string') return badgeData.issuer.id;
+
+    return null;
+  }
+
+  resolveLocalVerificationMethod(badgeData, { domain, issuerUrl, verificationMethod }) {
+    if (verificationMethod) return verificationMethod;
+
+    const issuerFromBadge = this.getIssuerUrlFromBadge(badgeData);
+    const resolvedIssuerUrl = issuerUrl || issuerFromBadge;
+    if (resolvedIssuerUrl) {
+      return `${resolvedIssuerUrl.replace(/#.*$/, '').replace(/\/+$/, '')}#key`;
+    }
+
+    if (domain) {
+      const host = this.normalizeDomain(domain);
+      return `https://${host}/.well-known/openbadges-issuer.json#key`;
+    }
+
+    throw new Error('Unable to determine verification method. Provide --verification-method, --issuer-url, or <domain>');
+  }
+
+  signBadgeDataLocally(badgeData, privateKeyPem) {
+    const canonicalData = JSON.stringify(badgeData, null, 0);
+    const dataBuffer = Buffer.from(canonicalData, 'utf8');
+    const privateKey = crypto.createPrivateKey(privateKeyPem);
+    const signature = crypto.sign(null, dataBuffer, privateKey);
+    return signature.toString('base64url');
+  }
+
+  async signBadgeLocal(badgeData, options = {}) {
+    const { domain, privateKeyFile, issuerUrl, verificationMethod } = options;
+    if (!privateKeyFile) {
+      throw new Error('Local signing requires --private-key-file <path-to-private-key.pem>');
+    }
+
+    const resolvedKeyPath = path.resolve(privateKeyFile);
+    const privateKeyPem = await fs.readFile(resolvedKeyPath, 'utf8');
+    const resolvedVerificationMethod = this.resolveLocalVerificationMethod(badgeData, {
+      domain,
+      issuerUrl,
+      verificationMethod
+    });
+
+    const signature = this.signBadgeDataLocally(badgeData, privateKeyPem);
+    const signedBadge = {
+      ...badgeData,
+      proof: {
+        type: 'Ed25519Signature2020',
+        created: new Date().toISOString(),
+        verificationMethod: resolvedVerificationMethod,
+        proofPurpose: 'assertionMethod',
+        jws: signature
+      }
+    };
+
+    console.log('✅ Badge signed locally (no API key, no server signing key):');
+    console.log(`   Verification Method: ${resolvedVerificationMethod}`);
+    console.log(`   Signature: ${signature.substring(0, 50)}...`);
+
+    return {
+      message: 'Badge signed locally',
+      signedBadge,
+      signature,
+      verificationMethod: resolvedVerificationMethod,
+      mode: 'local'
+    };
+  }
+
   async generateWellKnownFile(issuerData) {
     console.log(`📄 Generating .well-known/openbadges-issuer.json file`);
     
@@ -756,9 +836,13 @@ program
 
 program
   .command('sign-badge')
-  .description('Cryptographically sign a badge with issuer keys')
+  .description('Sign a badge using server-managed keys or local private key (--local)')
   .argument('<badgeFile>', 'Path to badge JSON file to sign')
-  .argument('<domain>', 'Domain of the issuer for key lookup')
+  .argument('[domain]', 'Domain of the issuer for key lookup')
+  .option('--local', 'Sign locally with a provided private key (no API key required)')
+  .option('--private-key-file <file>', 'Path to local Ed25519 private key PEM file (required with --local)')
+  .option('--issuer-url <url>', 'Issuer profile URL to derive verificationMethod for --local')
+  .option('--verification-method <url>', 'Explicit verificationMethod URL for --local')
   .option('--output <file>', 'Output file for signed badge (optional)')
   .action(async (badgeFile, domain, options) => {
     const cli = new BadgeCLI();
@@ -768,8 +852,20 @@ program
       // Read the badge file
       const badgeData = JSON.parse(await fs.readFile(badgeFile, 'utf8'));
       
-      // Sign the badge
-      const result = await cli.signBadge(badgeData, domain);
+      let result;
+      if (options.local) {
+        result = await cli.signBadgeLocal(badgeData, {
+          domain,
+          privateKeyFile: options.privateKeyFile,
+          issuerUrl: options.issuerUrl,
+          verificationMethod: options.verificationMethod
+        });
+      } else {
+        if (!domain) {
+          throw new Error('Domain is required for server signing mode. Use --local with --private-key-file for local signing.');
+        }
+        result = await cli.signBadge(badgeData, domain);
+      }
       
       // Save signed badge
       const outputFile = options.output || badgeFile.replace('.json', '-signed.json');

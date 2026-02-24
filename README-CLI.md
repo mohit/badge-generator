@@ -181,6 +181,26 @@ Test connection to the badge API.
 node cli/badge-cli.js test-connection
 ```
 
+### Signing
+
+#### `sign-badge <badgeFile> [domain]`
+Sign a badge in one of two modes.
+
+**Managed server signing (requires API key):**
+```bash
+node cli/badge-cli.js sign-badge ./badge.json demo.example.org --output ./badge-signed.json
+```
+
+**Local signing (no API key required):**
+```bash
+node cli/badge-cli.js sign-badge ./badge.json --local \
+  --private-key-file ./issuer-verification-files/private-key.pem \
+  --issuer-url "https://demo.example.org/.well-known/openbadges-issuer.json" \
+  --output ./badge-signed.json
+```
+
+For `--local`, you can also provide `--verification-method` directly if you do not want it derived from issuer URL/domain.
+
 ## Domain Validation Rules
 
 ### ✅ Allowed Domains
@@ -244,7 +264,7 @@ node cli/badge-cli.js create-issuer \
 ```bash
 node cli/badge-cli.js config --api-key "your-key"
 ```
-Only commands that write/read trusted issuer state or create/sign resources require an API key.
+Only commands that write/read trusted issuer state, create resources, or use managed server signing require an API key.
 
 **"Domain appears to be registered"**
 - Use `example.com` domains for testing

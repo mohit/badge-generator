@@ -78,7 +78,14 @@ node cli/badge-cli.js verify-issuer-url "https://example.com/issuer.json"
 ### Signing
 
 ```bash
+# Managed signing via server key (requires API key)
 node cli/badge-cli.js sign-badge ./badge.json demo.example.org --output ./badge-signed.json
+
+# Local signing via your private key (no API key required)
+node cli/badge-cli.js sign-badge ./badge.json --local \
+  --private-key-file ./issuer-verification-files/private-key.pem \
+  --issuer-url "https://demo.example.org/.well-known/openbadges-issuer.json" \
+  --output ./badge-signed.json
 ```
 
 ## Typical Workflow
@@ -86,4 +93,4 @@ node cli/badge-cli.js sign-badge ./badge.json demo.example.org --output ./badge-
 1. `config --base-url`.
 2. `validate` and `verify` (public, no trust log write).
 3. `verify-badge` and `verify-issuer-url`.
-4. Add API key only when you need `--log-trust` or issuing/signing endpoints.
+4. Add API key only when you need `--log-trust`, issuing endpoints, or managed server signing.
