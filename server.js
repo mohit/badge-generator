@@ -540,7 +540,6 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
 });
 
 // Badge and Issuer Verification endpoints
-<<<<<<< HEAD
 async function verifyBadgeByUrlInternal(badgeUrl, options = {}) {
   try {
     console.log(`🔍 Verifying badge: ${badgeUrl}`);
