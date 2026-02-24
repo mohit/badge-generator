@@ -42,7 +42,7 @@ function isPrivateIp(ip) {
  * Validate that a URL is safe for server-side fetch from a public endpoint.
  * Resolves the hostname via DNS and rejects private/internal IPs.
  */
-async function validatePublicUrl(urlString) {
+export async function validatePublicUrl(urlString) {
   let parsed;
   try {
     parsed = new URL(urlString);
@@ -56,6 +56,24 @@ async function validatePublicUrl(urlString) {
   }
 
   const hostname = parsed.hostname;
+  const normalizedHost = parsed.host.toLowerCase();
+  const normalizedHostname = hostname.toLowerCase();
+  const trustedPublicDomain = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
+
+  // Allow fetches to the configured public domain (hosted sample badges,
+  // issuer profile, etc.), even when internal platform DNS resolves privately.
+  const trustedIsLocalhost = trustedPublicDomain.hostname === 'localhost' || trustedPublicDomain.hostname === '::1';
+  const trustedIsIp = net.isIP(trustedPublicDomain.hostname);
+  const trustedIsPrivateIp = trustedIsIp && isPrivateIp(trustedPublicDomain.hostname);
+  const trustedDomainAllowed = !trustedIsLocalhost && !trustedIsPrivateIp;
+
+  if (
+    trustedDomainAllowed &&
+    (normalizedHost === trustedPublicDomain.host ||
+      normalizedHostname === trustedPublicDomain.hostname)
+  ) {
+    return parsed;
+  }
 
   // Reject obvious private hostnames
   if (hostname === 'localhost' || hostname === '[::1]') {
