@@ -84,10 +84,14 @@ a {
 }
 
 .logo {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
   text-decoration: none;
   font-size: 1.13rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .logo-mark {
@@ -97,6 +101,17 @@ a {
   border-radius: 50%;
   margin-right: 0.45rem;
   background: linear-gradient(145deg, var(--trust), var(--verify));
+}
+
+.logo-main {
+  color: var(--ink);
+}
+
+.logo-byline {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--steel);
 }
 
 .mobile-menu-btn {
@@ -937,6 +952,10 @@ footer {
 @media (max-width: 640px) {
   .container {
     width: min(var(--max-width), 100% - 1.4rem);
+  }
+
+  .logo-byline {
+    font-size: 0.64rem;
   }
 
   .section,
