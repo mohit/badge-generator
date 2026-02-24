@@ -1,0 +1,21 @@
+# Badge Generator
+
+Badge Generator is an Open Badges and Verifiable Credentials service for issuing, hosting, signing, and verifying badge JSON documents.
+
+This file lists markdown-first docs that are easier for LLMs and automation agents to consume.
+
+## Canonical LLM Docs
+
+- https://badges.firmament.works/docs/llm/README.md
+- https://badges.firmament.works/docs/llm/API.md
+- https://badges.firmament.works/docs/llm/DEPLOYMENT.md
+- https://badges.firmament.works/docs/llm/CLI.md
+- https://badges.firmament.works/docs/llm/MCP.md
+
+## Source Repository Docs
+
+- https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator
+- https://github.com/mohit/badge-generator/blob/main/README.md
+- https://github.com/mohit/badge-generator/blob/main/DEPLOYMENT.md
+- https://github.com/mohit/badge-generator/blob/main/README-CLI.md
+- https://github.com/mohit/badge-generator/blob/main/README-CLAUDE-INTEGRATION.md

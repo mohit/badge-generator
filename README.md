@@ -8,6 +8,8 @@ A secure, deployable web application for hosting Open Badges with password-prote
 - **[Claude Integration Guide](README-CLAUDE-INTEGRATION.md)** - Using Badge Generator with Claude Desktop via MCP
 - **[Deployment Guide](DEPLOYMENT.md)** - Comprehensive deployment instructions for all platforms
 - **[Domain Validation](DOMAIN_VALIDATION.md)** - Understanding domain verification and security
+- **[LLM Docs (Markdown-Only)](public/docs/llm/README.md)** - Minimal docs optimized for LLMs and agents
+- **[`llms.txt` Discovery File](public/llms.txt)** - Canonical entrypoint for agent discovery
 - **[Our Vision](public/vision.html)** - The long-term vision for democratizing digital credentials
 
 ## Features
