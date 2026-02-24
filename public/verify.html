@@ -1,657 +1,422 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verify Badges & Credentials - Badge Generator</title>
-    <meta name="description" content="Verify the authenticity of digital badges, credentials, and issuers. Instant verification with detailed security analysis.">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="/styles.css">
-    
-    <!-- Verification page specific styles -->
-    <style>
-        .verify-hero {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-            color: white;
-            padding: 4rem 2rem 3rem;
-            text-align: center;
-        }
-        
-        .verify-form {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            box-shadow: var(--shadow-xl);
-            margin: 2rem auto;
-            max-width: 600px;
-            border: 1px solid var(--border);
-        }
-        
-        .form-group {
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .form-label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: var(--spacing-xs);
-            color: var(--text-primary);
-        }
-        
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--border-radius);
-            font-size: var(--font-size-base);
-            transition: border-color 0.2s;
-        }
-        
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-        
-        .form-textarea {
-            min-height: 120px;
-            resize: vertical;
-            font-family: 'Courier New', monospace;
-            font-size: 0.875rem;
-        }
-        
-        .verify-tabs {
-            display: flex;
-            background: var(--surface);
-            border-radius: var(--border-radius);
-            padding: 0.25rem;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .verify-tab {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            text-align: center;
-            border-radius: var(--border-radius);
-            cursor: pointer;
-            transition: all 0.2s;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-        
-        .verify-tab.active {
-            background: white;
-            color: var(--primary);
-            box-shadow: var(--shadow);
-        }
-        
-        .tab-content {
-            display: none;
-        }
-        
-        .tab-content.active {
-            display: block;
-        }
-        
-        .verify-button {
-            width: 100%;
-            padding: 1rem;
-            background: var(--primary);
-            color: white;
-            border: none;
-            border-radius: var(--border-radius);
-            font-size: var(--font-size-base);
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .verify-button:hover:not(:disabled) {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-        
-        .verify-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .result-container {
-            margin-top: var(--spacing-lg);
-            padding: var(--spacing-lg);
-            border-radius: var(--border-radius);
-            display: none;
-        }
-        
-        .result-success {
-            background: #f0fdf4;
-            border: 1px solid #86efac;
-            color: #166534;
-        }
-        
-        .result-error {
-            background: #fef2f2;
-            border: 1px solid #fca5a5;
-            color: #dc2626;
-        }
-        
-        .result-warning {
-            background: #fffbeb;
-            border: 1px solid #fcd34d;
-            color: #d97706;
-        }
-        
-        .result-title {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-xs);
-        }
-        
-        .result-details {
-            font-size: var(--font-size-sm);
-            line-height: 1.6;
-        }
-        
-        .result-details ul {
-            margin: var(--spacing-xs) 0;
-            padding-left: var(--spacing-lg);
-        }
-        
-        .result-details li {
-            margin-bottom: var(--spacing-xs);
-        }
-        
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .examples {
-            background: var(--surface);
-            padding: var(--spacing-lg);
-            border-radius: var(--border-radius);
-            margin-top: var(--spacing-lg);
-        }
-        
-        .examples h3 {
-            font-size: var(--font-size-lg);
-            font-weight: 600;
-            margin-bottom: var(--spacing-sm);
-            color: var(--text-primary);
-        }
-        
-        .example-links {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--spacing-sm);
-        }
-        
-        .example-link {
-            padding: 0.5rem 1rem;
-            background: var(--primary);
-            color: white;
-            text-decoration: none;
-            border-radius: var(--border-radius);
-            font-size: var(--font-size-sm);
-            transition: background 0.2s;
-        }
-        
-        .example-link:hover {
-            background: var(--primary-dark);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify Credentials | Firmament Badges</title>
+  <meta name="description" content="Verify Open Badges and credential issuers by URL, JSON, or issuer profile.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <nav>
-            <a href="/" class="logo">🎖️ Badge Generator</a>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/#features">Features</a></li>
-                <li><a href="/verify.html" class="active">Verify</a></li>
-                <li><a href="/vision.html">Vision</a></li>
-                <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a></li>
-            </ul>
-        </nav>
-    </header>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Hero Section -->
+  <header class="site-header">
+    <nav class="site-nav container" aria-label="Primary">
+      <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"></span>Firmament Badges</a>
+      <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+      <ul class="nav-links" id="primary-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/verify.html" class="active">Verify</a></li>
+        <li><a href="/api.html">API</a></li>
+        <li><a href="/vision.html">Vision</a></li>
+        <li><a href="/docs/llm/README.md">LLM Docs</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
     <section class="verify-hero">
-        <div class="container">
-            <h1>Verify Digital Badges & Credentials</h1>
-            <p style="font-size: 1.125rem; opacity: 0.9; max-width: 600px; margin: 1rem auto 0;">
-                Instantly verify the authenticity of digital badges, credentials, and issuers. Get detailed security analysis and trust scores.
-            </p>
-        </div>
+      <div class="container">
+        <p class="kicker">Public Verifier</p>
+        <h1 class="section-title" style="margin-bottom: 0.45rem;">Credential trust check</h1>
+        <p class="section-lede">One panel for structure, issuer, and signature checks with auditable result details.</p>
+      </div>
     </section>
 
-    <!-- Main Verification Form -->
-    <section class="content-section">
-        <div class="verify-form">
-            <div class="verify-tabs">
-                <div class="verify-tab active" data-tab="url">Verify by URL</div>
-                <div class="verify-tab" data-tab="json">Verify by JSON</div>
-                <div class="verify-tab" data-tab="issuer">Verify Issuer</div>
-            </div>
+    <section class="section" style="padding-top: 0.5rem;">
+      <div class="container verify-layout">
+        <section class="panel verify-panel">
+          <div class="verify-tabs">
+            <div class="verify-tab active" data-tab="url">By URL</div>
+            <div class="verify-tab" data-tab="json">By JSON</div>
+            <div class="verify-tab" data-tab="issuer">Issuer</div>
+          </div>
 
-            <!-- URL Verification Tab -->
-            <div class="tab-content active" id="url-tab">
-                <form id="url-form">
-                    <div class="form-group">
-                        <label class="form-label" for="badge-url">Badge or Credential URL</label>
-                        <input 
-                            type="url" 
-                            id="badge-url" 
-                            class="form-input" 
-                            placeholder="https://example.com/badges/certificate.json"
-                            required
-                        >
-                        <small style="color: var(--text-secondary); font-size: 0.875rem;">
-                            Enter the direct URL to a JSON badge file or credential
-                        </small>
-                    </div>
-                    <button type="submit" class="verify-button">
-                        <span class="button-text">Verify Badge</span>
-                        <span class="loading-spinner" style="display: none;"></span>
-                    </button>
-                </form>
-            </div>
+          <div class="tab-content active" id="url-tab">
+            <form id="url-form">
+              <div class="form-group">
+                <label class="form-label" for="badge-url">Badge or credential URL</label>
+                <input type="url" id="badge-url" class="form-input" placeholder="https://example.com/badges/assertion.json" required>
+                <small class="form-help">Fetches the resource and runs trust checks.</small>
+              </div>
+              <button type="submit" class="verify-button">
+                <span class="button-text">Verify URL</span>
+                <span class="loading-spinner" style="display: none;"></span>
+              </button>
+            </form>
+          </div>
 
-            <!-- JSON Verification Tab -->
-            <div class="tab-content" id="json-tab">
-                <form id="json-form">
-                    <div class="form-group">
-                        <label class="form-label" for="badge-json">Paste Badge JSON</label>
-                        <textarea 
-                            id="badge-json" 
-                            class="form-input form-textarea" 
-                            placeholder='{"@context": "https://w3id.org/openbadges/v2", "type": "Assertion", ...}'
-                            required
-                        ></textarea>
-                        <small style="color: var(--text-secondary); font-size: 0.875rem;">
-                            Paste the complete JSON content of the badge or credential
-                        </small>
-                    </div>
-                    <button type="submit" class="verify-button">
-                        <span class="button-text">Verify JSON</span>
-                        <span class="loading-spinner" style="display: none;"></span>
-                    </button>
-                </form>
-            </div>
+          <div class="tab-content" id="json-tab">
+            <form id="json-form">
+              <div class="form-group">
+                <label class="form-label" for="badge-json">Badge JSON payload</label>
+                <textarea id="badge-json" class="form-input form-textarea" placeholder='{"@context":"https://w3id.org/openbadges/v2","type":"Assertion",...}' required></textarea>
+                <small class="form-help">Paste a full JSON object.</small>
+              </div>
+              <button type="submit" class="verify-button">
+                <span class="button-text">Verify JSON</span>
+                <span class="loading-spinner" style="display: none;"></span>
+              </button>
+            </form>
+          </div>
 
-            <!-- Issuer Verification Tab -->
-            <div class="tab-content" id="issuer-tab">
-                <form id="issuer-form">
-                    <div class="form-group">
-                        <label class="form-label" for="issuer-url">Issuer URL or Domain</label>
-                        <input 
-                            type="url" 
-                            id="issuer-url" 
-                            class="form-input" 
-                            placeholder="https://university.edu/issuer or university.edu"
-                            required
-                        >
-                        <small style="color: var(--text-secondary); font-size: 0.875rem;">
-                            Enter issuer URL or domain to check their verification status
-                        </small>
-                    </div>
-                    <button type="submit" class="verify-button">
-                        <span class="button-text">Verify Issuer</span>
-                        <span class="loading-spinner" style="display: none;"></span>
-                    </button>
-                </form>
-            </div>
+          <div class="tab-content" id="issuer-tab">
+            <form id="issuer-form">
+              <div class="form-group">
+                <label class="form-label" for="issuer-url">Issuer URL</label>
+                <input type="url" id="issuer-url" class="form-input" placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
+                <small class="form-help">Checks issuer resource validity and accessibility.</small>
+              </div>
+              <button type="submit" class="verify-button">
+                <span class="button-text">Verify issuer</span>
+                <span class="loading-spinner" style="display: none;"></span>
+              </button>
+            </form>
+          </div>
 
-            <!-- Results Container -->
-            <div id="result-container" class="result-container">
-                <div class="result-title">
-                    <span class="result-icon"></span>
-                    <span class="result-text"></span>
-                </div>
-                <div class="result-details"></div>
+          <div id="result-container" class="result-container" role="status" aria-live="polite">
+            <div class="result-title">
+              <span class="result-icon"></span>
+              <span class="result-text"></span>
             </div>
-        </div>
+            <div class="result-details"></div>
+          </div>
 
-        <!-- Examples Section -->
-        <div class="examples">
-            <h3>Try These Examples</h3>
+          <div class="examples">
+            <h3>Quick examples</h3>
             <div class="example-links">
-                <a href="#" class="example-link" data-example="badge">Sample Badge JSON</a>
-                <a href="#" class="example-link" data-example="issuer">Sample Issuer JSON</a>
-                <a href="#" class="example-link" data-example="domain">Verify openbadges.org</a>
+              <a href="#" class="example-link" data-example="badge">Sample badge</a>
+              <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
+              <a href="#" class="example-link" data-example="domain">openbadges.org</a>
             </div>
-        </div>
+          </div>
+        </section>
+
+        <aside class="panel verify-panel scroll-animate">
+          <h2 class="panel-title">How to read the verdict</h2>
+          <div class="signal-stack">
+            <div class="signal-row"><span class="signal-key">Structure</span><span class="status-pill status-pass">required fields pass</span></div>
+            <div class="signal-row"><span class="signal-key">Issuer</span><span class="status-pill status-pass">profile reachable</span></div>
+            <div class="signal-row"><span class="signal-key">Signature</span><span class="status-pill status-warn">strongly recommended</span></div>
+          </div>
+          <p class="signal-note" style="margin-top: 0.8rem;">
+            Public verify endpoints include SSRF protections and are designed for untrusted input.
+          </p>
+
+          <div class="card" style="margin-top: 0.95rem;">
+            <p class="eyebrow">Public endpoint</p>
+            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
+          </div>
+          <div class="card" style="margin-top: 0.75rem;">
+            <p class="eyebrow">Need more detail?</p>
+            <a href="/api.html" class="btn btn-secondary">Open API reference</a>
+          </div>
+        </aside>
+      </div>
     </section>
+  </main>
 
-    <!-- How It Works -->
-    <section class="content-section" style="background: var(--surface);">
-        <h2 class="section-title">How Verification Works</h2>
-        <div class="features-grid">
-            <div class="feature-card">
-                <div class="feature-icon">🔍</div>
-                <h3 class="feature-title">Structure Validation</h3>
-                <p class="feature-description">
-                    Checks if the badge follows Open Badges v2/v3 specifications and contains all required fields.
-                </p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">🏢</div>
-                <h3 class="feature-title">Issuer Verification</h3>
-                <p class="feature-description">
-                    Validates the issuer's identity and checks if they're authorized to issue the credential.
-                </p>
-            </div>
-            
-            <div class="feature-card">
-                <div class="feature-icon">🔐</div>
-                <h3 class="feature-title">Cryptographic Proof</h3>
-                <p class="feature-description">
-                    Verifies digital signatures and cryptographic evidence to ensure the badge hasn't been tampered with.
-                </p>
-            </div>
-        </div>
-    </section>
+  <footer>
+    <div class="container footer-row">
+      <p>Firmament Badges verifier.</p>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/api.html">API</a>
+        <a href="/vision.html">Vision</a>
+        <a href="/docs/llm/README.md">LLM Docs</a>
+      </div>
+    </div>
+  </footer>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="/">Home</a>
-                <a href="/verify.html">Verify</a>
-                <a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a>
-                <a href="https://openbadges.org/" target="_blank">Open Badges</a>
-                <a href="https://www.w3.org/TR/vc-data-model/" target="_blank">W3C Standards</a>
-            </div>
-            <p class="footer-copyright">
-                © 2025 Badge Generator. Professional badge verification platform.
-            </p>
-        </div>
-    </footer>
+  <script>
+    document.querySelectorAll('.verify-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.verify-tab').forEach((t) => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+        document.getElementById('result-container').style.display = 'none';
+      });
+    });
 
-    <!-- JavaScript -->
-    <script>
-        // Tab switching functionality
-        document.querySelectorAll('.verify-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs and contents
-                document.querySelectorAll('.verify-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                tab.classList.add('active');
-                
-                // Show corresponding content
-                const tabName = tab.dataset.tab;
-                document.getElementById(`${tabName}-tab`).classList.add('active');
-                
-                // Clear any previous results
-                document.getElementById('result-container').style.display = 'none';
-            });
+    const examples = {
+      badge: JSON.stringify({
+        '@context': 'https://w3id.org/openbadges/v2',
+        type: 'Assertion',
+        id: 'https://example.com/assertions/123',
+        recipient: {
+          type: 'email',
+          hashed: false,
+          identity: 'learner@example.com'
+        },
+        badge: 'https://example.com/badges/web-dev-101',
+        issuedOn: '2026-01-15T00:00:00Z',
+        verification: { type: 'hosted' }
+      }, null, 2),
+      issuer: JSON.stringify({
+        '@context': 'https://w3id.org/openbadges/v2',
+        type: 'Issuer',
+        id: 'https://example.com/issuer',
+        name: 'Example Learning Academy',
+        url: 'https://example.com',
+        email: 'badges@example.com'
+      }, null, 2),
+      domain: 'https://openbadges.org'
+    };
+
+    const statusClassMap = {
+      pass: 'status-pass',
+      warn: 'status-warn',
+      fail: 'status-fail',
+      skip: 'status-skip'
+    };
+
+    const statusTextMap = {
+      pass: 'pass',
+      warn: 'warn',
+      fail: 'fail',
+      skip: 'skip'
+    };
+
+    function escapeHtml(input) {
+      return String(input)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function statusPill(state, text) {
+      const css = statusClassMap[state] || 'status-skip';
+      const label = escapeHtml(text || statusTextMap[state] || 'skip');
+      return `<span class="status-pill ${css}">${label}</span>`;
+    }
+
+    function ladderRow(label, state, text) {
+      return `<div class="result-ladder-row"><span class="label">${escapeHtml(label)}</span>${statusPill(state, text)}</div>`;
+    }
+
+    document.querySelectorAll('.example-link').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const type = link.dataset.example;
+        if (type === 'domain') {
+          document.querySelector('[data-tab="issuer"]').click();
+          document.getElementById('issuer-url').value = examples.domain;
+          return;
+        }
+
+        document.querySelector('[data-tab="json"]').click();
+        document.getElementById('badge-json').value = type === 'issuer' ? examples.issuer : examples.badge;
+      });
+    });
+
+    document.getElementById('url-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await verifyByUrl(document.getElementById('badge-url').value);
+    });
+
+    document.getElementById('json-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await verifyByJson(document.getElementById('badge-json').value);
+    });
+
+    document.getElementById('issuer-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await verifyIssuer(document.getElementById('issuer-url').value);
+    });
+
+    async function verifyByUrl(url) {
+      const button = document.querySelector('#url-form .verify-button');
+      const buttonText = button.querySelector('.button-text');
+      const spinner = button.querySelector('.loading-spinner');
+
+      try {
+        showLoading(button, buttonText, spinner);
+        const response = await fetch(`/public/api/verify/badge/${encodeURIComponent(url)}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        showBadgeResult(result);
+      } catch (error) {
+        showError(`Verification failed: ${error.message}`);
+      } finally {
+        hideLoading(button, buttonText, spinner);
+      }
+    }
+
+    async function verifyByJson(jsonStr) {
+      const button = document.querySelector('#json-form .verify-button');
+      const buttonText = button.querySelector('.button-text');
+      const spinner = button.querySelector('.loading-spinner');
+
+      try {
+        showLoading(button, buttonText, spinner);
+        const badgeData = JSON.parse(jsonStr);
+        const response = await fetch('/public/api/verify/json', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ badgeData })
         });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        showBadgeResult(result);
+      } catch (error) {
+        if (error instanceof SyntaxError) {
+          showError('Invalid JSON format.');
+        } else {
+          showError(`Verification failed: ${error.message}`);
+        }
+      } finally {
+        hideLoading(button, buttonText, spinner);
+      }
+    }
 
-        // Example data
-        const examples = {
-            badge: JSON.stringify({
-                "@context": "https://w3id.org/openbadges/v2",
-                "type": "Assertion",
-                "id": "https://example.com/assertions/123",
-                "recipient": {
-                    "type": "email",
-                    "hashed": false,
-                    "identity": "learner@example.com"
-                },
-                "badge": "https://example.com/badges/web-dev-101",
-                "issuedOn": "2026-01-15T00:00:00Z",
-                "verification": { "type": "hosted" }
-            }, null, 2),
-            issuer: JSON.stringify({
-                "@context": "https://w3id.org/openbadges/v2",
-                "type": "Issuer",
-                "id": "https://example.com/issuer",
-                "name": "Example Learning Academy",
-                "url": "https://example.com",
-                "email": "badges@example.com",
-                "description": "A demonstration badge issuer for testing verification."
-            }, null, 2),
-            domain: 'https://openbadges.org'
-        };
+    async function verifyIssuer(url) {
+      const button = document.querySelector('#issuer-form .verify-button');
+      const buttonText = button.querySelector('.button-text');
+      const spinner = button.querySelector('.loading-spinner');
 
-        // Example link handlers
-        document.querySelectorAll('.example-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const exampleType = link.dataset.example;
+      try {
+        showLoading(button, buttonText, spinner);
+        const response = await fetch(`/public/api/verify/issuer/${encodeURIComponent(url)}`);
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `HTTP ${response.status}`);
+        showIssuerResult(result);
+      } catch (error) {
+        showError(`Issuer verification failed: ${error.message}`);
+      } finally {
+        hideLoading(button, buttonText, spinner);
+      }
+    }
 
-                if (exampleType === 'domain') {
-                    document.querySelector('[data-tab="issuer"]').click();
-                    document.getElementById('issuer-url').value = examples.domain;
-                } else if (exampleType === 'issuer') {
-                    document.querySelector('[data-tab="json"]').click();
-                    document.getElementById('badge-json').value = examples.issuer;
-                } else {
-                    document.querySelector('[data-tab="json"]').click();
-                    document.getElementById('badge-json').value = examples.badge;
-                }
-            });
+    function showBadgeResult(result) {
+      const container = document.getElementById('result-container');
+      const icon = container.querySelector('.result-icon');
+      const text = container.querySelector('.result-text');
+      const details = container.querySelector('.result-details');
+
+      const structureState = result.structure ? (result.structure.valid ? 'pass' : 'fail') : 'skip';
+      const issuerState = result.issuer ? (result.issuer.valid ? 'pass' : 'fail') : 'skip';
+      const signatureState = result.signature ? (result.signature.valid ? 'pass' : 'fail') : 'skip';
+
+      let status = 'error';
+      let headline = 'Credential failed verification';
+      let verdictPill = statusPill('fail', 'invalid');
+
+      if (result.valid && result.verificationLevel === 'cryptographically_verified') {
+        status = 'success';
+        headline = 'Credential cryptographically verified';
+        verdictPill = statusPill('pass', 'high assurance');
+      } else if (result.valid) {
+        status = 'warning';
+        headline = 'Credential valid with partial proof';
+        verdictPill = statusPill('warn', 'review context');
+      }
+
+      icon.textContent = status === 'success' ? 'PASS' : status === 'warning' ? 'WARN' : 'FAIL';
+      text.innerHTML = `${escapeHtml(headline)} ${verdictPill}`;
+
+      let detailsHtml = '';
+      detailsHtml += `<p class="result-summary"><strong>Version:</strong> ${escapeHtml(result.version || 'unknown')} &nbsp; <strong>Level:</strong> ${escapeHtml(result.verificationLevel || 'unknown')}</p>`;
+      detailsHtml += '<div class="result-ladder">';
+      detailsHtml += ladderRow('Structure', structureState, statusTextMap[structureState]);
+      detailsHtml += ladderRow('Issuer', issuerState, statusTextMap[issuerState]);
+      detailsHtml += ladderRow('Signature', signatureState, signatureState === 'skip' ? 'not present' : statusTextMap[signatureState]);
+      detailsHtml += '</div>';
+
+      if (result.structure?.errors?.length) {
+        detailsHtml += '<div class="result-list"><p>Errors</p><ul>';
+        result.structure.errors.forEach((entry) => {
+          detailsHtml += `<li>${escapeHtml(entry)}</li>`;
         });
+        detailsHtml += '</ul></div>';
+      }
 
-        // Form submission handlers
-        document.getElementById('url-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const url = document.getElementById('badge-url').value;
-            await verifyByUrl(url);
+      if (result.structure?.warnings?.length) {
+        detailsHtml += '<div class="result-list"><p>Warnings</p><ul>';
+        result.structure.warnings.forEach((entry) => {
+          detailsHtml += `<li>${escapeHtml(entry)}</li>`;
         });
+        detailsHtml += '</ul></div>';
+      }
 
-        document.getElementById('json-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const json = document.getElementById('badge-json').value;
-            await verifyByJson(json);
-        });
+      details.innerHTML = detailsHtml;
+      container.className = `result-container result-${status}`;
+      container.style.display = 'block';
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
-        document.getElementById('issuer-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const url = document.getElementById('issuer-url').value;
-            await verifyIssuer(url);
-        });
+    function showIssuerResult(result) {
+      const container = document.getElementById('result-container');
+      const icon = container.querySelector('.result-icon');
+      const text = container.querySelector('.result-text');
+      const details = container.querySelector('.result-details');
 
-        // Verification functions
-        async function verifyByUrl(url) {
-            const button = document.querySelector('#url-form .verify-button');
-            const buttonText = button.querySelector('.button-text');
-            const spinner = button.querySelector('.loading-spinner');
-            
-            try {
-                showLoading(button, buttonText, spinner);
-                
-                const response = await fetch(`/public/api/verify/badge/${encodeURIComponent(url)}`);
-                const result = await response.json();
+      const valid = Boolean(result.valid && result.verification?.valid !== false);
+      const status = valid ? 'success' : 'error';
+      icon.textContent = valid ? 'PASS' : 'FAIL';
+      text.innerHTML = `${valid ? 'Issuer resource verified' : 'Issuer resource failed verification'} ${statusPill(valid ? 'pass' : 'fail', valid ? 'valid' : 'invalid')}`;
 
-                if (!response.ok) {
-                    throw new Error(result.error || `HTTP ${response.status}`);
-                }
+      const profileState = valid ? 'pass' : 'fail';
+      const message = result.verification?.message || 'No additional details returned by verifier';
+      let detailsHtml = `<p class="result-summary"><strong>Type:</strong> ${escapeHtml(result.verification?.type || 'unknown')}</p>`;
+      detailsHtml += '<div class="result-ladder">';
+      detailsHtml += ladderRow('Issuer profile', profileState, statusTextMap[profileState]);
+      detailsHtml += '</div>';
+      detailsHtml += `<div class="result-list"><p>Message</p><ul><li>${escapeHtml(message)}</li></ul></div>`;
 
-                showResult(result, 'badge');
-            } catch (error) {
-                showError(`Failed to verify badge: ${error.message}`);
-            } finally {
-                hideLoading(button, buttonText, spinner);
-            }
-        }
+      if (result.verification?.error) {
+        detailsHtml += `<div class="result-list"><p>Error</p><ul><li>${escapeHtml(result.verification.error)}</li></ul></div>`;
+      }
 
-        async function verifyByJson(jsonStr) {
-            const button = document.querySelector('#json-form .verify-button');
-            const buttonText = button.querySelector('.button-text');
-            const spinner = button.querySelector('.loading-spinner');
-            
-            try {
-                showLoading(button, buttonText, spinner);
-                
-                // Parse and validate JSON first
-                const badgeData = JSON.parse(jsonStr);
+      details.innerHTML = detailsHtml;
+      container.className = `result-container result-${status}`;
+      container.style.display = 'block';
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
-                const response = await fetch('/public/api/verify/json', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ badgeData })
-                });
-                const result = await response.json();
+    function showError(message) {
+      const container = document.getElementById('result-container');
+      container.querySelector('.result-icon').textContent = 'FAIL';
+      container.querySelector('.result-text').innerHTML = `Verifier request error ${statusPill('fail', 'request failed')}`;
+      container.querySelector('.result-details').innerHTML = `<p class="result-summary">${escapeHtml(message)}</p>`;
+      container.className = 'result-container result-error';
+      container.style.display = 'block';
+      container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
 
-                if (!response.ok) {
-                    throw new Error(result.error || `HTTP ${response.status}`);
-                }
+    function showLoading(button, buttonText, spinner) {
+      button.disabled = true;
+      buttonText.style.display = 'none';
+      spinner.style.display = 'inline-block';
+    }
 
-                showResult(result, 'badge');
-            } catch (error) {
-                if (error instanceof SyntaxError) {
-                    showError('Invalid JSON format. Please check your JSON syntax.');
-                } else {
-                    showError(`Failed to verify JSON: ${error.message}`);
-                }
-            } finally {
-                hideLoading(button, buttonText, spinner);
-            }
-        }
+    function hideLoading(button, buttonText, spinner) {
+      button.disabled = false;
+      buttonText.style.display = 'inline';
+      spinner.style.display = 'none';
+    }
 
-        async function verifyIssuer(url) {
-            const button = document.querySelector('#issuer-form .verify-button');
-            const buttonText = button.querySelector('.button-text');
-            const spinner = button.querySelector('.loading-spinner');
-            
-            try {
-                showLoading(button, buttonText, spinner);
-                
-                const response = await fetch(`/public/api/verify/issuer/${encodeURIComponent(url)}`);
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || `HTTP ${response.status}`);
-                }
-
-                showResult(result, 'issuer');
-            } catch (error) {
-                showError(`Failed to verify issuer: ${error.message}`);
-            } finally {
-                hideLoading(button, buttonText, spinner);
-            }
-        }
-
-        function showLoading(button, buttonText, spinner) {
-            button.disabled = true;
-            buttonText.style.display = 'none';
-            spinner.style.display = 'inline-block';
-        }
-
-        function hideLoading(button, buttonText, spinner) {
-            button.disabled = false;
-            buttonText.style.display = 'inline';
-            spinner.style.display = 'none';
-        }
-
-        function showResult(result, type) {
-            const container = document.getElementById('result-container');
-            const icon = container.querySelector('.result-icon');
-            const text = container.querySelector('.result-text');
-            const details = container.querySelector('.result-details');
-            
-            // Determine result status
-            let status = 'error';
-            if (result.valid) {
-                status = result.verificationLevel === 'cryptographically_verified' ? 'success' : 'warning';
-            }
-            
-            // Set icon and title
-            const icons = {
-                success: '✅',
-                warning: '⚠️',
-                error: '❌'
-            };
-            
-            icon.textContent = icons[status];
-            text.textContent = result.valid ? 'Verification Successful' : 'Verification Failed';
-            
-            // Build details
-            let detailsHtml = '';
-            
-            if (type === 'badge') {
-                detailsHtml += `<p><strong>Status:</strong> ${result.verificationLevel || 'Unknown'}</p>`;
-                
-                if (result.structure) {
-                    detailsHtml += `<p><strong>Structure:</strong> ${result.structure.valid ? 'Valid' : 'Invalid'}</p>`;
-                    if (result.structure.errors && result.structure.errors.length > 0) {
-                        detailsHtml += `<p><strong>Errors:</strong></p><ul>`;
-                        result.structure.errors.forEach(error => {
-                            detailsHtml += `<li>${error}</li>`;
-                        });
-                        detailsHtml += `</ul>`;
-                    }
-                }
-                
-                if (result.issuer) {
-                    detailsHtml += `<p><strong>Issuer:</strong> ${result.issuer.valid ? 'Valid' : 'Invalid'}</p>`;
-                }
-                
-                if (result.signature) {
-                    detailsHtml += `<p><strong>Signature:</strong> ${result.signature.valid ? 'Valid' : 'Invalid'}</p>`;
-                }
-            } else if (type === 'issuer') {
-                if (result.verification) {
-                    detailsHtml += `<p><strong>Type:</strong> ${result.verification.type || 'Unknown'}</p>`;
-                    detailsHtml += `<p><strong>Message:</strong> ${result.verification.message || 'No message'}</p>`;
-                    
-                    if (result.verification.issuer) {
-                        detailsHtml += `<p><strong>Issuer Name:</strong> ${result.verification.issuer.name || 'Unknown'}</p>`;
-                    }
-                }
-            }
-            
-            details.innerHTML = detailsHtml;
-            
-            // Apply styling
-            container.className = `result-container result-${status}`;
-            container.style.display = 'block';
-            
-            // Scroll to result
-            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-
-        function showError(message) {
-            const container = document.getElementById('result-container');
-            const icon = container.querySelector('.result-icon');
-            const text = container.querySelector('.result-text');
-            const details = container.querySelector('.result-details');
-            
-            icon.textContent = '❌';
-            text.textContent = 'Verification Error';
-            details.innerHTML = `<p>${message}</p>`;
-            
-            container.className = 'result-container result-error';
-            container.style.display = 'block';
-            
-            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-    </script>
+    const queryUrl = new URLSearchParams(window.location.search).get('url');
+    if (queryUrl) {
+      document.getElementById('badge-url').value = queryUrl;
+      document.querySelector('[data-tab="url"]').click();
+    }
+  </script>
+  <script src="/scripts.js"></script>
 </body>
 </html>

@@ -1,316 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Our Vision - Creating the Let's Encrypt Moment for Digital Credentials</title>
-    <meta name="description" content="Our vision to democratize digital credentialing through open standards, making verifiable credentials as ubiquitous as HTTPS.">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="/styles.css">
-    
-    <!-- Vision page specific styles -->
-    <style>
-        .vision-hero {
-            background: linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%);
-            color: white;
-            padding: 6rem 2rem 4rem;
-            text-align: center;
-        }
-        
-        .vision-hero-container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-        
-        .vision-hero h1 {
-            font-size: clamp(2.5rem, 5vw, 4rem);
-            font-weight: 700;
-            line-height: 1.1;
-            margin-bottom: 1.5rem;
-        }
-        
-        .vision-hero-subtitle {
-            font-size: 1.25rem;
-            opacity: 0.9;
-            margin-bottom: 2rem;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision | Firmament Badges</title>
+  <meta name="description" content="The Let's Encrypt direction for OpenBadges: open, free, and verifiable credential infrastructure.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <nav>
-            <a href="/" class="logo">🎖️ Badge Generator</a>
-            <ul class="nav-links">
-                <li><a href="/">Home</a></li>
-                <li><a href="/#features">Features</a></li>
-                <li><a href="/verify.html">Verify</a></li>
-                <li><a href="/#getting-started">Get Started</a></li>
-                <li><a href="/vision.html" class="active">Vision</a></li>
-                <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a></li>
-            </ul>
-        </nav>
-    </header>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Hero Section -->
-    <section class="vision-hero">
-        <div class="vision-hero-container">
-            <h1 class="animate-fade-in">Creating the Let's Encrypt Moment for Digital Credentials</h1>
-            <p class="vision-hero-subtitle animate-fade-in">
-                We're at a tipping point for digital credentials. Just like Let's Encrypt democratized HTTPS, 
-                we're building the infrastructure to make verifiable credentials free, open, and ubiquitous.
-            </p>
-        </div>
-    </section>
+  <header class="site-header">
+    <nav class="site-nav container" aria-label="Primary">
+      <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"></span>Firmament Badges</a>
+      <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+      <ul class="nav-links" id="primary-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/verify.html">Verify</a></li>
+        <li><a href="/api.html">API</a></li>
+        <li><a href="/vision.html" class="active">Vision</a></li>
+        <li><a href="/docs/llm/README.md">LLM Docs</a></li>
+      </ul>
+    </nav>
+  </header>
 
-    <!-- Why Now Section -->
-    <section class="content-section">
-        <h2 class="section-title">🚀 Why Now?</h2>
-        <div class="prose">
-            <p>Digital badges and credentials are rapidly gaining traction across industries:</p>
-            
-            <div class="stats-grid">
-                <div class="stat-card scroll-animate">
-                    <div class="stat-number">73%</div>
-                    <div class="stat-label">of employers favor skills-based hiring</div>
-                </div>
-                <div class="stat-card scroll-animate">
-                    <div class="stat-number">$15B</div>
-                    <div class="stat-label">projected digital credentialing market by 2030</div>
-                </div>
-                <div class="stat-card scroll-animate">
-                    <div class="stat-number">2.5x</div>
-                    <div class="stat-label">faster hiring with verified micro-credentials</div>
-                </div>
-                <div class="stat-card scroll-animate">
-                    <div class="stat-number">89%</div>
-                    <div class="stat-label">of learning providers want badge interoperability</div>
-                </div>
-            </div>
-
-            <ul>
-                <li><strong>Employers increasingly favor micro-credentials</strong> over traditional degrees for specific skill verification</li>
-                <li><strong>Educational institutions and corporate training providers</strong> are eager to demonstrate granular competencies that traditional transcripts miss</li>
-                <li><strong>Market projections estimate</strong> the digital credentialing industry to grow significantly over the next decade</li>
-            </ul>
-
-            <p>Yet, current growth is happening largely within <strong>proprietary ecosystems</strong>, limiting universal interoperability, raising costs, and hindering true democratization.</p>
-        </div>
-    </section>
-
-    <!-- Our Vision Section -->
-    <section class="content-section" style="background: var(--surface);">
-        <h2 class="section-title">🌟 Our Vision: The Let's Encrypt Model for Credentials</h2>
-        <p class="section-subtitle">
-            Just as Let's Encrypt created a simple, open, and cost-free standard for HTTPS, we envision a world where digital credentials are completely democratized.
+  <main id="main-content">
+    <section class="manifesto-hero">
+      <div class="container">
+        <p class="kicker">Manifesto</p>
+        <h1 class="section-title">The Let's Encrypt moment for credentials</h1>
+        <p class="section-lede">
+          Credentials should be as easy to verify as HTTPS certificates: open standards, no lock-in, and strong proof by default.
         </p>
-        
-        <div class="problem-solution">
-            <div class="problem-card scroll-animate">
-                <h3 class="card-title">
-                    <span>❌</span>
-                    Current Problems
-                </h3>
-                <ul>
-                    <li>Fragmented, proprietary ecosystems</li>
-                    <li>High costs preventing small issuer adoption</li>
-                    <li>Limited interoperability across platforms</li>
-                    <li>Weak security and verification standards</li>
-                    <li>Vendor lock-in limiting credential portability</li>
-                </ul>
-            </div>
-            
-            <div class="solution-card scroll-animate">
-                <h3 class="card-title">
-                    <span>✅</span>
-                    Our Solution
-                </h3>
-                <ul>
-                    <li><strong>Completely free</strong> and accessible to organizations of all sizes</li>
-                    <li><strong>Universal interoperability</strong> with seamless cross-platform integration</li>
-                    <li><strong>Cryptographically robust standards</strong> ensuring authenticity</li>
-                    <li><strong>Open source</strong> preventing vendor lock-in</li>
-                    <li><strong>Standards-compliant</strong> with W3C and Open Badges specifications</li>
-                </ul>
-            </div>
+
+        <div class="manifesto-grid">
+          <article class="card scroll-animate">
+            <p class="eyebrow">Current state</p>
+            <h3>Fragmented platforms</h3>
+            <p>Credentials often live in private systems and fail to travel cleanly across employer workflows.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Target state</p>
+            <h3>Portable trust</h3>
+            <p>A credential should be portable JSON with transparent issuer checks and proof verification.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Method</p>
+            <h3>Open infra first</h3>
+            <p>Invest in free, standards-aligned tooling so any issuer can publish trustworthy credentials.</p>
+          </article>
         </div>
+      </div>
     </section>
 
-    <!-- Proof of Concept Section -->
-    <section class="content-section">
-        <h2 class="section-title">🔬 Proof-of-Concept Validation</h2>
-        <div class="prose">
-            <p>We've successfully validated the technical feasibility of this vision using Open Badges v3:</p>
-            
-            <h3>✅ Technical Achievements</h3>
-            <ul>
-                <li><strong>Issuer Setup:</strong> Instantly created fully compliant issuer ("Test Learning Academy")</li>
-                <li><strong>Badge Class Creation:</strong> Easily defined badges with clear criteria and metadata</li>
-                <li><strong>Credential Issuance:</strong> Seamlessly issued verifiable digital credentials</li>
-                <li><strong>Cryptographic Verification:</strong> Implemented Ed25519 digital signatures</li>
-                <li><strong>API-Driven Automation:</strong> Demonstrated bulk badge issuance capabilities</li>
-            </ul>
-
-            <h3>🛡️ Security & Standards</h3>
-            <ul>
-                <li>Fully compliant with <strong>Open Badges v3</strong> and <strong>W3C Verifiable Credentials</strong></li>
-                <li>Hosted badge components publicly using universally verifiable <strong>JSON-LD data</strong></li>
-                <li>Implemented <strong>cryptographic signatures</strong> for tamper-proof verification</li>
-                <li>Created <strong>automated verification systems</strong> with multi-level security checks</li>
-            </ul>
+    <section class="section section-muted">
+      <div class="container">
+        <h2 class="section-title">Design principles</h2>
+        <div class="principle-grid">
+          <article class="card scroll-animate">
+            <h3>Public verifiability</h3>
+            <p>Verification should be inspectable and reproducible with clear status outputs.</p>
+          </article>
+          <article class="card scroll-animate">
+            <h3>Issuer accountability</h3>
+            <p>Domain ownership and well-known profiles establish explicit issuer provenance.</p>
+          </article>
+          <article class="card scroll-animate">
+            <h3>Operator ergonomics</h3>
+            <p>CLI, API, and MCP access should make secure issuance practical instead of aspirational.</p>
+          </article>
         </div>
+      </div>
     </section>
 
-    <!-- Impact Timeline -->
-    <section class="timeline">
-        <div class="timeline-container">
-            <h2 class="section-title">📈 Anticipated Impact</h2>
-            <p class="section-subtitle">
-                Our roadmap for transforming the global credentialing ecosystem through open standards and free infrastructure.
-            </p>
-            
-            <div class="timeline-grid">
-                <div class="timeline-card scroll-animate">
-                    <div class="timeline-period">Short-Term (1–2 Years)</div>
-                    <h3 class="timeline-title">Foundation & Adoption</h3>
-                    <div class="timeline-content">
-                        <ul>
-                            <li>Drastic reduction in credentialing costs</li>
-                            <li>Immediate interoperability across platforms</li>
-                            <li>Democratization of credential issuance</li>
-                            <li>Early adopter pilot programs with key organizations</li>
-                            <li>Integration with major learning management systems</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="timeline-card scroll-animate">
-                    <div class="timeline-period">Medium-Term (3–5 Years)</div>
-                    <h3 class="timeline-title">Ecosystem Transformation</h3>
-                    <div class="timeline-content">
-                        <ul>
-                            <li>Real-time verification and granular skill tracking</li>
-                            <li>Greater global accessibility and equity</li>
-                            <li>Integration with professional networks and job boards</li>
-                            <li>Government and institutional adoption</li>
-                            <li>Standardized digital wallet compatibility</li>
-                        </ul>
-                    </div>
-                </div>
-                
-                <div class="timeline-card scroll-animate">
-                    <div class="timeline-period">Long-Term (5–10 Years)</div>
-                    <h3 class="timeline-title">Paradigm Shift</h3>
-                    <div class="timeline-content">
-                        <ul>
-                            <li>Fundamental shift from degree-centric hiring</li>
-                            <li>Dynamic, real-time job market skill matching</li>
-                            <li>Cultivation of continuous learning culture</li>
-                            <li>Global standard for workforce mobility</li>
-                            <li>AI-driven personalized learning pathways</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Roadmap arc</h2>
+        <div class="roadmap-grid">
+          <article class="card roadmap-item scroll-animate">
+            <h3>Phase 1: Foundation</h3>
+            <p>Reliable issue and verify primitives with markdown-first docs for humans and LLMs.</p>
+          </article>
+          <article class="card roadmap-item scroll-animate">
+            <h3>Phase 2: Integrations</h3>
+            <p>Deeper LMS and hiring-system integrations built on stable trust interfaces.</p>
+          </article>
+          <article class="card roadmap-item scroll-animate">
+            <h3>Phase 3: Network effects</h3>
+            <p>Credential verification becomes expected everywhere, with no dependence on a single vendor.</p>
+          </article>
         </div>
+      </div>
     </section>
 
-    <!-- Potential Partners Section -->
-    <section class="content-section">
-        <h2 class="section-title">🤝 Potential Funders and Partners</h2>
-        <p class="section-subtitle">
-            Building a coalition of technology leaders, educational institutions, and forward-thinking organizations to democratize digital credentials.
-        </p>
-        
-        <div class="partners-grid">
-            <div class="partner-category scroll-animate">
-                <h4>🏢 Technology Leaders</h4>
-                <ul class="partner-list">
-                    <li>Mozilla Foundation</li>
-                    <li>Google for Education</li>
-                    <li>Microsoft Skills Initiative</li>
-                    <li>Amazon Web Services</li>
-                    <li>LinkedIn Learning</li>
-                </ul>
-            </div>
-            
-            <div class="partner-category scroll-animate">
-                <h4>🎓 Education Initiatives</h4>
-                <ul class="partner-list">
-                    <li>Gates Foundation</li>
-                    <li>Khan Academy</li>
-                    <li>Coursera</li>
-                    <li>Community College Network</li>
-                    <li>UNESCO Digital Skills</li>
-                </ul>
-            </div>
-            
-            <div class="partner-category scroll-animate">
-                <h4>🏛️ Government Agencies</h4>
-                <ul class="partner-list">
-                    <li>Department of Labor</li>
-                    <li>Department of Education</li>
-                    <li>State Workforce Initiatives</li>
-                    <li>European Skills Agenda</li>
-                    <li>UN Sustainable Development Goals</li>
-                </ul>
-            </div>
-            
-            <div class="partner-category scroll-animate">
-                <h4>🏭 Industry Associations</h4>
-                <ul class="partner-list">
-                    <li>IEEE Professional Development</li>
-                    <li>ACM Learning Center</li>
-                    <li>Manufacturing Skills Institute</li>
-                    <li>Healthcare Credentialing</li>
-                    <li>Financial Services Training</li>
-                </ul>
-            </div>
+    <section class="section">
+      <div class="container">
+        <div class="cta-band">
+          <div>
+            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">Build on open trust primitives</h2>
+            <p>Use the API and markdown docs to move from idea to a verifiable credential pipeline.</p>
+          </div>
+          <a href="/docs/llm/README.md" class="btn btn-primary">Open LLM docs</a>
         </div>
+      </div>
     </section>
+  </main>
 
-    <!-- Call to Action -->
-    <section class="cta-section">
-        <div class="cta-content">
-            <h2 class="cta-title">The Catalyst Needed</h2>
-            <p class="cta-description">
-                Like Let's Encrypt, achieving this transformative shift requires strategic coalition building and neutral leadership. 
-                The technology and standards are ready. What's missing is coordinated action across the industry.
-            </p>
-            <p class="cta-description">
-                <strong>We have the opportunity to fundamentally reshape global skills verification, workforce mobility, and lifelong learning. 
-                The tipping point is here. The ecosystem is ready. It's time to act.</strong>
-            </p>
-            <a href="/" class="btn btn-white">Start Building the Future</a>
-        </div>
-    </section>
+  <footer>
+    <div class="container footer-row">
+      <p>Firmament Badges vision.</p>
+      <div class="footer-links">
+        <a href="/">Home</a>
+        <a href="/verify.html">Verify</a>
+        <a href="/api.html">API</a>
+      </div>
+    </div>
+  </footer>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="/">Home</a>
-                <a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a>
-                <a href="https://openbadges.org/" target="_blank">Open Badges</a>
-                <a href="https://www.w3.org/TR/vc-data-model/" target="_blank">W3C Standards</a>
-                <a href="https://letsencrypt.org/" target="_blank">Let's Encrypt</a>
-            </div>
-            <p class="footer-copyright">
-                © 2025 Badge Generator. Building the infrastructure for democratized digital credentials.
-            </p>
-        </div>
-    </footer>
-
-    <!-- JavaScript -->
-    <script src="/scripts.js"></script>
+  <script src="/scripts.js"></script>
 </body>
 </html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Reference | Firmament Badges</title>
+  <meta name="description" content="API quickstart and endpoint map for issuing and verifying Open Badges.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="site-header">
+    <nav class="site-nav container" aria-label="Primary">
+      <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"></span>Firmament Badges</a>
+      <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+      <ul class="nav-links" id="primary-nav">
+        <li><a href="/">Home</a></li>
+        <li><a href="/verify.html">Verify</a></li>
+        <li><a href="/api.html" class="active">API</a></li>
+        <li><a href="/vision.html">Vision</a></li>
+        <li><a href="/docs/llm/README.md">LLM Docs</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
+    <section class="api-hero">
+      <div class="container">
+        <p class="kicker">API Surface</p>
+        <h1 class="section-title">Issue and verify with explicit trust boundaries</h1>
+        <p class="section-lede">
+          Authenticated write endpoints live under <code>/api/*</code>. Public verification endpoints live under
+          <code>/public/api/*</code> and enforce SSRF protections.
+        </p>
+      </div>
+    </section>
+
+    <section class="section" style="padding-top: 0.8rem;">
+      <div class="container api-layout">
+        <article class="api-group scroll-animate">
+          <p class="eyebrow">Authentication</p>
+          <h3>Authenticated requests require <code>X-API-Key</code></h3>
+          <p>Attach the key to all write and admin requests, then keep public verification flows keyless.</p>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span>Header</span>
+              <button class="copy-btn" data-copy-target="api-header-snippet">Copy</button>
+            </div>
+            <pre id="api-header-snippet">X-API-Key: &lt;API_KEY&gt;</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span>Public verify call</span>
+              <button class="copy-btn" data-copy-target="api-verify-snippet">Copy</button>
+            </div>
+            <pre id="api-verify-snippet">curl "https://badges.firmament.works/public/api/verify/badge/https%3A%2F%2Fexample.com%2Fbadges%2Fassertion.json"</pre>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-head">
+              <span>Create issuer</span>
+              <button class="copy-btn" data-copy-target="api-issuer-snippet">Copy</button>
+            </div>
+            <pre id="api-issuer-snippet">curl -X POST "https://badges.firmament.works/api/issuer" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: &lt;API_KEY&gt;" \
+  -d '{
+    "id":"https://demo.example.org/issuer",
+    "name":"Demo Academy",
+    "url":"https://demo.example.org",
+    "email":"badges@demo.example.org"
+  }'</pre>
+          </div>
+        </article>
+
+        <article class="api-group scroll-animate">
+          <p class="eyebrow">Endpoint map</p>
+          <h3>Grouped by job to be done</h3>
+          <div class="api-grid">
+            <section class="endpoint-item" style="padding: 0.7rem;">
+              <code>Public verification plane</code>
+              <ul class="endpoint-list" style="margin-top: 0.45rem;">
+                <li class="endpoint-item">
+                  <code>GET /public/api/verify/badge/:badgeUrl(*)</code>
+                  <span>Fetch and verify a remote badge URL.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>GET /public/api/verify/issuer/:issuerUrl(*)</code>
+                  <span>Verify an issuer profile URL.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /public/api/verify/json</code>
+                  <span>Verify inline badge JSON object.</span>
+                </li>
+              </ul>
+            </section>
+
+            <section class="endpoint-item" style="padding: 0.7rem;">
+              <code>Issuance plane</code>
+              <ul class="endpoint-list" style="margin-top: 0.45rem;">
+                <li class="endpoint-item">
+                  <code>GET /api/validate-issuer-domain</code>
+                  <span>Validate domain usage constraints.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /api/issuer</code>
+                  <span>Create a hosted issuer JSON resource.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /api/badge-class</code>
+                  <span>Create a hosted badge class JSON resource.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /api/credential-subject</code>
+                  <span>Issue a hosted assertion JSON resource.</span>
+                </li>
+              </ul>
+            </section>
+
+            <section class="endpoint-item" style="padding: 0.7rem;">
+              <code>Issuer operations</code>
+              <ul class="endpoint-list" style="margin-top: 0.45rem;">
+                <li class="endpoint-item">
+                  <code>POST /api/issuers/verify</code>
+                  <span>Verify domain ownership via well-known profile.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>GET /api/issuers</code>
+                  <span>List verified issuer records.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /api/issuers/:domain/reverify</code>
+                  <span>Re-run issuer verification.</span>
+                </li>
+              </ul>
+            </section>
+
+            <section class="endpoint-item" style="padding: 0.7rem;">
+              <code>Proof and key operations</code>
+              <ul class="endpoint-list" style="margin-top: 0.45rem;">
+                <li class="endpoint-item">
+                  <code>POST /api/sign-badge</code>
+                  <span>Add a proof block to badge payload.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>POST /api/cache-public-key</code>
+                  <span>Cache issuer public keys by domain.</span>
+                </li>
+                <li class="endpoint-item">
+                  <code>GET /api/badge-files</code>
+                  <span>List hosted JSON resources.</span>
+                </li>
+              </ul>
+            </section>
+          </div>
+
+          <div class="cta-row" style="margin-top: 0.95rem;">
+            <a class="btn btn-secondary" href="/docs/llm/API.md">Markdown API guide</a>
+            <a class="btn btn-secondary" href="/docs/llm/README.md">LLM docs index</a>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container footer-row">
+      <p>Firmament Badges API docs.</p>
+      <div class="footer-links">
+        <a href="/verify.html">Verify</a>
+        <a href="/vision.html">Vision</a>
+        <a href="/docs/llm/README.md">LLM Docs</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/scripts.js"></script>
+</body>
+</html>

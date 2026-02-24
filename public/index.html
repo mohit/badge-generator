@@ -1,218 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Badge Generator - Open Badges and Verifiable Credentials, Simplified</title>
-    <meta name="description" content="Deploy professional digital badges in minutes. Standards-compliant, cryptographically secure, and ready for production use anywhere.">
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Stylesheet -->
-    <link rel="stylesheet" href="/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firmament Badges | Open Trust Infrastructure for Credentials</title>
+  <meta name="description" content="Issue and verify Open Badges with standards-based, cryptographically verifiable infrastructure.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <nav>
-            <a href="/" class="logo">🎖️ Badge Generator</a>
-            <ul class="nav-links">
-                <li><a href="#features">Features</a></li>
-                <li><a href="/verify.html">Verify</a></li>
-                <li><a href="#getting-started">Get Started</a></li>
-                <li><a href="/vision.html">Vision</a></li>
-                <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a></li>
-            </ul>
-        </nav>
-    </header>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
 
-    <!-- Hero Section -->
+  <header class="site-header">
+    <nav class="site-nav container" aria-label="Primary">
+      <a href="/" class="logo"><span class="logo-mark" aria-hidden="true"></span>Firmament Badges</a>
+      <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
+      <ul class="nav-links" id="primary-nav">
+        <li><a href="/verify.html">Verify</a></li>
+        <li><a href="#issue">Issue</a></li>
+        <li><a href="/api.html">API</a></li>
+        <li><a href="/vision.html">Vision</a></li>
+        <li><a href="/docs/llm/README.md">LLM Docs</a></li>
+        <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank" rel="noreferrer">Docs</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main-content">
     <section class="hero">
-        <div class="hero-container">
-            <h1 class="animate-fade-in">Issue trusted digital badges your learners will value</h1>
-            <p class="hero-subtitle animate-fade-in">
-                Create professional, verifiable credentials that employers recognize and trust. Simple setup, secure verification, works everywhere.
-            </p>
-            
-            <div class="cta-buttons animate-fade-in">
-                <a href="#getting-started" class="btn btn-primary">Start Issuing Badges</a>
-                <a href="/vision.html" class="btn btn-secondary">Why Digital Badges Matter</a>
-            </div>
-
-            <!-- Example Badge -->
-            <div class="demo-badge animate-fade-in">
-                <div class="badge-icon">📜</div>
-                <h3>Project Management Certificate</h3>
-                <p class="demo-badge-issuer">Professional Development Institute</p>
-                <div class="demo-badge-verification">
-                    <span class="verification-icon">✓</span>
-                    <span class="verification-text">Employer-Verified Credential</span>
-                </div>
-            </div>
+      <div class="container hero-grid">
+        <div>
+          <p class="kicker">Open Trust Infrastructure</p>
+          <h1>Open credential trust infrastructure.</h1>
+          <p>
+            Issue, host, and verify credentials as open resources with explicit trust checks.
+            Built for schools, workforce teams, and learning platforms that need defensible proof.
+          </p>
+          <div class="cta-row">
+            <a href="/verify.html" class="btn btn-primary">Verify a Badge</a>
+            <a href="#issue" class="btn btn-secondary">See issuing flow</a>
+          </div>
+          <ul class="proof-chips" aria-label="Trust claims">
+            <li>Open Badges v2 and v3</li>
+            <li>W3C VC compatible</li>
+            <li>Ed25519 signature support</li>
+            <li>Domain verification controls</li>
+          </ul>
         </div>
+
+        <aside class="panel hero-proof-card scroll-animate" aria-label="Verification ladder">
+          <h2 class="panel-title">Trust ladder</h2>
+          <div class="signal-stack">
+            <div class="signal-row">
+              <span class="signal-key">Structure check</span>
+              <span class="signal-value signal-ok">pass</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-key">Issuer check</span>
+              <span class="signal-value signal-ok">pass</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-key">Signature check</span>
+              <span class="signal-value signal-ok">pass</span>
+            </div>
+            <div class="signal-row">
+              <span class="signal-key">Final status</span>
+              <span class="signal-value signal-ok">verified</span>
+            </div>
+          </div>
+          <p class="signal-note">Human-readable verdicts up front, full technical detail when you need to audit.</p>
+        </aside>
+      </div>
     </section>
 
-    <!-- Current Status -->
-    <section class="status-section">
-        <div class="status-container">
-            <h2 class="status-title">Trusted by Organizations Worldwide</h2>
-            <div class="status-grid">
-                <div class="status-item">
-                    <div class="status-badge">
-                        <span>✓</span>
-                        <span>Trusted</span>
-                    </div>
-                    <div class="status-text">Employer-Recognized Standards</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-badge">
-                        <span>✓</span>
-                        <span>Secure</span>
-                    </div>
-                    <div class="status-text">Tamper-Proof Verification</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-badge">
-                        <span>✓</span>
-                        <span>Simple</span>
-                    </div>
-                    <div class="status-text">5-Minute Setup</div>
-                </div>
-                <div class="status-item">
-                    <div class="status-badge">
-                        <span>✓</span>
-                        <span>Free</span>
-                    </div>
-                    <div class="status-text">No Subscription Fees</div>
-                </div>
-            </div>
+    <section class="section section-muted" id="pillars">
+      <div class="container">
+        <h2 class="section-title">Infrastructure guarantees</h2>
+        <p class="section-lede">Designed for high signal: open formats, durable identifiers, and transparent verification.</p>
+        <div class="grid-3" style="margin-top: 1rem;">
+          <article class="card scroll-animate">
+            <p class="eyebrow">Open</p>
+            <h3>Open data model</h3>
+            <p>Issuers and credentials are stored as plain JSON resources aligned with Open Badges and VC conventions.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Provable</p>
+            <h3>Cryptographic integrity</h3>
+            <p>Sign badge payloads with Ed25519 keys and verify them against issuer keys and hosted metadata.</p>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">Defensible</p>
+            <h3>Issuer domain controls</h3>
+            <p>Domain validation and well-known issuer checks reduce impersonation and make trust boundaries explicit.</p>
+          </article>
         </div>
+      </div>
     </section>
 
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="features-container">
-            <h2 class="section-title">Why organizations choose our badge platform</h2>
-            <p class="section-subtitle">
-                Professional credentialing that enhances your reputation and helps learners advance their careers.
-            </p>
-            
-            <div class="features-grid">
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">🏆</div>
-                    <h3 class="feature-title">Employer Recognition</h3>
-                    <p class="feature-description">
-                        Industry-standard badges that employers trust. Verifiable credentials that open doors for your learners.
-                    </p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">🔒</div>
-                    <h3 class="feature-title">Fraud Prevention</h3>
-                    <p class="feature-description">
-                        Cryptographic security prevents fake certificates. Your organization's reputation stays protected with tamper-proof badges.
-                    </p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">Instant Verification</h3>
-                    <p class="feature-description">
-                        Employers can verify credentials immediately. No phone calls, no paperwork – just instant, trusted verification.
-                    </p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">🌐</div>
-                    <h3 class="feature-title">Works Everywhere</h3>
-                    <p class="feature-description">
-                        LinkedIn, job applications, professional portfolios. Your badges display properly across all platforms and devices.
-                    </p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Track Success</h3>
-                    <p class="feature-description">
-                        See how your badges are being verified and shared. Understand the impact of your credentialing program.
-                    </p>
-                </div>
-                
-                <div class="feature-card scroll-animate">
-                    <div class="feature-icon">💰</div>
-                    <h3 class="feature-title">No Hidden Costs</h3>
-                    <p class="feature-description">
-                        Free to use with no per-badge fees, user limits, or subscription costs. Focus your budget on education, not software.
-                    </p>
-                </div>
-            </div>
+    <section class="section" id="issue">
+      <div class="container">
+        <h2 class="section-title">Issue in four API calls</h2>
+        <p class="section-lede">From issuer setup to a verifiable assertion URL in a single pipeline.</p>
+
+        <div class="api-steps">
+          <article class="api-step scroll-animate">
+            <h4>1. Validate domain</h4>
+            <code class="code-chip">GET /api/validate-issuer-domain</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>2. Create issuer</h4>
+            <code class="code-chip">POST /api/issuer</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>3. Create badge class</h4>
+            <code class="code-chip">POST /api/badge-class</code>
+          </article>
+          <article class="api-step scroll-animate">
+            <h4>4. Issue assertion</h4>
+            <code class="code-chip">POST /api/credential-subject</code>
+          </article>
         </div>
+      </div>
     </section>
 
-    <!-- Getting Started Section -->
-    <section class="getting-started" id="getting-started">
-        <div class="steps-container">
-            <h2 class="section-title">Start issuing badges in 3 simple steps</h2>
-            <p class="section-subtitle">
-                From setup to your first verified badge in under 10 minutes. No technical expertise required.
-            </p>
-            
-            <div class="steps-grid">
-                <div class="step scroll-animate">
-                    <div class="step-number">1</div>
-                    <h3 class="step-title">Setup Your Organization</h3>
-                    <p class="step-description">
-                        Register your organization as a trusted badge issuer. One-time setup with our guided process.
-                    </p>
-                </div>
-                
-                <div class="step scroll-animate">
-                    <div class="step-number">2</div>
-                    <h3 class="step-title">Design Your Badges</h3>
-                    <p class="step-description">
-                        Create badge templates for your courses, certifications, or achievements. Define criteria and add your branding.
-                    </p>
-                </div>
-                
-                <div class="step scroll-animate">
-                    <div class="step-number">3</div>
-                    <h3 class="step-title">Award & Verify</h3>
-                    <p class="step-description">
-                        Issue badges to learners instantly. They can share them anywhere, and employers can verify them immediately.
-                    </p>
-                </div>
-            </div>
+    <section class="section section-muted">
+      <div class="container grid-2">
+        <article class="card scroll-animate">
+          <p class="eyebrow">For issuers</p>
+          <h3>Run reliable issuance pipelines</h3>
+          <p>Use API, CLI, or MCP tools to issue at scale with consistent validation and hosted JSON artifacts.</p>
+          <div class="cta-row" style="margin-top: 0.8rem;">
+            <a class="btn btn-secondary" href="/api.html">Read API docs</a>
+            <a class="btn btn-secondary" href="/docs/llm/CLI.md">Use CLI</a>
+          </div>
+        </article>
 
-            <div class="final-cta">
-                <a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" class="btn btn-primary" target="_blank">
-                    Get Started Guide
-                </a>
-                <a href="/vision.html" class="btn btn-secondary">
-                    Why Digital Badges Matter
-                </a>
-            </div>
-        </div>
+        <article class="card scroll-animate">
+          <p class="eyebrow">For verifiers</p>
+          <h3>Evaluate trust quickly</h3>
+          <p>Provide a URL, JSON payload, or issuer profile to inspect structure, issuer validity, and signature status.</p>
+          <div class="cta-row" style="margin-top: 0.8rem;">
+            <a class="btn btn-primary" href="/verify.html">Open verifier</a>
+          </div>
+        </article>
+      </div>
     </section>
 
-    <!-- Footer -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-links">
-                <a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank">Documentation</a>
-                <a href="/vision.html">Our Vision</a>
-                <a href="https://openbadges.org/" target="_blank">Open Badges</a>
-                <a href="https://www.w3.org/TR/vc-data-model/" target="_blank">W3C Standards</a>
-            </div>
-            <p class="footer-copyright">
-                © 2025 Badge Generator. Open source project for democratizing digital credentials.
-            </p>
+    <section class="section">
+      <div class="container">
+        <div class="cta-band">
+          <div>
+            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for OpenBadges</h2>
+            <p>Free, interoperable credential trust rails. Same Firmament mission, tuned for operators and integrators.</p>
+          </div>
+          <a href="/vision.html" class="btn btn-primary">Read vision</a>
         </div>
-    </footer>
+      </div>
+    </section>
+  </main>
 
-    <!-- JavaScript -->
-    <script src="/scripts.js"></script>
+  <footer>
+    <div class="container footer-row">
+      <p>Firmament Badges. Open credential trust infrastructure.</p>
+      <div class="footer-links">
+        <a href="/verify.html">Verify</a>
+        <a href="/api.html">API</a>
+        <a href="/vision.html">Vision</a>
+        <a href="/docs/llm/README.md">LLM Docs</a>
+        <a href="https://openbadges.org/" target="_blank" rel="noreferrer">Open Badges</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/scripts.js"></script>
 </body>
 </html>
