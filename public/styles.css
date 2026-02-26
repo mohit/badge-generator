@@ -108,9 +108,9 @@ a {
 .logo {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.35rem;
+  gap: var(--space-xs);
   text-decoration: none;
-  font-size: 1.13rem;
+  font-size: var(--text-md);
   font-weight: 600;
   letter-spacing: 0.01em;
   white-space: nowrap;
@@ -130,7 +130,7 @@ a {
 }
 
 .logo-byline {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   letter-spacing: 0.02em;
   color: var(--steel);
@@ -254,7 +254,7 @@ a {
 .hero p {
   color: var(--steel);
   max-width: 52ch;
-  font-size: 1.04rem;
+  font-size: var(--text-md);
 }
 
 .cta-row {
@@ -293,7 +293,7 @@ a {
 }
 
 .panel-title {
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   margin-bottom: 0.8rem;
 }
@@ -320,7 +320,7 @@ a {
 }
 
 .signal-value {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -339,9 +339,9 @@ a {
 }
 
 .signal-note {
-  margin-top: 0.65rem;
+  margin-top: var(--space-sm);
   color: var(--steel);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
 }
 
 .grid-3 {
@@ -378,7 +378,7 @@ a {
 }
 
 .card h3 {
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   margin-bottom: 0.3rem;
 }
 
@@ -388,7 +388,7 @@ a {
 }
 
 .eyebrow {
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--trust);
@@ -411,7 +411,7 @@ a {
 }
 
 .api-step h4 {
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   margin-bottom: 0.5rem;
 }
 
@@ -420,8 +420,8 @@ a {
   border-radius: 10px;
   background: #0f172a;
   color: #dbe7ff;
-  padding: 0.58rem 0.65rem;
-  font-size: 0.78rem;
+  padding: 0.58rem var(--space-sm);
+  font-size: var(--text-xs);
   font-family: var(--font-mono);
   line-height: 1.35;
 }
@@ -458,10 +458,10 @@ footer {
 .footer-row {
   display: flex;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--space-md);
   flex-wrap: wrap;
   color: var(--steel);
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
 }
 
 .footer-links {
@@ -508,7 +508,7 @@ footer {
   color: var(--steel);
   padding: 0.52rem 0.7rem;
   text-align: center;
-  font-size: 0.87rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   user-select: none;
@@ -535,7 +535,7 @@ footer {
 .form-label {
   display: block;
   margin-bottom: 0.3rem;
-  font-size: 0.86rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--ink-soft);
 }
@@ -570,7 +570,7 @@ footer {
   min-height: 136px;
   resize: vertical;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
 }
 
 .verify-button {
@@ -637,17 +637,17 @@ footer {
   align-items: center;
   gap: 0.4rem;
   font-weight: 700;
-  font-size: 0.94rem;
+  font-size: var(--text-base);
   margin-bottom: 0.45rem;
 }
 
 .result-icon {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.04em;
 }
 
 .result-details {
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
 }
 
 .result-details ul {
@@ -657,7 +657,7 @@ footer {
 
 .result-summary {
   color: var(--ink-soft);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
 }
 
 .status-pill {
@@ -665,7 +665,7 @@ footer {
   align-items: center;
   border-radius: 999px;
   border: 1px solid var(--line);
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 700;
@@ -715,7 +715,7 @@ footer {
 
 .result-ladder-row .label {
   color: var(--ink-soft);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .result-list {
@@ -880,7 +880,7 @@ footer {
 }
 
 .examples h3 {
-  font-size: 0.88rem;
+  font-size: var(--text-sm);
   margin-bottom: 0.45rem;
 }
 
@@ -891,7 +891,7 @@ footer {
 }
 
 .example-link {
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0.34rem 0.58rem;
@@ -935,13 +935,13 @@ footer {
 }
 
 .roadmap-item h3 {
-  font-size: 1rem;
+  font-size: var(--text-base);
   margin-bottom: 0.35rem;
 }
 
 .roadmap-item p {
   color: var(--steel);
-  font-size: 0.92rem;
+  font-size: var(--text-base);
 }
 
 .api-hero {
@@ -964,13 +964,13 @@ footer {
 }
 
 .api-group h3 {
-  font-size: 1.03rem;
+  font-size: var(--text-md);
   margin-bottom: 0.38rem;
 }
 
 .api-group p {
   color: var(--steel);
-  font-size: 0.9rem;
+  font-size: var(--text-sm);
 }
 
 .endpoint-list {
@@ -990,14 +990,14 @@ footer {
 .endpoint-item code {
   display: block;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: #223251;
 }
 
 .endpoint-item span {
   display: block;
   margin-top: 0.2rem;
-  font-size: 0.79rem;
+  font-size: var(--text-xs);
   color: var(--steel);
 }
 
@@ -1017,7 +1017,7 @@ footer {
   gap: 0.6rem;
   border-bottom: 1px solid #24314e;
   padding: 0.42rem 0.52rem;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: #97a7ce;
 }
 
@@ -1061,7 +1061,7 @@ footer {
   padding: 0.56rem 0.6rem 0.68rem;
   overflow-x: auto;
   font-family: var(--font-mono);
-  font-size: 0.77rem;
+  font-size: var(--text-xs);
   line-height: 1.45;
 }
 
