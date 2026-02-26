@@ -188,7 +188,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const trustState = result.trustState || 'UNVERIFIED';
       const badgeClass = trustState === 'DOMAIN_VERIFIED_SIGNATURE'
         ? 'trust-badge trust-badge--verified'
-        : 'trust-badge trust-badge--unverified';
+        : trustState === 'DEMO_DOMAIN_VERIFIED_SIGNATURE'
+          ? 'trust-badge trust-badge--demo'
+          : 'trust-badge trust-badge--unverified';
       const domain = result.issuerDomain || 'unknown';
       const validationLabel = result.validationLabel || (isDemoDomain(domain) ? 'DEMO' : null);
       const claimedName = result.issuerClaimedName || 'not provided';
@@ -285,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const verifyUrl = safeHttpUrl(result.verifyUrl);
 
         promptResult.innerHTML = `
-          <div class="trust-badge trust-badge--verified">DOMAIN_VERIFIED_SIGNATURE · ${escapeHtml(validationLabel)}</div>
+          <div class="trust-badge trust-badge--demo">${escapeHtml(result.trustState || 'DEMO_DOMAIN_VERIFIED_SIGNATURE')} · ${escapeHtml(validationLabel)}</div>
           <p style="margin-top:0.5rem;"><strong>Issuer Domain:</strong> ${escapeHtml(issuerDomain)}</p>
           <p style="margin-top:0.5rem;"><strong>Badge URL:</strong> <a id="prompt-badge-url-link" target="_blank" rel="noreferrer"></a></p>
           <p><strong>Verify URL:</strong> <a id="prompt-verify-url-link" target="_blank" rel="noreferrer"></a></p>

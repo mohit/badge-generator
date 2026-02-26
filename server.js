@@ -222,7 +222,8 @@ const DEMO_PUBLIC_KEY_PATHS = [
 const UPLOADS_DIR = path.resolve(process.env.UPLOADS_DIR || 'uploads');
 const TRUST_STATES = Object.freeze({
   UNVERIFIED: 'UNVERIFIED',
-  DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE'
+  DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE',
+  DEMO_DOMAIN_VERIFIED_SIGNATURE: 'DEMO_DOMAIN_VERIFIED_SIGNATURE'
 });
 const PUBLIC_ISSUER_VERIFY_WINDOW_MS = parsePositiveInt(
   process.env.PUBLIC_ISSUER_VERIFY_WINDOW_MS || '3600000',
@@ -519,6 +520,9 @@ function determineVerificationReason(trustState) {
   if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE) {
     return 'Signature is valid and key is currently discoverable for this domain.';
   }
+  if (trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE) {
+    return 'Signature is valid. Issuer uses the reserved example.com demo domain.';
+  }
   return 'Issuer cannot be cryptographically verified.';
 }
 
@@ -581,13 +585,17 @@ function consumePublicIssuerCooldown(domain, now = Date.now()) {
 }
 
 function buildTrustPayload({ structure, issuer, signature }) {
-  const trustState = determineTrustState(structure, issuer, signature);
+  let trustState = determineTrustState(structure, issuer, signature);
   const issuerDomain = extractIssuerDomainFromVerification(issuer);
   const issuerClaimedName = extractIssuerClaimedName(issuer);
   const validationLabel = getValidationLabelForDomain(issuerDomain);
   const fallbackIssuerPem = toPublicKeyPem(issuer?.issuer?.publicKey) ||
     (Array.isArray(issuer?.issuer?.publicKeys) ? toPublicKeyPem(issuer.issuer.publicKeys[0]) : null);
   const keyFingerprint = signature?.keyFingerprint || computeKeyFingerprint(fallbackIssuerPem) || null;
+
+  if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE && validationLabel === DEMO_VALIDATION_LABEL) {
+    trustState = TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE;
+  }
 
   return {
     trustState,
@@ -607,18 +615,24 @@ function buildIssuerTrustPayload(issuerVerification) {
   const fallbackIssuerPem = toPublicKeyPem(issuerVerification?.issuer?.publicKey) ||
     (Array.isArray(issuerVerification?.issuer?.publicKeys) ? toPublicKeyPem(issuerVerification.issuer.publicKeys[0]) : null);
   const keyFingerprint = issuerVerification?.keyFingerprint || computeKeyFingerprint(fallbackIssuerPem) || null;
-  const trustState = issuerVerification?.valid && keyFingerprint
+  let trustState = issuerVerification?.valid && keyFingerprint
     ? TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
     : TRUST_STATES.UNVERIFIED;
+
+  if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE && validationLabel === DEMO_VALIDATION_LABEL) {
+    trustState = TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE;
+  }
 
   return {
     trustState,
     issuerDomain,
     validationLabel,
     keyFingerprint,
-    verificationReason: trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
-      ? 'Issuer profile is reachable and key is discoverable for this domain.'
-      : determineVerificationReason(TRUST_STATES.UNVERIFIED),
+    verificationReason: trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE
+      ? 'Issuer profile is reachable and key is discoverable. Issuer uses the reserved example.com demo domain.'
+      : trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
+        ? 'Issuer profile is reachable and key is discoverable for this domain.'
+        : determineVerificationReason(TRUST_STATES.UNVERIFIED),
     issuerClaimedName: issuerVerification?.issuerClaimedName || extractIssuerClaimedName(issuerVerification) || null
   };
 }
@@ -1485,7 +1499,7 @@ async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl
   };
 }
 
-app.get('/api/verify/badge/:badgeUrl(*)', async (req, res) => {
+app.get('/api/verify/badge/:badgeUrl(*)', requireApiKey, async (req, res) => {
   const badgeUrl = req.params.badgeUrl;
   
   if (!badgeUrl) {
@@ -1514,7 +1528,7 @@ app.get('/public/api/verify/badge/:badgeUrl(*)', applyPublicVerifyRateLimit, app
   res.status(result.status).json(result.body);
 });
 
-app.get('/api/verify/issuer/:issuerUrl(*)', async (req, res) => {
+app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
   const issuerUrl = req.params.issuerUrl;
   
   if (!issuerUrl) {
@@ -2388,8 +2402,7 @@ app.post('/public/api/demo/prompt-to-badge', applyPublicVerifyConcurrencyLimit, 
   appendTrustEvent(issuerDomain, {
     action: 'issue_prompt_demo_badge',
     outcome: 'issued',
-    source: 'public_demo',
-    badgeUrl
+    source: 'public_demo'
   });
 
   const verifyUrl = `${baseUrl}/verify.html?url=${encodeURIComponent(badgeUrl)}&autoverify=1`;
@@ -2402,7 +2415,7 @@ app.post('/public/api/demo/prompt-to-badge', applyPublicVerifyConcurrencyLimit, 
     badgeUrl,
     verifyUrl,
     shareText,
-    trustHint: 'Expected trust state: DOMAIN_VERIFIED_SIGNATURE',
+    trustHint: 'Expected trust state: DEMO_DOMAIN_VERIFIED_SIGNATURE',
     signedBadge
   });
 });

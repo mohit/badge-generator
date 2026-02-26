@@ -1300,11 +1300,15 @@ class BadgeGeneratorMCPServer {
 
     const explanation = trustState === 'DOMAIN_VERIFIED_SIGNATURE'
       ? 'The badge is signed, the signature validates, and the signing key is discoverable for the issuer domain.'
-      : 'The badge does not meet the conditions for domain-bound signature trust.';
+      : trustState === 'DEMO_DOMAIN_VERIFIED_SIGNATURE'
+        ? 'The badge is signed and the signature validates, but the issuer uses the reserved example.com demo domain.'
+        : 'The badge does not meet the conditions for domain-bound signature trust.';
 
     const nextSteps = trustState === 'DOMAIN_VERIFIED_SIGNATURE'
       ? 'Review criteria/evidence and issuer reputation for quality decisions.'
-      : 'Check issuer URL reachability, key publication in .well-known profile, and proof signature validity.';
+      : trustState === 'DEMO_DOMAIN_VERIFIED_SIGNATURE'
+        ? 'This is a demo badge. For production use, issue from a real domain with discoverable keys.'
+        : 'Check issuer URL reachability, key publication in .well-known profile, and proof signature validity.';
 
     return {
       content: [

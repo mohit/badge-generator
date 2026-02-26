@@ -749,6 +749,12 @@ footer {
   color: var(--verify);
 }
 
+.trust-badge--demo {
+  background: var(--warn-light);
+  border-color: rgba(180, 83, 9, 0.38);
+  color: var(--warn);
+}
+
 .trust-badge--unverified {
   background: var(--risk-light);
   border-color: rgba(185, 28, 28, 0.33);

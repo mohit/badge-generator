@@ -124,8 +124,8 @@
           <h2 class="panel-title">How to read the verdict</h2>
           <div class="signal-stack">
             <div class="signal-row"><span class="signal-key">DOMAIN_VERIFIED_SIGNATURE</span><span class="status-pill status-pass">signature + domain key pass</span></div>
+            <div class="signal-row"><span class="signal-key">DEMO_DOMAIN_VERIFIED_SIGNATURE</span><span class="status-pill status-warn">valid signature, reserved demo domain</span></div>
             <div class="signal-row"><span class="signal-key">UNVERIFIED</span><span class="status-pill status-fail">issuer not cryptographically verified</span></div>
-            <div class="signal-row"><span class="signal-key">DEMO</span><span class="status-pill status-warn">reserved example.com issuer domain</span></div>
           </div>
           <p class="signal-note" style="margin-top: 0.8rem;">
             This verifies domain/key control. It does not certify assessment quality or accreditation.
@@ -160,7 +160,8 @@
   <script>
     const TRUST_STATES = {
       UNVERIFIED: 'UNVERIFIED',
-      DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE'
+      DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE',
+      DEMO_DOMAIN_VERIFIED_SIGNATURE: 'DEMO_DOMAIN_VERIFIED_SIGNATURE'
     };
 
     document.querySelectorAll('.verify-tab').forEach((tab) => {
@@ -217,6 +218,9 @@
       if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE) {
         return '<span class="trust-badge trust-badge--verified">DOMAIN_VERIFIED_SIGNATURE</span>';
       }
+      if (trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE) {
+        return '<span class="trust-badge trust-badge--demo">DEMO_DOMAIN_VERIFIED_SIGNATURE</span>';
+      }
       return '<span class="trust-badge trust-badge--unverified">UNVERIFIED</span>';
     }
 
@@ -241,6 +245,9 @@
       if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE) {
         const label = validationLabel ? ` ${statusPill('warn', validationLabel)}` : '';
         return `Signed by verified domain: <code>${escapeHtml(issuerDomain || 'unknown')}</code>${label}`;
+      }
+      if (trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE) {
+        return `Demo badge from reserved domain: <code>${escapeHtml(issuerDomain || 'unknown')}</code> ${statusPill('warn', 'DEMO')}`;
       }
       return 'Issuer cannot be cryptographically verified.';
     }
@@ -372,10 +379,14 @@
       const keyFingerprint = result.keyFingerprint || result.signature?.keyFingerprint || 'not available';
       const reason = result.verificationReason || (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
         ? 'Signature is valid and key is currently discoverable for this domain.'
-        : 'Issuer cannot be cryptographically verified.');
+        : trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE
+          ? 'Signature is valid. Issuer uses the reserved example.com demo domain.'
+          : 'Issuer cannot be cryptographically verified.');
 
-      const status = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'success' : 'error';
-      icon.textContent = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'PASS' : 'FAIL';
+      const isVerified = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE;
+      const isDemo = trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE;
+      const status = (isVerified || isDemo) ? 'success' : 'error';
+      icon.textContent = (isVerified || isDemo) ? 'PASS' : 'FAIL';
       text.innerHTML = `${trustHeadline(trustState, issuerDomain, validationLabel)} ${trustBadge(trustState)}`;
 
       let detailsHtml = '';
@@ -432,10 +443,14 @@
       const keyFingerprint = result.keyFingerprint || result.verification?.keyFingerprint || 'not available';
       const reason = result.verificationReason || (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
         ? 'Signature is valid and key is currently discoverable for this domain.'
-        : 'Issuer cannot be cryptographically verified.');
-      const status = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'success' : 'error';
+        : trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE
+          ? 'Signature is valid. Issuer uses the reserved example.com demo domain.'
+          : 'Issuer cannot be cryptographically verified.');
+      const isVerified = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE;
+      const isDemo = trustState === TRUST_STATES.DEMO_DOMAIN_VERIFIED_SIGNATURE;
+      const status = (isVerified || isDemo) ? 'success' : 'error';
 
-      icon.textContent = status === 'success' ? 'PASS' : 'FAIL';
+      icon.textContent = (isVerified || isDemo) ? 'PASS' : 'FAIL';
       text.innerHTML = `${trustHeadline(trustState, issuerDomain, validationLabel)} ${trustBadge(trustState)}`;
 
       let detailsHtml = `<p class="result-summary"><strong>Type:</strong> ${escapeHtml(result.verification?.type || 'unknown')}</p>`;

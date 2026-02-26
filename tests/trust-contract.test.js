@@ -13,10 +13,11 @@ test('server exposes trust discovery and prompt-to-badge public endpoints', asyn
   assert.ok(source.includes("app.post('/public/api/demo/prompt-to-badge'"));
 });
 
-test('server trust contract includes two-state model fields', async () => {
+test('server trust contract includes trust model fields', async () => {
   const source = await fs.readFile('server.js', 'utf8');
 
   assert.ok(source.includes('DOMAIN_VERIFIED_SIGNATURE'));
+  assert.ok(source.includes('DEMO_DOMAIN_VERIFIED_SIGNATURE'));
   assert.ok(source.includes('UNVERIFIED'));
   assert.ok(source.includes('issuerDomain'));
   assert.ok(source.includes('validationLabel'));
