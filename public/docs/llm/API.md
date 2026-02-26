@@ -61,6 +61,24 @@ curl -X POST "https://badges.firmament.works/public/api/issuers/verify" \
   -d '{"domain":"example.com"}'
 ```
 
+### Prompt-to-Badge Demo (Public, Rate-Limited)
+
+- `POST /public/api/demo/prompt-to-badge`
+- Body fields:
+  - `summary` (required, min length 12)
+  - `learnerName`, `sourceUrl`, `proficiency`, `skills[]`, `badgeName` (optional)
+- Returns:
+  - `badgeUrl`
+  - `verifyUrl`
+  - `shareText`
+  - `signedBadge`
+
+### Trust Discovery APIs (Public, No API Key)
+
+- `GET /public/api/trust/issuer/:domain`
+- `GET /public/api/trust/events/:domain`
+- `GET /public/api/trust/issuers?status=verified`
+
 ## Verification Endpoints (Also Available Under `/api`, No API Key Required)
 
 - `GET /api/verify/badge/:badgeUrl(*)`
@@ -74,6 +92,8 @@ Use `/public/api/*` from untrusted input flows; it blocks private/internal netwo
 
 - `GET /api/badge-files`
 - Returns hosted JSON files under `/badges/*`.
+- `GET /api/metrics`
+  - Runtime counters: verification volume, external fetches, cache hit rate, trust writes.
 
 ### Domain Validation
 
@@ -131,6 +151,11 @@ Badge verification responses commonly include:
 - `issuer` (issuer validation result)
 - `signature` (cryptographic proof validation result)
 - `verificationLevel` (e.g. `cryptographically_verified`, `fully_verified`, `remote_verified`, `invalid`)
+- `trustState` (`DOMAIN_VERIFIED_SIGNATURE` or `UNVERIFIED`)
+- `issuerDomain` (canonical domain identity)
+- `keyFingerprint` (SHA-256 fingerprint when key is discoverable)
+- `verificationReason` (human-readable trust reason)
+- `issuerClaimedName` (non-canonical issuer name claim)
 - `verifiedAt` (ISO timestamp)
 
 ## Error Patterns

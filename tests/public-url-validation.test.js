@@ -56,6 +56,16 @@ test('public URL validator still blocks untrusted private IPs', async () => {
   }
 });
 
+test('public URL validator allows reserved example.com demo domains', async () => {
+  const ctx = await loadValidatePublicUrlFor('badges.example.invalid');
+  try {
+    const parsed = await ctx.validate('https://issuer.badge.example.com/.well-known/openbadges-issuer.json');
+    assert.equal(parsed.hostname, 'issuer.badge.example.com');
+  } finally {
+    ctx.restore();
+  }
+});
+
 test('public URL validator does not allow localhost even if PUBLIC_DOMAIN is localhost', async () => {
   const ctx = await loadValidatePublicUrlFor('localhost:3000');
   try {

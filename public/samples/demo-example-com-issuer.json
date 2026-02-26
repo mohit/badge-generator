@@ -1,0 +1,20 @@
+{
+  "@context": [
+    "https://www.w3.org/ns/credentials/v2",
+    "https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json"
+  ],
+  "id": "https://example.com/.well-known/openbadges-issuer.json",
+  "type": "Profile",
+  "name": "EXAMPLE.com Demo Issuer",
+  "url": "https://example.com",
+  "email": "demo@example.com",
+  "description": "Demonstration issuer profile for reserved example.com domains.",
+  "official": true,
+  "verified": true,
+  "publicKey": {
+    "id": "https://example.com/.well-known/openbadges-issuer.json#key",
+    "type": "Ed25519VerificationKey2020",
+    "controller": "https://example.com/.well-known/openbadges-issuer.json",
+    "publicKeyMultibase": "zMCowBQYDK2VwAyEAvsj7UqRcQXCt5v3au1avE5xW7dWWLQjiJBNllmO_76U"
+  }
+}

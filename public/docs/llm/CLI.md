@@ -65,9 +65,11 @@ node cli/badge-cli.js verify "demo.example.org"
 node cli/badge-cli.js verify "demo.example.org" --log-trust
 node cli/badge-cli.js get-issuer "demo.example.org"
 node cli/badge-cli.js get-issuer "demo.example.org" --log-trust
+node cli/badge-cli.js onboard-issuer --name "Demo University" --url "https://demo.example.org" --email "badges@demo.example.org"
 ```
 `verify --log-trust` works without API key via public trust-write API (rate-limited).  
 If API key is configured, CLI uses admin trust-write mode and supports `--force`.
+`verify` and `verify-badge` print trust metadata: `trustState`, `issuerDomain`, `keyFingerprint`, and trust reason.
 
 ### Verification
 

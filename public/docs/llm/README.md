@@ -1,4 +1,4 @@
-# Badge Generator LLM Docs
+# Open Badges by Firmament Works LLM Docs
 
 This directory is a markdown-only documentation surface for LLMs and automation agents.
 
@@ -17,6 +17,7 @@ Use this order:
 - Cryptographic signing
 - Badge and issuer verification
 - Domain verification and impersonation prevention
+- Trust discovery APIs and prompt-to-badge demo flow
 
 ## Notes
 

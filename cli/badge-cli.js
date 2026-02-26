@@ -17,6 +17,11 @@ class BadgeCLI {
     this.config = {};
   }
 
+  static TRUST_STATES = {
+    UNVERIFIED: 'UNVERIFIED',
+    DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE'
+  };
+
   static SAFE_TEST_DOMAINS = [
     'example.com',
     'example.org',
@@ -171,6 +176,116 @@ class BadgeCLI {
     return { publicKey, privateKey };
   }
 
+  extractPublicKeyPem(maybeKey) {
+    if (!maybeKey) return null;
+    if (typeof maybeKey === 'string') {
+      return maybeKey.includes('BEGIN PUBLIC KEY') ? maybeKey : null;
+    }
+
+    if (typeof maybeKey !== 'object') return null;
+
+    if (typeof maybeKey.publicKeyPem === 'string') {
+      return maybeKey.publicKeyPem;
+    }
+
+    if (typeof maybeKey.publicKeyMultibase === 'string' && maybeKey.publicKeyMultibase.startsWith('z')) {
+      try {
+        const keyBuffer = Buffer.from(maybeKey.publicKeyMultibase.slice(1), 'base64url');
+        return crypto.createPublicKey({
+          key: keyBuffer,
+          format: 'der',
+          type: 'spki'
+        }).export({ type: 'spki', format: 'pem' }).toString();
+      } catch {
+        return null;
+      }
+    }
+
+    return null;
+  }
+
+  computePublicKeyFingerprint(publicKeyPem) {
+    if (!publicKeyPem) return null;
+    try {
+      const keyDer = crypto.createPublicKey(publicKeyPem).export({
+        type: 'spki',
+        format: 'der'
+      });
+      const digest = crypto.createHash('sha256').update(keyDer).digest('hex');
+      return `sha256:${digest}`;
+    } catch {
+      return null;
+    }
+  }
+
+  extractTrustDomain(result, fallbackDomain = null) {
+    return result?.issuerDomain ||
+      result?.verification?.issuerDomain ||
+      result?.issuer?.domain ||
+      fallbackDomain ||
+      null;
+  }
+
+  isDemoDomain(domain) {
+    if (!domain) return false;
+    try {
+      const parsed = new URL(String(domain).includes('://') ? domain : `https://${domain}`);
+      const hostname = parsed.hostname.toLowerCase();
+      return hostname === 'example.com' || hostname.endsWith('.example.com');
+    } catch {
+      return false;
+    }
+  }
+
+  extractValidationLabel(result, fallbackDomain = null) {
+    const explicit = result?.validationLabel || result?.verification?.validationLabel || null;
+    if (explicit) return explicit;
+    const issuerDomain = this.extractTrustDomain(result, fallbackDomain);
+    return this.isDemoDomain(issuerDomain) ? 'DEMO' : null;
+  }
+
+  extractTrustFingerprint(result) {
+    const direct = result?.keyFingerprint ||
+      result?.verification?.keyFingerprint ||
+      result?.issuer?.publicKeyFingerprint ||
+      result?.issuer?.keyFingerprint ||
+      result?.signature?.keyFingerprint;
+    if (direct) return direct;
+
+    const issuerPem = this.extractPublicKeyPem(result?.verification?.issuer?.publicKey) ||
+      (Array.isArray(result?.verification?.issuer?.publicKeys)
+        ? this.extractPublicKeyPem(result.verification.issuer.publicKeys[0])
+        : null);
+    return this.computePublicKeyFingerprint(issuerPem);
+  }
+
+  printTrustSummary(result, fallbackDomain = null) {
+    const trustState = result?.trustState ||
+      (result?.status === 'verified' ? BadgeCLI.TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE : null) ||
+      (result?.valid
+        ? BadgeCLI.TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
+        : BadgeCLI.TRUST_STATES.UNVERIFIED);
+    const issuerDomain = this.extractTrustDomain(result, fallbackDomain);
+    const validationLabel = this.extractValidationLabel(result, fallbackDomain);
+    const fingerprint = this.extractTrustFingerprint(result);
+    const reason = result?.verificationReason ||
+      (trustState === BadgeCLI.TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
+        ? 'Signature is valid and key is currently discoverable for this domain.'
+        : 'Issuer cannot be cryptographically verified.');
+
+    console.log('   Trust State:', trustState);
+    if (issuerDomain) {
+      console.log(`   Issuer Domain: ${issuerDomain}`);
+    }
+    if (validationLabel) {
+      console.log(`   Validation Label: ${validationLabel}`);
+    }
+    if (fingerprint) {
+      console.log(`   Key Fingerprint: ${fingerprint}`);
+    }
+    console.log(`   Reason: ${reason}`);
+  }
+
   async validateDomain(url, options = {}) {
     const { serverPolicy = false } = options;
     console.log(`🔍 Validating domain: ${url}`);
@@ -285,6 +400,7 @@ class BadgeCLI {
           console.log(`✅ Issuer verification completed (trust logged via admin API):`);
           console.log(`   Status: ${result.status}`);
           console.log(`   Message: ${result.message}`);
+          this.printTrustSummary(result, normalizedDomain);
           
           if (result.verificationDetails) {
             console.log(`📋 Verification Details:`);
@@ -307,6 +423,7 @@ class BadgeCLI {
         console.log(`✅ Issuer verification completed (trust logged via public API):`);
         console.log(`   Status: ${result.status}`);
         console.log(`   Message: ${result.message}`);
+        this.printTrustSummary(result, normalizedDomain);
 
         return result;
       }
@@ -325,6 +442,7 @@ class BadgeCLI {
             console.log(`✅ Issuer verification completed (no trust log write):`);
             console.log(`   URL: ${issuerUrl}`);
             console.log(`   Message: ${result.verification?.message || result.message || 'Issuer verified'}`);
+            this.printTrustSummary(result, normalizedDomain);
             return result;
           }
 
@@ -375,6 +493,11 @@ class BadgeCLI {
       if (issuer.wellKnownUrl) {
         console.log(`   Well-Known URL: ${issuer.wellKnownUrl}`);
       }
+
+      const fingerprint = issuer.publicKeyFingerprint || issuer.keyFingerprint || null;
+      if (fingerprint) {
+        console.log(`   Key Fingerprint: ${fingerprint}`);
+      }
       
       return result;
     } catch (error) {
@@ -420,6 +543,7 @@ class BadgeCLI {
       console.log(`   Badge Source: ${sourceLabel}`);
       console.log(`   Version: ${result.version}`);
       console.log(`   Level: ${levelEmojis[result.verificationLevel] || '❓'} ${result.verificationLevel}`);
+      this.printTrustSummary(result);
       
       // Structure details
       if (result.structure) {
@@ -474,6 +598,7 @@ class BadgeCLI {
       console.log(`   Issuer URL: ${issuerUrl}`);
       console.log(`   Type: ${result.verification.type || 'Unknown'}`);
       console.log(`   Message: ${result.verification.message || 'No message'}`);
+      this.printTrustSummary(result);
       
       if (result.verification.issuer) {
         console.log(`   📋 Issuer Information:`);
@@ -669,6 +794,51 @@ class BadgeCLI {
       publicKeyMultibase
     };
   }
+
+  async onboardIssuer(options = {}) {
+    const {
+      name,
+      url,
+      email,
+      description,
+      verifyNow = false,
+      logTrust = false
+    } = options;
+
+    if (!name || !url || !email) {
+      throw new Error('onboard-issuer requires --name, --url, and --email');
+    }
+
+    console.log('🧭 Issuer onboarding guide');
+    console.log('   Step 1/4: Generate issuer profile and keypair files');
+    const generated = await this.generateWellKnownFile({
+      name,
+      url,
+      email,
+      description
+    });
+
+    const normalizedDomain = this.normalizeDomain(url);
+    console.log('\n   Step 2/4: Host the issuer profile');
+    console.log(`   Place issuer-verification-files/openbadges-issuer.json at: https://${normalizedDomain}/.well-known/openbadges-issuer.json`);
+
+    console.log('\n   Step 3/4: Verify domain control');
+    console.log(`   Run: node cli/badge-cli.js verify ${normalizedDomain}${logTrust ? ' --log-trust' : ''}`);
+
+    console.log('\n   Step 4/4: Issue and sign your first badge');
+    console.log(`   Run: node cli/badge-cli.js sign-badge ./badge.json ${normalizedDomain} --output ./badge-signed.json`);
+    console.log('   Or local mode: node cli/badge-cli.js sign-badge ./badge.json --local --private-key-file ./issuer-verification-files/private-key.pem');
+
+    if (verifyNow) {
+      console.log('\n🔐 Running domain verification now...');
+      await this.verifyIssuer(normalizedDomain, {
+        logTrust,
+        force: false
+      });
+    }
+
+    return generated;
+  }
 }
 
 // CLI Commands
@@ -783,8 +953,30 @@ program
   });
 
 program
+  .command('onboard-issuer')
+  .description('Guided issuer onboarding: generate files, host well-known profile, verify domain, issue first badge')
+  .requiredOption('-n, --name <name>', 'Organization name')
+  .requiredOption('-u, --url <url>', 'Organization URL')
+  .requiredOption('-e, --email <email>', 'Contact email')
+  .option('-d, --description <desc>', 'Organization description')
+  .option('--verify-now', 'Run issuer verification at the end of onboarding')
+  .option('--log-trust', 'When used with --verify-now, persist verification to server trust log')
+  .action(async (options) => {
+    const cli = new BadgeCLI();
+    await cli.loadConfig();
+    await cli.onboardIssuer({
+      name: options.name,
+      url: options.url,
+      email: options.email,
+      description: options.description,
+      verifyNow: options.verifyNow || false,
+      logTrust: options.logTrust || false
+    });
+  });
+
+program
   .command('verify')
-  .description('Verify an issuer domain (public check by default)')
+  .description('Verify an issuer domain and print trust state/domain/key fingerprint')
   .argument('<domain>', 'Domain to verify (e.g., example.com)')
   .option('--log-trust', 'Persist verification result to server trust log (requires API key)')
   .option('--force', 'Force re-verification (only with --log-trust)')
@@ -832,7 +1024,7 @@ program
 
 program
   .command('verify-badge')
-  .description('Verify an Open Badge from URL or local JSON file')
+  .description('Verify an Open Badge from URL or local JSON file with trust metadata')
   .argument('<badgeSource>', 'Badge URL or local JSON file path')
   .action(async (badgeSource) => {
     const cli = new BadgeCLI();

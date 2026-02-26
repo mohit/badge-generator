@@ -10,6 +10,8 @@ An MCP (Model Context Protocol) server that allows AI assistants like Claude or 
 - 📋 **List & View Badges** - Browse and inspect created badges
 - 🔍 **Public Verification** - Verify badges/issuers without API keys
 - 🌐 **Domain Trust Bootstrap** - Verify `.well-known` issuer domains via public or admin routes
+- 🧭 **Issuer Onboarding Helpers** - Generate issuer profile templates and trust-ready metadata
+- ⚡ **Prompt-to-Badge Demo** - Issue signed sample badges through public demo API
 - 🔧 **Configuration** - Dynamic server and API key setup
 
 ## Installation
@@ -157,6 +159,15 @@ Behavior:
 - With API key: uses admin trust endpoint (`/api/issuers/verify`)
 - Without API key: uses public rate-limited trust endpoint (`/public/api/issuers/verify`)
 
+### `generate_issuer_profile_template`
+Generate a ready-to-host `/.well-known/openbadges-issuer.json` template.
+
+### `issue_sample_badge`
+Call the public prompt-to-badge endpoint and return a signed sample badge + verify URL.
+
+### `explain_verification_result`
+Translate verifier JSON into plain-language trust explanation and next steps.
+
 ### `validate_issuer_domain`
 Validate issuer URL shape locally.
 
@@ -198,7 +209,7 @@ The MCP server supports both Open Badges v2.0 and v3.0 formats:
 
 ## Authentication Notes
 
-- **No API key required:** `test_server`, `verify_badge`, `verify_badge_json`, `verify_issuer`, `verify_issuer_domain` (public mode), `get_badge`, local `validate_issuer_domain`
+- **No API key required:** `test_server`, `verify_badge`, `verify_badge_json`, `verify_issuer`, `verify_issuer_domain` (public mode), `generate_issuer_profile_template`, `issue_sample_badge`, `explain_verification_result`, `get_badge`, local `validate_issuer_domain`
 - **API key required:** `create_issuer`, `create_badge_class`, `create_credential_subject`, `list_badges`, `sign_badge`, `cache_public_key`, `verify_issuer_domain` with `force`, `validate_issuer_domain` with `serverPolicy`
 
 ## Error Handling

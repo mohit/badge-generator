@@ -7,6 +7,7 @@ import {
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import fetch from 'node-fetch';
+import crypto from 'crypto';
 import { z } from 'zod';
 
 // Configuration
@@ -68,6 +69,27 @@ const ValidateIssuerDomainSchema = z.object({
 
 const VerifyBadgeJsonSchema = z.object({
   badgeData: z.record(z.any()),
+});
+
+const GenerateIssuerTemplateSchema = z.object({
+  name: z.string().min(1),
+  url: z.string().url(),
+  email: z.string().email().optional(),
+  description: z.string().optional(),
+  publicKeyMultibase: z.string().optional()
+});
+
+const IssueSampleBadgeSchema = z.object({
+  learnerName: z.string().min(1).optional(),
+  sourceUrl: z.string().url().optional(),
+  summary: z.string().min(12),
+  proficiency: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  badgeName: z.string().optional()
+});
+
+const ExplainVerificationResultSchema = z.object({
+  verification: z.record(z.any())
 });
 
 class BadgeGeneratorMCPServer {
@@ -363,6 +385,88 @@ class BadgeGeneratorMCPServer {
             },
           },
           {
+            name: 'generate_issuer_profile_template',
+            description: 'Generate a ready-to-host /.well-known/openbadges-issuer.json template and key instructions',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                name: {
+                  type: 'string',
+                  description: 'Issuer display name'
+                },
+                url: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'Issuer website URL'
+                },
+                email: {
+                  type: 'string',
+                  format: 'email',
+                  description: 'Contact email (optional)'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Issuer description (optional)'
+                },
+                publicKeyMultibase: {
+                  type: 'string',
+                  description: 'Optional Ed25519 public key multibase (z...)'
+                }
+              },
+              required: ['name', 'url']
+            }
+          },
+          {
+            name: 'issue_sample_badge',
+            description: 'Create a signed demo badge using the public prompt-to-badge endpoint (no API key required)',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                learnerName: {
+                  type: 'string',
+                  description: 'Recipient display name (optional)'
+                },
+                sourceUrl: {
+                  type: 'string',
+                  format: 'uri',
+                  description: 'Optional source evidence URL'
+                },
+                summary: {
+                  type: 'string',
+                  description: 'Assessment summary (minimum 12 chars)'
+                },
+                proficiency: {
+                  type: 'string',
+                  description: 'beginner | intermediate | advanced | expert (optional)'
+                },
+                skills: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Skill tags (optional)'
+                },
+                badgeName: {
+                  type: 'string',
+                  description: 'Badge title (optional)'
+                }
+              },
+              required: ['summary']
+            }
+          },
+          {
+            name: 'explain_verification_result',
+            description: 'Translate verifier JSON into a plain-language trust explanation with next steps',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                verification: {
+                  type: 'object',
+                  description: 'Verification JSON result from verify_badge/verify_badge_json/verify_issuer'
+                }
+              },
+              required: ['verification']
+            }
+          },
+          {
             name: 'sign_badge',
             description: 'Cryptographically sign badge data using server-managed issuer keys (requires API key)',
             inputSchema: {
@@ -428,6 +532,12 @@ class BadgeGeneratorMCPServer {
             return await this.verifyBadgeJson(args);
           case 'verify_issuer_domain':
             return await this.verifyIssuerDomain(args);
+          case 'generate_issuer_profile_template':
+            return await this.generateIssuerProfileTemplate(args);
+          case 'issue_sample_badge':
+            return await this.issueSampleBadge(args);
+          case 'explain_verification_result':
+            return await this.explainVerificationResult(args);
           case 'sign_badge':
             return await this.signBadge(args);
           case 'cache_public_key':
@@ -837,6 +947,76 @@ class BadgeGeneratorMCPServer {
     };
   }
 
+  extractPublicKeyPem(maybeKey) {
+    if (!maybeKey) return null;
+    if (typeof maybeKey === 'string') {
+      return maybeKey.includes('BEGIN PUBLIC KEY') ? maybeKey : null;
+    }
+    if (typeof maybeKey !== 'object') return null;
+    if (typeof maybeKey.publicKeyPem === 'string') {
+      return maybeKey.publicKeyPem;
+    }
+    if (typeof maybeKey.publicKeyMultibase === 'string' && maybeKey.publicKeyMultibase.startsWith('z')) {
+      try {
+        const keyBuffer = Buffer.from(maybeKey.publicKeyMultibase.slice(1), 'base64url');
+        return crypto.createPublicKey({
+          key: keyBuffer,
+          format: 'der',
+          type: 'spki'
+        }).export({ type: 'spki', format: 'pem' }).toString();
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  computeKeyFingerprint(publicKeyPem) {
+    if (!publicKeyPem) return null;
+    try {
+      const keyDer = crypto.createPublicKey(publicKeyPem).export({
+        type: 'spki',
+        format: 'der'
+      });
+      const digest = crypto.createHash('sha256').update(keyDer).digest('hex');
+      return `sha256:${digest}`;
+    } catch {
+      return null;
+    }
+  }
+
+  formatTrustSummary(result) {
+    const trustState = result?.trustState || 'UNVERIFIED';
+    const issuerDomain = result?.issuerDomain || result?.verification?.issuerDomain || result?.issuer?.domain || 'unknown';
+    const validationLabel = result?.validationLabel || result?.verification?.validationLabel ||
+      (this.isDemoDomain(issuerDomain) ? 'DEMO' : null);
+    const keyFingerprint = result?.keyFingerprint ||
+      result?.verification?.keyFingerprint ||
+      result?.signature?.keyFingerprint ||
+      result?.issuer?.publicKeyFingerprint ||
+      this.computeKeyFingerprint(this.extractPublicKeyPem(result?.verification?.issuer?.publicKey));
+    const reason = result?.verificationReason || 'Issuer cannot be cryptographically verified.';
+
+    return [
+      `• Trust State: ${trustState}`,
+      `• Issuer Domain: ${issuerDomain}`,
+      `• Validation Label: ${validationLabel || 'none'}`,
+      `• Key Fingerprint: ${keyFingerprint || 'not available'}`,
+      `• Reason: ${reason}`
+    ].join('\n');
+  }
+
+  isDemoDomain(domain) {
+    if (!domain) return false;
+    try {
+      const parsed = new URL(String(domain).includes('://') ? domain : `https://${domain}`);
+      const hostname = parsed.hostname.toLowerCase();
+      return hostname === 'example.com' || hostname.endsWith('.example.com');
+    } catch {
+      return false;
+    }
+  }
+
   async verifyBadge(args) {
     const { badgeUrl } = args;
     const verification = await this.requestJson(`/public/api/verify/badge/${encodeURIComponent(badgeUrl)}`);
@@ -858,6 +1038,7 @@ class BadgeGeneratorMCPServer {
     let detailsText = `\n\n🔍 Verification Details:\n`;
     detailsText += `• Badge Version: ${verification.version}\n`;
     detailsText += `• Verification Level: ${verificationLevel}\n`;
+    detailsText += `${this.formatTrustSummary(verification)}\n`;
     
     // Structure validation details
     if (verification.structure) {
@@ -914,6 +1095,7 @@ class BadgeGeneratorMCPServer {
     detailsText += `• Status: ${verification.valid ? 'Valid' : 'Invalid'}\n`;
     detailsText += `• Type: ${verification.type || 'Unknown'}\n`;
     detailsText += `• Message: ${verification.message || 'No message'}\n`;
+    detailsText += `${this.formatTrustSummary(result)}\n`;
     
     if (verification.issuer) {
       detailsText += `\n📋 Issuer Information:\n`;
@@ -958,6 +1140,7 @@ class BadgeGeneratorMCPServer {
           text: `🔍 Inline Badge JSON Verification\n\n${overallStatus}\n` +
             `Version: ${verification.version}\n` +
             `Verification Level: ${verification.verificationLevel}\n` +
+            `${this.formatTrustSummary(verification)}\n` +
             `Verified At: ${verification.verifiedAt}\n\n` +
             `${JSON.stringify(verification, null, 2)}`
         }
@@ -987,7 +1170,8 @@ class BadgeGeneratorMCPServer {
             text: `✅ Issuer Domain Verified (admin trust write)\n\n` +
               `Domain: ${normalizedDomain}\n` +
               `Status: ${result.status}\n` +
-              `Message: ${result.message}\n\n` +
+              `Message: ${result.message}\n` +
+              `${this.formatTrustSummary(result)}\n\n` +
               `${JSON.stringify(result.issuer, null, 2)}`
           }
         ]
@@ -1010,8 +1194,131 @@ class BadgeGeneratorMCPServer {
           text: `✅ Issuer Domain Verified (public trust write)\n\n` +
             `Domain: ${normalizedDomain}\n` +
             `Status: ${result.status}\n` +
-            `Message: ${result.message}\n\n` +
+            `Message: ${result.message}\n` +
+            `${this.formatTrustSummary(result)}\n\n` +
             `${JSON.stringify(result.issuer, null, 2)}`
+        }
+      ]
+    };
+  }
+
+  async generateIssuerProfileTemplate(args) {
+    const { name, url, email, description, publicKeyMultibase } = GenerateIssuerTemplateSchema.parse(args || {});
+    const normalizedUrl = url.replace(/\/+$/, '');
+
+    let finalMultibase = publicKeyMultibase;
+    let generatedPublicKeyPem = null;
+    if (!finalMultibase) {
+      const { publicKey } = crypto.generateKeyPairSync('ed25519', {
+        publicKeyEncoding: {
+          type: 'spki',
+          format: 'pem'
+        },
+        privateKeyEncoding: {
+          type: 'pkcs8',
+          format: 'pem'
+        }
+      });
+
+      generatedPublicKeyPem = publicKey;
+      const publicKeyDer = crypto.createPublicKey(publicKey).export({
+        type: 'spki',
+        format: 'der'
+      });
+      finalMultibase = `z${Buffer.from(publicKeyDer).toString('base64url')}`;
+    }
+
+    const profile = {
+      '@context': [
+        'https://www.w3.org/ns/credentials/v2',
+        'https://purl.imsglobal.org/spec/ob/v3p0/context-3.0.3.json'
+      ],
+      id: `${normalizedUrl}/.well-known/openbadges-issuer.json`,
+      type: 'Profile',
+      name,
+      url: normalizedUrl,
+      ...(email ? { email } : {}),
+      ...(description ? { description } : {}),
+      publicKey: {
+        id: `${normalizedUrl}/.well-known/openbadges-issuer.json#key`,
+        type: 'Ed25519VerificationKey2020',
+        controller: `${normalizedUrl}/.well-known/openbadges-issuer.json`,
+        publicKeyMultibase: finalMultibase
+      }
+    };
+
+    const fingerprint = this.computeKeyFingerprint(this.extractPublicKeyPem({
+      publicKeyMultibase: finalMultibase
+    }));
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `📄 Issuer Profile Template\n\n` +
+            `Host this JSON at: ${normalizedUrl}/.well-known/openbadges-issuer.json\n` +
+            `Domain: ${new URL(normalizedUrl).host}\n` +
+            `Key Fingerprint: ${fingerprint || 'not available'}\n\n` +
+            `${generatedPublicKeyPem ? `Generated Public Key PEM:\n${generatedPublicKeyPem}\n` : ''}` +
+            `Profile JSON:\n${JSON.stringify(profile, null, 2)}`
+        }
+      ]
+    };
+  }
+
+  async issueSampleBadge(args) {
+    const payload = IssueSampleBadgeSchema.parse(args || {});
+    const result = await this.requestJson('/public/api/demo/prompt-to-badge', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `✅ Sample badge issued\n\n` +
+            `Badge URL: ${result.badgeUrl}\n` +
+            `Verify URL: ${result.verifyUrl}\n` +
+            `Trust Hint: ${result.trustHint}\n` +
+            `Share Text: ${result.shareText}\n\n` +
+            `${JSON.stringify(result.signedBadge, null, 2)}`
+        }
+      ]
+    };
+  }
+
+  async explainVerificationResult(args) {
+    const { verification } = ExplainVerificationResultSchema.parse(args || {});
+    const trustState = verification.trustState || 'UNVERIFIED';
+    const issuerDomain = verification.issuerDomain || verification.verification?.issuerDomain || 'unknown';
+    const validationLabel = verification.validationLabel || verification.verification?.validationLabel ||
+      (this.isDemoDomain(issuerDomain) ? 'DEMO' : null);
+    const keyFingerprint = verification.keyFingerprint || verification.signature?.keyFingerprint || 'not available';
+    const reason = verification.verificationReason || 'Issuer cannot be cryptographically verified.';
+    const caveat = verification.trustCaveat || 'This verifies domain/key control. It does not certify assessment quality or accreditation.';
+
+    const explanation = trustState === 'DOMAIN_VERIFIED_SIGNATURE'
+      ? 'The badge is signed, the signature validates, and the signing key is discoverable for the issuer domain.'
+      : 'The badge does not meet the conditions for domain-bound signature trust.';
+
+    const nextSteps = trustState === 'DOMAIN_VERIFIED_SIGNATURE'
+      ? 'Review criteria/evidence and issuer reputation for quality decisions.'
+      : 'Check issuer URL reachability, key publication in .well-known profile, and proof signature validity.';
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `🧾 Verification Explanation\n\n` +
+            `Trust State: ${trustState}\n` +
+            `Issuer Domain: ${issuerDomain}\n` +
+            `Validation Label: ${validationLabel || 'none'}\n` +
+            `Key Fingerprint: ${keyFingerprint}\n` +
+            `Reason: ${reason}\n\n` +
+            `${explanation}\n\n` +
+            `Caveat: ${caveat}\n` +
+            `Next Step: ${nextSteps}`
         }
       ]
     };

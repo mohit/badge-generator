@@ -1,6 +1,6 @@
-# Badge Generator
+# Open Badges by Firmament Works
 
-Badge Generator is an Open Badges and Verifiable Credentials service for issuing, hosting, signing, and verifying badge JSON documents.
+Open Badges by Firmament Works is domain-bound trust infrastructure for issuing, signing, and verifying Open Badges and VC-compatible credential JSON.
 
 This file lists markdown-first docs that are easier for LLMs and automation agents to consume.
 
@@ -11,6 +11,7 @@ This file lists markdown-first docs that are easier for LLMs and automation agen
 - https://badges.firmament.works/docs/llm/DEPLOYMENT.md
 - https://badges.firmament.works/docs/llm/CLI.md
 - https://badges.firmament.works/docs/llm/MCP.md
+- https://badges.firmament.works/challenge.html
 
 ## Source Repository Docs
 

@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Open Badges by Firmament Works | Open Trust Infrastructure</title>
-  <meta name="description" content="Issue and verify Open Badges with standards-based, cryptographically verifiable infrastructure.">
+  <meta name="description" content="Sign badges, verify domains, and share proof with open trust infrastructure for Open Badges.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:title" content="Open Badges by Firmament Works">
+  <meta property="og:description" content="Domain-bound signatures and public verification for Open Badges.">
+  <meta property="og:image" content="https://badges.firmament.works/og-image.png">
+  <meta property="og:url" content="https://badges.firmament.works/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,10 +29,9 @@
       </a>
       <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
       <ul class="nav-links" id="primary-nav">
+        <li><a href="/" class="active">Home</a></li>
         <li><a href="/verify.html">Verify</a></li>
-        <li><a href="#issue">Issue</a></li>
         <li><a href="/vision.html">Vision</a></li>
-        <li><a href="https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator" target="_blank" rel="noreferrer">Docs</a></li>
       </ul>
     </nav>
   </header>
@@ -35,27 +41,31 @@
       <div class="container hero-grid">
         <div>
           <p class="kicker">Open Trust Infrastructure</p>
-          <h1>Open credential trust infrastructure.</h1>
+          <h1>Sign badges. Verify domains. Share proof.</h1>
           <p>
-            Issue, host, and verify credentials as open resources with explicit trust checks.
-            Built for schools, workforce teams, and learning platforms that need defensible proof.
+            Issue Open Badges with domain-bound signatures and verify them through public endpoints.
+            No lock-in, no platform-only trust claims, and no API key needed for verification.
           </p>
           <div class="cta-row">
-            <a href="/verify.html" class="btn btn-primary">Verify a Badge</a>
-            <a href="#" class="btn btn-secondary" data-demo-url-link>Run Live Test</a>
+            <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
+            <a href="/challenge.html" class="btn btn-secondary">Try prompt-to-badge demo</a>
             <a href="#issue" class="btn btn-secondary">See issuing flow</a>
           </div>
           <ul class="proof-chips" aria-label="Trust claims">
             <li>Open Badges v2 and v3</li>
             <li>W3C VC compatible</li>
-            <li>Ed25519 signature support</li>
-            <li>Domain verification controls</li>
+            <li>Ed25519 signatures</li>
+            <li>Public verifier APIs</li>
           </ul>
         </div>
 
         <aside class="panel hero-proof-card scroll-animate" aria-label="Verification ladder">
           <h2 class="panel-title">Trust ladder</h2>
           <div class="signal-stack">
+            <div class="signal-row">
+              <span class="signal-key">Trust state</span>
+              <span class="signal-value signal-ok">DOMAIN_VERIFIED_SIGNATURE</span>
+            </div>
             <div class="signal-row">
               <span class="signal-key">Structure check</span>
               <span class="signal-value signal-ok">pass</span>
@@ -68,35 +78,33 @@
               <span class="signal-key">Signature check</span>
               <span class="signal-value signal-ok">pass</span>
             </div>
-            <div class="signal-row">
-              <span class="signal-key">Final status</span>
-              <span class="signal-value signal-ok">verified</span>
-            </div>
           </div>
-          <p class="signal-note">Human-readable verdicts up front, full technical detail when you need to audit.</p>
+          <div class="caveat-banner" style="margin-top:0.75rem;">
+            This verifies domain/key control. It does not certify assessment quality or accreditation.
+          </div>
         </aside>
       </div>
     </section>
 
     <section class="section section-muted" id="pillars">
       <div class="container">
-        <h2 class="section-title">Infrastructure guarantees</h2>
-        <p class="section-lede">Designed for high signal: open formats, durable identifiers, and transparent verification.</p>
+        <h2 class="section-title">What this proves</h2>
+        <p class="section-lede">Domain identity, cryptographic integrity, and public verification in one open workflow.</p>
         <div class="grid-3" style="margin-top: 1rem;">
           <article class="card scroll-animate">
-            <p class="eyebrow">Open</p>
-            <h3>Open data model</h3>
-            <p>Issuers and credentials are stored as plain JSON resources aligned with Open Badges and VC conventions.</p>
+            <p class="eyebrow">Domain-bound signatures</p>
+            <h3>Identity anchored to domains</h3>
+            <p>Badges are signed with Ed25519 keys and checked against issuer domain metadata at well-known endpoints.</p>
           </article>
           <article class="card scroll-animate">
-            <p class="eyebrow">Provable</p>
-            <h3>Cryptographic integrity</h3>
-            <p>Sign badge payloads with Ed25519 keys and verify them against issuer keys and hosted metadata.</p>
+            <p class="eyebrow">Public verification</p>
+            <h3>No-key verification endpoints</h3>
+            <p>Anyone can verify badges by URL or JSON through public APIs with SSRF protections for untrusted input.</p>
           </article>
           <article class="card scroll-animate">
-            <p class="eyebrow">Defensible</p>
-            <h3>Issuer domain controls</h3>
-            <p>Domain validation and well-known issuer checks reduce impersonation and make trust boundaries explicit.</p>
+            <p class="eyebrow">Two trust states</p>
+            <h3>Clear output, no inflation</h3>
+            <p>Results are binary: <code>DOMAIN_VERIFIED_SIGNATURE</code> or <code>UNVERIFIED</code>. Assessment rigor remains issuer policy.</p>
           </article>
         </div>
       </div>
@@ -105,22 +113,22 @@
     <section class="section" id="contributions">
       <div class="container">
         <h2 class="section-title">What this implementation contributes</h2>
-        <p class="section-lede">Not a new badge category, but a tighter operational stack with stronger default safety and automation.</p>
+        <p class="section-lede">Distinctive strengths versus hosted badge platforms.</p>
         <div class="grid-3" style="margin-top: 1rem;">
           <article class="card scroll-animate">
             <p class="eyebrow">Security</p>
             <h3>SSRF-hardened public verifier</h3>
-            <p>Public verify endpoints block private/internal targets before server-side fetches.</p>
+            <p>Public verify routes block private/internal targets before any server-side fetch happens.</p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Trust policy</p>
-            <h3>Anti-impersonation domain controls</h3>
-            <p>Well-known issuer verification, verified issuer registry, and safe test-domain handling.</p>
+            <h3>Anti-impersonation domain checks</h3>
+            <p>Issuer verification is tied to <code>/.well-known/openbadges-issuer.json</code>, with rate limits and cooldowns.</p>
           </article>
           <article class="card scroll-animate">
-            <p class="eyebrow">Ops</p>
-            <h3>Self-hosted + agent-friendly</h3>
-            <p>Deploy-anywhere architecture with API, CLI, MCP integration, and llms.txt discovery surface.</p>
+            <p class="eyebrow">Agent-native ops</p>
+            <h3>API + CLI + MCP + llms.txt</h3>
+            <p>Run the same trust flow manually or programmatically with markdown-first and MCP-compatible interfaces.</p>
           </article>
         </div>
       </div>
@@ -129,52 +137,77 @@
     <section class="section" id="issue">
       <div class="container">
         <h2 class="section-title">Issue in four API calls</h2>
-        <p class="section-lede">From issuer setup to a verifiable assertion URL in a single pipeline.</p>
+        <p class="section-lede">From issuer setup to verifiable assertion URL in one pipeline. Or run the same flow via CLI.</p>
 
         <div class="api-steps">
           <article class="api-step scroll-animate">
-            <h4>1. Validate domain</h4>
-            <code class="code-chip">GET /api/validate-issuer-domain</code>
+            <h4>1. Verify issuer domain</h4>
+            <code class="code-chip">POST /public/api/issuers/verify</code>
           </article>
           <article class="api-step scroll-animate">
-            <h4>2. Create issuer</h4>
-            <code class="code-chip">POST /api/issuer</code>
+            <h4>2. Create issuer + badge class</h4>
+            <code class="code-chip">POST /api/issuer<br>POST /api/badge-class</code>
           </article>
           <article class="api-step scroll-animate">
-            <h4>3. Create badge class</h4>
-            <code class="code-chip">POST /api/badge-class</code>
+            <h4>3. Issue + sign</h4>
+            <code class="code-chip">POST /api/credential-subject<br>POST /api/sign-badge</code>
           </article>
           <article class="api-step scroll-animate">
-            <h4>4. Issue assertion</h4>
-            <code class="code-chip">POST /api/credential-subject</code>
+            <h4>4. Verify publicly</h4>
+            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
           </article>
         </div>
 
         <div class="cta-row" style="margin-top: 1rem;">
-          <a href="#" class="btn btn-primary" data-demo-url-link>Run test credential verification</a>
-          <a href="/api.html" class="btn btn-secondary">Open implementation details</a>
+          <a href="/verify.html" class="btn btn-primary">Run test credential verification</a>
+          <a href="/challenge.html" class="btn btn-secondary">Try 60-second challenge</a>
         </div>
       </div>
     </section>
 
     <section class="section section-muted">
-      <div class="container grid-2">
-        <article class="card scroll-animate">
-          <p class="eyebrow">For issuers</p>
-          <h3>Run reliable issuance pipelines</h3>
-          <p>Use API, CLI, or MCP tools to issue at scale with consistent validation and hosted JSON artifacts.</p>
-          <div class="cta-row" style="margin-top: 0.8rem;">
-            <a class="btn btn-secondary" href="/api.html">Read API docs</a>
-            <a class="btn btn-secondary" href="https://github.com/mohit/badge-generator/blob/main/README-CLI.md" target="_blank" rel="noreferrer">Use CLI</a>
+      <div class="container">
+        <h2 class="section-title">Who this serves</h2>
+        <p class="section-lede">Separate paths for issuance operations and verification operations, both on open rails.</p>
+        <div class="grid-2" style="margin-top: 1rem;">
+          <article class="card scroll-animate">
+            <p class="eyebrow">For issuers</p>
+            <h3>Issue from your own domain and keys</h3>
+            <p>Generate issuer metadata, publish <code>/.well-known/openbadges-issuer.json</code>, verify domain control, and sign badges without platform lock-in.</p>
+            <div class="cta-row" style="margin-top: 0.75rem;">
+              <a href="/challenge.html" class="btn btn-secondary">Try issuer flow</a>
+              <a href="/api.html" class="btn btn-primary">See API steps</a>
+            </div>
+          </article>
+          <article class="card scroll-animate">
+            <p class="eyebrow">For verifiers</p>
+            <h3>Verify badges without private access</h3>
+            <p>Paste badge URLs or JSON, inspect trust state and key fingerprint, and automate checks with public verifier endpoints.</p>
+            <div class="cta-row" style="margin-top: 0.75rem;">
+              <a href="/verify.html" class="btn btn-primary">Open verifier</a>
+              <a href="/challenge.html" class="btn btn-secondary">Run challenge</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-muted">
+      <div class="container challenge-grid">
+        <article class="demo-card scroll-animate">
+          <h3 class="demo-card__title">Step 0: Prompt-to-badge activation</h3>
+          <p class="demo-card__description">Use a short learning summary, generate a signed sample badge, and share a verify link. This is the fastest path for enthusiasts to test the system end-to-end.</p>
+          <div class="cta-row" style="margin-top: 0.85rem;">
+            <a class="btn btn-primary" href="/challenge.html">Start challenge</a>
           </div>
         </article>
 
         <article class="card scroll-animate">
-          <p class="eyebrow">For verifiers</p>
-          <h3>Evaluate trust quickly</h3>
-          <p>Provide a URL, JSON payload, or issuer profile to inspect structure, issuer validity, and signature status.</p>
+          <p class="eyebrow">Trust caveat</p>
+          <h3>Verifier proves signer identity</h3>
+          <p>Verification answers who signed the badge and whether the key is discoverable for that domain. It does not score educational quality or accreditation.</p>
           <div class="cta-row" style="margin-top: 0.8rem;">
-            <a class="btn btn-primary" href="/verify.html">Open verifier</a>
+            <a class="btn btn-secondary" href="/verify.html">Inspect verifier output</a>
           </div>
         </article>
       </div>
@@ -184,10 +217,10 @@
       <div class="container">
         <div class="cta-band">
           <div>
-            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for OpenBadges</h2>
-            <p>Free, interoperable credential trust rails. Same Firmament mission, tuned for operators and integrators.</p>
+            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for credentials</h2>
+            <p>Free, interoperable trust rails for issuers and verifiers. Built by Firmament Works.</p>
           </div>
-          <a href="/vision.html" class="btn btn-primary">Read vision</a>
+          <a href="/vision.html" class="btn btn-primary">Read the vision</a>
         </div>
       </div>
     </section>
@@ -195,13 +228,13 @@
 
   <footer>
     <div class="container footer-row">
-      <p>Open Badges by Firmament Works. Open credential trust infrastructure.</p>
+      <p>Built by <a href="https://firmament.works" target="_blank" rel="noreferrer">Firmament Works</a>.</p>
       <div class="footer-links">
         <a href="/verify.html">Verify</a>
         <a href="/api.html">API</a>
         <a href="/vision.html">Vision</a>
+        <a href="/challenge.html">Challenge</a>
         <a href="/llms.txt">llms.txt</a>
-        <a href="https://openbadges.org/" target="_blank" rel="noreferrer">Open Badges</a>
       </div>
     </div>
   </footer>

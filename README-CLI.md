@@ -157,10 +157,31 @@ Verify an issuer domain that hosts a well-known file.
 - Default: public live check, no trust-log write.
 - With `--log-trust`: persists verification result to server trust log via public API (rate-limited).
   - If API key is configured, CLI uses admin trust-write endpoint and supports `--force`.
+- Output now includes trust metadata (`trustState`, `issuerDomain`, `keyFingerprint`, reason).
 
 ```bash
 node cli/badge-cli.js verify "university.edu"
 node cli/badge-cli.js verify "university.edu" --log-trust
+```
+
+#### `onboard-issuer`
+Guided setup for new issuers:
+1. Generates keypair + `openbadges-issuer.json`
+2. Prints hosting path and verification commands
+3. Optionally runs domain verification immediately
+
+```bash
+node cli/badge-cli.js onboard-issuer \
+  --name "Your Organization" \
+  --url "https://yourdomain.com" \
+  --email "badges@yourdomain.com"
+
+# Optional: verify now and persist trust write
+node cli/badge-cli.js onboard-issuer \
+  --name "Your Organization" \
+  --url "https://yourdomain.com" \
+  --email "badges@yourdomain.com" \
+  --verify-now --log-trust
 ```
 
 #### `get-issuer <domain>`

@@ -17,11 +17,14 @@ A secure, deployable web application for hosting Open Badges with password-prote
 - **Password-protected upload page**: Secure file upload with session-based authentication
 - **JSON file hosting**: Upload and host JSON badge files at accessible URLs
 - **Badge verification system**: Cryptographic signature verification and issuer validation
+- **Two-state trust contract**: `DOMAIN_VERIFIED_SIGNATURE` vs `UNVERIFIED` with explicit caveat
+- **Public trust discovery APIs**: Query issuer trust state, trust events, and issuer listings
 - **API endpoints**: Create issuers, badge classes, and credential subjects via API
 - **Open Badges v2 & v3 compliant**: Follows Open Badges specification
 - **Multi-platform deployment**: Deploy anywhere with Docker, cloud platforms, or self-hosted
 - **CLI tools**: Command-line interface for badge operations and verification
 - **MCP integration**: AI assistant integration via Model Context Protocol
+- **Prompt-to-badge demo flow**: Public challenge + sample badge issuance (`/challenge.html`)
 
 ## Quick Start
 

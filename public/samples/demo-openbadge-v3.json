@@ -9,9 +9,9 @@
     "OpenBadgeCredential"
   ],
   "issuer": {
-    "id": "https://badges.firmament.works/.well-known/openbadges-issuer.json",
+    "id": "https://example.com/.well-known/openbadges-issuer.json",
     "type": "Profile",
-    "name": "Firmament Works"
+    "name": "EXAMPLE.com Demo Issuer"
   },
   "validFrom": "2026-02-24T00:00:00Z",
   "credentialSubject": {

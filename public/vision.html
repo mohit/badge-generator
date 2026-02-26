@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Vision | Open Badges by Firmament Works</title>
-  <meta name="description" content="The Let's Encrypt direction for OpenBadges: open, free, and verifiable credential infrastructure.">
+  <meta name="description" content="The Let's Encrypt direction for credentials: domain-bound trust now, circles-of-trust later.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:title" content="Vision | Open Badges by Firmament Works">
+  <meta property="og:description" content="Domain/key trust now. Vouching and circles-of-trust next.">
+  <meta property="og:image" content="https://badges.firmament.works/og-image.png">
+  <meta property="og:url" content="https://badges.firmament.works/vision.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -32,31 +39,31 @@
   <main id="main-content">
     <section class="manifesto-hero">
       <div class="container">
-        <p class="kicker">Manifesto</p>
+        <p class="kicker">Vision</p>
         <h1 class="section-title">The Let's Encrypt moment for credentials</h1>
         <p class="section-lede">
           Credentials should be as easy to verify as HTTPS certificates: open standards, no lock-in, and strong proof by default.
         </p>
         <div class="cta-row" style="margin-top: 0.9rem;">
-          <a href="#" class="btn btn-primary" data-demo-url-link>Run live verify test</a>
-          <a href="/api.html" class="btn btn-secondary">See implementation details</a>
+          <a href="/challenge.html" class="btn btn-primary">Run 60-second challenge</a>
+          <a href="/verify.html" class="btn btn-secondary">Open verifier</a>
         </div>
 
         <div class="manifesto-grid">
           <article class="card scroll-animate">
             <p class="eyebrow">Current state</p>
             <h3>Fragmented platforms</h3>
-            <p>Credentials often live in private systems and fail to travel cleanly across employer workflows.</p>
+            <p>Credentials are often trapped in closed networks and hard to validate independently.</p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Target state</p>
             <h3>Portable trust</h3>
-            <p>A credential should be portable JSON with transparent issuer checks and proof verification.</p>
+            <p>A badge should be portable JSON with explicit issuer-domain proof and machine-verifiable signatures.</p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Method</p>
-            <h3>Open infra first</h3>
-            <p>Invest in free, standards-aligned tooling so any issuer can publish trustworthy credentials.</p>
+            <h3>Open trust rails first</h3>
+            <p>Build free primitives anyone can deploy, not another centralized authority gate.</p>
           </article>
         </div>
       </div>
@@ -64,42 +71,22 @@
 
     <section class="section section-muted">
       <div class="container">
-        <h2 class="section-title">What is concrete in this implementation</h2>
+        <h2 class="section-title">What's here now</h2>
         <div class="grid-3" style="margin-top: 1rem;">
           <article class="card scroll-animate">
-            <p class="eyebrow">Verifier hardening</p>
-            <h3>Public URL safety controls</h3>
-            <p>Public endpoints reject private/internal targets before any server-side fetch occurs.</p>
+            <p class="eyebrow">Trust model</p>
+            <h3>Two-state verifier output</h3>
+            <p><code>DOMAIN_VERIFIED_SIGNATURE</code> or <code>UNVERIFIED</code>, with explicit caveat about assessment quality.</p>
           </article>
           <article class="card scroll-animate">
-            <p class="eyebrow">Issuer integrity</p>
-            <h3>Anti-impersonation checks</h3>
-            <p>Domain ownership flow built around <code>/.well-known/openbadges-issuer.json</code> verification.</p>
+            <p class="eyebrow">Security posture</p>
+            <h3>Public verifier hardening</h3>
+            <p>SSRF protections, request limits, trust-write rate limits, and cooldown controls for abuse resistance.</p>
           </article>
           <article class="card scroll-animate">
-            <p class="eyebrow">Operational path</p>
-            <h3>Issue + verify + test</h3>
-            <p>A single app provides issuance APIs, public verifier APIs, and a live hosted sample for testing.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-muted">
-      <div class="container">
-        <h2 class="section-title">Design principles</h2>
-        <div class="principle-grid">
-          <article class="card scroll-animate">
-            <h3>Public verifiability</h3>
-            <p>Verification should be inspectable and reproducible with clear status outputs.</p>
-          </article>
-          <article class="card scroll-animate">
-            <h3>Issuer accountability</h3>
-            <p>Domain ownership and well-known profiles establish explicit issuer provenance.</p>
-          </article>
-          <article class="card scroll-animate">
-            <h3>Operator ergonomics</h3>
-            <p>CLI, API, and MCP access should make secure issuance practical instead of aspirational.</p>
+            <p class="eyebrow">Interfaces</p>
+            <h3>API, CLI, MCP, llms.txt</h3>
+            <p>Human and agent workflows share the same trust primitives and verification semantics.</p>
           </article>
         </div>
       </div>
@@ -107,19 +94,39 @@
 
     <section class="section">
       <div class="container">
-        <h2 class="section-title">Roadmap arc</h2>
+        <h2 class="section-title">How issuer identity works</h2>
+        <div class="principle-grid">
+          <article class="card scroll-animate">
+            <h3>Canonical issuer identity</h3>
+            <p>Verifier identity is domain-first: <code>issued by &lt;domain&gt;</code>.</p>
+          </article>
+          <article class="card scroll-animate">
+            <h3>Claimed names are secondary</h3>
+            <p>Issuer profile names are displayed as claims, not canonical trust anchors.</p>
+          </article>
+          <article class="card scroll-animate">
+            <h3>TLS org/CN is metadata only</h3>
+            <p>Certificate org fields may describe a hosting provider. Domain ownership remains the trust anchor.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2 class="section-title">Now, next, later</h2>
         <div class="roadmap-grid">
           <article class="card roadmap-item scroll-animate">
-            <h3>Phase 1: Foundation</h3>
-            <p>Reliable issue and verify primitives with markdown-first docs for humans and LLMs.</p>
+            <h3>Now: Domain/key trust</h3>
+            <p>Public verification, trust discovery APIs, and prompt-to-badge activation for early adopters.</p>
           </article>
           <article class="card roadmap-item scroll-animate">
-            <h3>Phase 2: Integrations</h3>
-            <p>Deeper LMS and hiring-system integrations built on stable trust interfaces.</p>
+            <h3>Next: Issuer onboarding UX</h3>
+            <p>Guided flows for non-technical institutions: key generation, well-known hosting, and first issued badge.</p>
           </article>
           <article class="card roadmap-item scroll-animate">
-            <h3>Phase 3: Network effects</h3>
-            <p>Credential verification becomes expected everywhere, with no dependence on a single vendor.</p>
+            <h3>Later: Circles of trust</h3>
+            <p>Vouching networks for higher-order reputation layered on top of domain-bound signature trust.</p>
           </article>
         </div>
       </div>
@@ -130,9 +137,9 @@
         <div class="cta-band">
           <div>
             <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">Build on open trust primitives</h2>
-            <p>Use the API to move from idea to a verifiable credential pipeline.</p>
+            <p>Start by verifying a badge, then issue one with your own domain and keys.</p>
           </div>
-          <a href="/api.html" class="btn btn-primary">Open API reference</a>
+          <a href="/challenge.html" class="btn btn-primary">Start challenge</a>
         </div>
       </div>
     </section>
@@ -140,7 +147,7 @@
 
   <footer>
     <div class="container footer-row">
-      <p>Open Badges by Firmament Works vision.</p>
+      <p>Built by <a href="https://firmament.works" target="_blank" rel="noreferrer">Firmament Works</a>.</p>
       <div class="footer-links">
         <a href="/">Home</a>
         <a href="/verify.html">Verify</a>

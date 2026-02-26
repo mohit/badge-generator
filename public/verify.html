@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Verify Credentials | Open Badges by Firmament Works</title>
-  <meta name="description" content="Verify Open Badges and credential issuers by URL, JSON, or issuer profile.">
+  <meta name="description" content="Check any badge trust state by URL or JSON. Domain-bound verification with explicit result details.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:title" content="Verify Credentials | Open Badges by Firmament Works">
+  <meta property="og:description" content="Public Open Badges verifier with domain-bound trust state and auditable details.">
+  <meta property="og:image" content="https://badges.firmament.works/og-image.png">
+  <meta property="og:url" content="https://badges.firmament.works/verify.html">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -33,11 +40,11 @@
     <section class="verify-hero">
       <div class="container">
         <p class="kicker">Public Verifier</p>
-        <h1 class="section-title" style="margin-bottom: 0.45rem;">Credential trust check</h1>
-        <p class="section-lede">One panel for structure, issuer, and signature checks with auditable result details.</p>
+        <h1 class="section-title" style="margin-bottom: 0.45rem;">Check any badge's trust state</h1>
+        <p class="section-lede">Paste a URL, drop in JSON, or inspect an issuer profile. The verifier checks structure, issuer reachability, and signature, then shows exactly what it found.</p>
         <div class="cta-row" style="margin-top: 0.85rem;">
           <a href="#" class="btn btn-primary" data-demo-fill-link>Load live signed credential</a>
-          <a href="/api.html" class="btn btn-secondary">How to issue + verify</a>
+          <a href="/challenge.html" class="btn btn-secondary">Verify challenge</a>
         </div>
       </div>
     </section>
@@ -69,7 +76,7 @@
             <form id="json-form">
               <div class="form-group">
                 <label class="form-label" for="badge-json">Badge JSON payload</label>
-                <textarea id="badge-json" class="form-input form-textarea" placeholder='{"@context":"https://w3id.org/openbadges/v2","type":"Assertion",...}' required></textarea>
+                <textarea id="badge-json" class="form-input form-textarea" placeholder='{"@context":"https://www.w3.org/ns/credentials/v2","type":["VerifiableCredential","OpenBadgeCredential"],...}' required></textarea>
                 <small class="form-help">Paste a full JSON object.</small>
               </div>
               <button type="submit" class="verify-button">
@@ -84,7 +91,7 @@
               <div class="form-group">
                 <label class="form-label" for="issuer-url">Issuer URL</label>
                 <input type="url" id="issuer-url" class="form-input" placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
-                <small class="form-help">Checks issuer resource validity and accessibility.</small>
+                <small class="form-help">Checks issuer resource validity and key discoverability.</small>
               </div>
               <button type="submit" class="verify-button">
                 <span class="button-text">Verify issuer</span>
@@ -105,7 +112,7 @@
             <h3>Quick examples</h3>
             <div class="example-links">
               <a href="#" class="example-link" data-example="live">Live signed test</a>
-              <a href="#" class="example-link" data-example="badge">Sample badge</a>
+              <a href="#" class="example-link" data-example="unsigned">Unsigned sample</a>
               <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
               <a href="#" class="example-link" data-example="domain">openbadges.org</a>
             </div>
@@ -115,12 +122,12 @@
         <aside class="panel verify-panel scroll-animate">
           <h2 class="panel-title">How to read the verdict</h2>
           <div class="signal-stack">
-            <div class="signal-row"><span class="signal-key">Structure</span><span class="status-pill status-pass">required fields pass</span></div>
-            <div class="signal-row"><span class="signal-key">Issuer</span><span class="status-pill status-pass">profile reachable</span></div>
-            <div class="signal-row"><span class="signal-key">Signature</span><span class="status-pill status-warn">strongly recommended</span></div>
+            <div class="signal-row"><span class="signal-key">DOMAIN_VERIFIED_SIGNATURE</span><span class="status-pill status-pass">signature + domain key pass</span></div>
+            <div class="signal-row"><span class="signal-key">UNVERIFIED</span><span class="status-pill status-fail">issuer not cryptographically verified</span></div>
+            <div class="signal-row"><span class="signal-key">DEMO</span><span class="status-pill status-warn">reserved example.com issuer domain</span></div>
           </div>
           <p class="signal-note" style="margin-top: 0.8rem;">
-            Public verify endpoints include SSRF protections and are designed for untrusted input.
+            This verifies domain/key control. It does not certify assessment quality or accreditation.
           </p>
 
           <div class="card" style="margin-top: 0.95rem;">
@@ -128,8 +135,8 @@
             <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
           </div>
           <div class="card" style="margin-top: 0.75rem;">
-            <p class="eyebrow">Need more detail?</p>
-            <a href="/api.html" class="btn btn-secondary">Open API reference</a>
+            <p class="eyebrow">Need implementation details?</p>
+            <p class="small-note">See API and llms.txt links in the footer.</p>
           </div>
         </aside>
       </div>
@@ -138,7 +145,7 @@
 
   <footer>
     <div class="container footer-row">
-      <p>Open Badges by Firmament Works verifier.</p>
+      <p>Built by <a href="https://firmament.works" target="_blank" rel="noreferrer">Firmament Works</a>.</p>
       <div class="footer-links">
         <a href="/">Home</a>
         <a href="/api.html">API</a>
@@ -149,6 +156,11 @@
   </footer>
 
   <script>
+    const TRUST_STATES = {
+      UNVERIFIED: 'UNVERIFIED',
+      DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE'
+    };
+
     document.querySelectorAll('.verify-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.verify-tab').forEach((t) => t.classList.remove('active'));
@@ -160,29 +172,10 @@
     });
 
     const examples = {
-      badge: JSON.stringify({
-        '@context': 'https://w3id.org/openbadges/v2',
-        type: 'Assertion',
-        id: 'https://example.com/assertions/123',
-        recipient: {
-          type: 'email',
-          hashed: false,
-          identity: 'learner@example.com'
-        },
-        badge: 'https://example.com/badges/web-dev-101',
-        issuedOn: '2026-01-15T00:00:00Z',
-        verification: { type: 'hosted' }
-      }, null, 2),
-      issuer: JSON.stringify({
-        '@context': 'https://w3id.org/openbadges/v2',
-        type: 'Issuer',
-        id: 'https://example.com/issuer',
-        name: 'Example Learning Academy',
-        url: 'https://example.com',
-        email: 'badges@example.com'
-      }, null, 2),
-      domain: 'https://openbadges.org',
-      live: `${window.location.origin}/samples/demo-openbadge-v3-signed.json`
+      live: `${window.location.origin}/samples/demo-openbadge-v3-signed.json`,
+      unsigned: `${window.location.origin}/samples/demo-openbadge-v3.json`,
+      issuer: 'https://example.com/.well-known/openbadges-issuer.json',
+      domain: 'https://openbadges.org'
     };
 
     const statusClassMap = {
@@ -218,13 +211,49 @@
       return `<div class="result-ladder-row"><span class="label">${escapeHtml(label)}</span>${statusPill(state, text)}</div>`;
     }
 
+    function trustBadge(trustState) {
+      if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE) {
+        return '<span class="trust-badge trust-badge--verified">DOMAIN_VERIFIED_SIGNATURE</span>';
+      }
+      return '<span class="trust-badge trust-badge--unverified">UNVERIFIED</span>';
+    }
+
+    function isDemoDomain(domain) {
+      if (!domain) return false;
+      try {
+        const parsed = new URL(String(domain).includes('://') ? domain : `https://${domain}`);
+        const hostname = parsed.hostname.toLowerCase();
+        return hostname === 'example.com' || hostname.endsWith('.example.com');
+      } catch {
+        return false;
+      }
+    }
+
+    function resolveValidationLabel(result, issuerDomain) {
+      const explicitLabel = result.validationLabel || result.verification?.validationLabel || null;
+      if (explicitLabel) return explicitLabel;
+      return isDemoDomain(issuerDomain) ? 'DEMO' : null;
+    }
+
+    function trustHeadline(trustState, issuerDomain, validationLabel) {
+      if (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE) {
+        const label = validationLabel ? ` ${statusPill('warn', validationLabel)}` : '';
+        return `Signed by verified domain: <code>${escapeHtml(issuerDomain || 'unknown')}</code>${label}`;
+      }
+      return 'Issuer cannot be cryptographically verified.';
+    }
+
+    function sharedCaveat() {
+      return 'This verifies domain/key control. It does not certify assessment quality or accreditation.';
+    }
+
     document.querySelectorAll('.example-link').forEach((link) => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const type = link.dataset.example;
-        if (type === 'live') {
+        if (type === 'live' || type === 'unsigned') {
           document.querySelector('[data-tab="url"]').click();
-          document.getElementById('badge-url').value = examples.live;
+          document.getElementById('badge-url').value = examples[type];
           return;
         }
         if (type === 'domain') {
@@ -233,8 +262,8 @@
           return;
         }
 
-        document.querySelector('[data-tab="json"]').click();
-        document.getElementById('badge-json').value = type === 'issuer' ? examples.issuer : examples.badge;
+        document.querySelector('[data-tab="issuer"]').click();
+        document.getElementById('issuer-url').value = examples.issuer;
       });
     });
 
@@ -334,26 +363,30 @@
       const structureState = result.structure ? (result.structure.valid ? 'pass' : 'fail') : 'skip';
       const issuerState = result.issuer ? (result.issuer.valid ? 'pass' : 'fail') : 'skip';
       const signatureState = result.signature ? (result.signature.valid ? 'pass' : 'fail') : 'skip';
+      const trustState = result.trustState || TRUST_STATES.UNVERIFIED;
+      const issuerDomain = result.issuerDomain || result.issuer?.issuerDomain || 'unknown';
+      const validationLabel = resolveValidationLabel(result, issuerDomain);
+      const issuerClaimedName = result.issuerClaimedName || result.issuer?.issuerClaimedName || result.issuer?.issuer?.name || 'not provided';
+      const keyFingerprint = result.keyFingerprint || result.signature?.keyFingerprint || 'not available';
+      const reason = result.verificationReason || (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
+        ? 'Signature is valid and key is currently discoverable for this domain.'
+        : 'Issuer cannot be cryptographically verified.');
 
-      let status = 'error';
-      let headline = 'Credential failed verification';
-      let verdictPill = statusPill('fail', 'invalid');
-
-      if (result.valid && result.verificationLevel === 'cryptographically_verified') {
-        status = 'success';
-        headline = 'Credential cryptographically verified';
-        verdictPill = statusPill('pass', 'high assurance');
-      } else if (result.valid) {
-        status = 'warning';
-        headline = 'Credential valid with partial proof';
-        verdictPill = statusPill('warn', 'review context');
-      }
-
-      icon.textContent = status === 'success' ? 'PASS' : status === 'warning' ? 'WARN' : 'FAIL';
-      text.innerHTML = `${escapeHtml(headline)} ${verdictPill}`;
+      const status = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'success' : 'error';
+      icon.textContent = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'PASS' : 'FAIL';
+      text.innerHTML = `${trustHeadline(trustState, issuerDomain, validationLabel)} ${trustBadge(trustState)}`;
 
       let detailsHtml = '';
       detailsHtml += `<p class="result-summary"><strong>Version:</strong> ${escapeHtml(result.version || 'unknown')} &nbsp; <strong>Level:</strong> ${escapeHtml(result.verificationLevel || 'unknown')}</p>`;
+      detailsHtml += '<div class="issuer-block">';
+      detailsHtml += `<div class="issuer-block__domain">Issued by ${escapeHtml(issuerDomain)}</div>`;
+      if (validationLabel) {
+        detailsHtml += `<div class="issuer-block__meta">Validation label: ${statusPill('warn', validationLabel)}</div>`;
+      }
+      detailsHtml += `<div class="issuer-block__meta">Claimed name: ${escapeHtml(issuerClaimedName)}</div>`;
+      detailsHtml += `<div class="issuer-block__fingerprint">Key fingerprint: ${escapeHtml(keyFingerprint)}</div>`;
+      detailsHtml += '</div>';
+      detailsHtml += `<p class="small-note" style="margin-top:0.55rem;">${escapeHtml(reason)}</p>`;
       detailsHtml += '<div class="result-ladder">';
       detailsHtml += ladderRow('Structure', structureState, statusTextMap[structureState]);
       detailsHtml += ladderRow('Issuer', issuerState, statusTextMap[issuerState]);
@@ -376,6 +409,8 @@
         detailsHtml += '</ul></div>';
       }
 
+      detailsHtml += `<div class="caveat-banner">${escapeHtml(sharedCaveat())}</div>`;
+
       details.innerHTML = detailsHtml;
       container.className = `result-container result-${status}`;
       container.style.display = 'block';
@@ -388,22 +423,30 @@
       const text = container.querySelector('.result-text');
       const details = container.querySelector('.result-details');
 
-      const valid = Boolean(result.valid && result.verification?.valid !== false);
-      const status = valid ? 'success' : 'error';
-      icon.textContent = valid ? 'PASS' : 'FAIL';
-      text.innerHTML = `${valid ? 'Issuer resource verified' : 'Issuer resource failed verification'} ${statusPill(valid ? 'pass' : 'fail', valid ? 'valid' : 'invalid')}`;
+      const trustState = result.trustState || (result.verification?.valid ? TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE : TRUST_STATES.UNVERIFIED);
+      const issuerDomain = result.issuerDomain || result.verification?.issuerDomain || 'unknown';
+      const validationLabel = resolveValidationLabel(result, issuerDomain);
+      const claimedName = result.issuerClaimedName || result.verification?.issuerClaimedName || result.verification?.issuer?.name || 'not provided';
+      const keyFingerprint = result.keyFingerprint || result.verification?.keyFingerprint || 'not available';
+      const reason = result.verificationReason || (trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE
+        ? 'Signature is valid and key is currently discoverable for this domain.'
+        : 'Issuer cannot be cryptographically verified.');
+      const status = trustState === TRUST_STATES.DOMAIN_VERIFIED_SIGNATURE ? 'success' : 'error';
 
-      const profileState = valid ? 'pass' : 'fail';
-      const message = result.verification?.message || 'No additional details returned by verifier';
+      icon.textContent = status === 'success' ? 'PASS' : 'FAIL';
+      text.innerHTML = `${trustHeadline(trustState, issuerDomain, validationLabel)} ${trustBadge(trustState)}`;
+
       let detailsHtml = `<p class="result-summary"><strong>Type:</strong> ${escapeHtml(result.verification?.type || 'unknown')}</p>`;
-      detailsHtml += '<div class="result-ladder">';
-      detailsHtml += ladderRow('Issuer profile', profileState, statusTextMap[profileState]);
-      detailsHtml += '</div>';
-      detailsHtml += `<div class="result-list"><p>Message</p><ul><li>${escapeHtml(message)}</li></ul></div>`;
-
-      if (result.verification?.error) {
-        detailsHtml += `<div class="result-list"><p>Error</p><ul><li>${escapeHtml(result.verification.error)}</li></ul></div>`;
+      detailsHtml += '<div class="issuer-block">';
+      detailsHtml += `<div class="issuer-block__domain">Issued by ${escapeHtml(issuerDomain)}</div>`;
+      if (validationLabel) {
+        detailsHtml += `<div class="issuer-block__meta">Validation label: ${statusPill('warn', validationLabel)}</div>`;
       }
+      detailsHtml += `<div class="issuer-block__meta">Claimed name: ${escapeHtml(claimedName)}</div>`;
+      detailsHtml += `<div class="issuer-block__fingerprint">Key fingerprint: ${escapeHtml(keyFingerprint)}</div>`;
+      detailsHtml += '</div>';
+      detailsHtml += `<div class="result-list"><p>Message</p><ul><li>${escapeHtml(result.verification?.message || reason)}</li></ul></div>`;
+      detailsHtml += `<div class="caveat-banner">${escapeHtml(sharedCaveat())}</div>`;
 
       details.innerHTML = detailsHtml;
       container.className = `result-container result-${status}`;
@@ -414,8 +457,11 @@
     function showError(message) {
       const container = document.getElementById('result-container');
       container.querySelector('.result-icon').textContent = 'FAIL';
-      container.querySelector('.result-text').innerHTML = `Verifier request error ${statusPill('fail', 'request failed')}`;
-      container.querySelector('.result-details').innerHTML = `<p class="result-summary">${escapeHtml(message)}</p>`;
+      container.querySelector('.result-text').innerHTML = `Issuer cannot be cryptographically verified. ${trustBadge(TRUST_STATES.UNVERIFIED)}`;
+      container.querySelector('.result-details').innerHTML = `
+        <p class="result-summary">${escapeHtml(message)}</p>
+        <div class="caveat-banner">${escapeHtml(sharedCaveat())}</div>
+      `;
       container.className = 'result-container result-error';
       container.style.display = 'block';
       container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

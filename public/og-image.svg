@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Open Badges by Firmament Works">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6f8fb"/>
+      <stop offset="100%" stop-color="#ecfdf5"/>
+    </linearGradient>
+    <linearGradient id="badge" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <circle cx="1060" cy="95" r="180" fill="#dbe7ff" opacity="0.65"/>
+  <circle cx="115" cy="560" r="210" fill="#d9f7ef" opacity="0.8"/>
+
+  <g transform="translate(86 108)">
+    <path d="M130 0l72 34v67c0 52-37 92-72 111-35-19-72-59-72-111V34l72-34z" fill="url(#badge)"/>
+    <path d="M95 95l22 22 48-48" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="310" y="218" font-family="Fraunces, Georgia, serif" font-size="72" font-weight="700" fill="#0b1020">Open Badges</text>
+  <text x="312" y="268" font-family="IBM Plex Sans, sans-serif" font-size="28" font-weight="600" fill="#374155">by Firmament Works</text>
+  <text x="310" y="336" font-family="IBM Plex Sans, sans-serif" font-size="38" font-weight="600" fill="#1a2238">Sign badges. Verify domains. Share proof.</text>
+  <text x="310" y="392" font-family="IBM Plex Sans, sans-serif" font-size="28" fill="#5b6475">Domain-bound signatures + public verification APIs</text>
+
+  <g transform="translate(310 446)">
+    <rect width="578" height="122" rx="20" fill="#ffffff" stroke="#d6dbe6"/>
+    <text x="30" y="45" font-family="IBM Plex Mono, monospace" font-size="24" font-weight="600" fill="#1d4ed8">TRUST STATE</text>
+    <text x="30" y="88" font-family="IBM Plex Mono, monospace" font-size="30" font-weight="700" fill="#0f766e">DOMAIN_VERIFIED_SIGNATURE</text>
+  </g>
+</svg>

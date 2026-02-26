@@ -30,6 +30,9 @@ Expose badge operations to LLM clients (for example Claude Desktop) through tool
 - Create issuer, badge class, credential subject
 - Verify badge and issuer resources
 - List and fetch hosted badge files
+- Generate issuer profile templates (`generate_issuer_profile_template`)
+- Issue signed sample badges via public demo API (`issue_sample_badge`)
+- Explain verifier JSON in plain language (`explain_verification_result`)
 
 ## Operational Guidance
 
