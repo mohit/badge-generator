@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const challengePageUrl = `${window.location.origin}/challenge.html`;
+  const challengePageUrl = `${window.location.origin}/verify.html#demo`;
   if (challengeShareLink) {
     challengeShareLink.textContent = challengePageUrl;
   }

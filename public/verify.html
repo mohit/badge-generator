@@ -4,12 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Credentials | Signet by Firmament Works</title>
+  <title>Verify &amp; Create | Signet by Firmament Works</title>
   <meta name="description"
-    content="Check any credential trust state by URL or JSON. Domain-bound verification with explicit result details.">
+    content="Verify any Signet credential by URL or JSON, or create your own signed demo badge using prompt-to-badge.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="Verify Credentials | Signet by Firmament Works">
-  <meta property="og:description" content="Public Signet verifier with domain-bound trust state and auditable details.">
+  <meta property="og:title" content="Verify &amp; Create | Signet by Firmament Works">
+  <meta property="og:description" content="Public Signet verifier with domain-bound trust state. Create a signed demo badge in seconds.">
   <meta property="og:image" content="https://badges.firmament.works/og-image.png">
   <meta property="og:url" content="https://badges.firmament.works/verify.html">
   <meta property="og:type" content="website">
@@ -34,122 +34,212 @@
         <li><a href="/">Home</a></li>
         <li><a href="/verify.html" class="active">Verify</a></li>
         <li><a href="/api.html">API</a></li>
-        <li><a href="/vision.html">Vision</a></li>
+        <li><a href="/issuer.html">Issuer Setup</a></li>
       </ul>
     </nav>
   </header>
 
   <main id="main-content">
+
+    <!-- ── Hero ───────────────────────────────────────────────── -->
     <section class="verify-hero">
       <div class="container">
-        <p class="kicker">Public Verifier</p>
-        <h1 class="section-title" style="margin-bottom: 0.45rem;">Check any credential's trust state</h1>
-        <p class="section-lede">Paste a URL, drop in JSON, or inspect an issuer profile. The verifier checks structure,
-          issuer reachability, and signature, then shows exactly what it found.</p>
-        <div class="cta-row" style="margin-top: 0.85rem;">
-          <a href="#" class="btn btn-primary" data-demo-fill-link>Load live signed credential</a>
-          <a href="/challenge.html" class="btn btn-secondary">Verify challenge</a>
+        <p class="kicker">Credential Tools</p>
+        <h1 class="section-title" style="margin-bottom: 0.35rem;">Verify or create a credential</h1>
+        <p class="section-lede">Verify any Signet credential by URL, JSON, or issuer domain. Or create your own signed demo badge using prompt-to-badge.</p>
+      </div>
+    </section>
+
+    <!-- ── Tab bar ─────────────────────────────────────────────── -->
+    <div class="page-tabs-bar">
+      <div class="container">
+        <nav class="page-tabs" aria-label="Tools">
+          <button class="page-tab active" data-page-tab="verify">Verify a Credential</button>
+          <button class="page-tab" data-page-tab="demo">Create a Signed Demo Badge</button>
+          <a class="page-tab page-tab-ext" href="/issuer.html">Become a Verified Issuer ↗</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════
+         TAB A: Verify a Credential
+    ══════════════════════════════════════════════════════════ -->
+    <div id="tab-section-verify" class="page-tab-section active">
+      <section class="section" style="padding-top: 0.75rem;">
+        <div class="container verify-layout">
+
+          <!-- Left: verify form panel -->
+          <section class="panel verify-panel">
+            <div class="verify-tabs">
+              <div class="verify-tab active" data-tab="url">By URL</div>
+              <div class="verify-tab" data-tab="json">By JSON</div>
+              <div class="verify-tab" data-tab="issuer">Issuer</div>
+            </div>
+
+            <div class="tab-content active" id="url-tab">
+              <form id="url-form">
+                <div class="form-group">
+                  <label class="form-label" for="badge-url">Badge or credential URL</label>
+                  <input type="url" id="badge-url" class="form-input"
+                    placeholder="https://example.com/badges/assertion.json" required>
+                  <small class="form-help">Fetches the resource and runs trust checks.</small>
+                </div>
+                <button type="submit" class="verify-button">
+                  <span class="button-text">Verify URL</span>
+                  <span class="loading-spinner" style="display: none;"></span>
+                </button>
+              </form>
+            </div>
+
+            <div class="tab-content" id="json-tab">
+              <form id="json-form">
+                <div class="form-group">
+                  <label class="form-label" for="badge-json">Badge JSON payload</label>
+                  <textarea id="badge-json" class="form-input form-textarea"
+                    placeholder='{"@context":"https://www.w3.org/ns/credentials/v2","type":["VerifiableCredential","OpenBadgeCredential"],...}'
+                    required></textarea>
+                  <small class="form-help">Paste a full JSON object.</small>
+                </div>
+                <button type="submit" class="verify-button">
+                  <span class="button-text">Verify JSON</span>
+                  <span class="loading-spinner" style="display: none;"></span>
+                </button>
+              </form>
+            </div>
+
+            <div class="tab-content" id="issuer-tab">
+              <form id="issuer-form">
+                <div class="form-group">
+                  <label class="form-label" for="issuer-url">Issuer URL</label>
+                  <input type="url" id="issuer-url" class="form-input"
+                    placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
+                  <small class="form-help">Checks issuer resource validity and key discoverability.</small>
+                </div>
+                <button type="submit" class="verify-button">
+                  <span class="button-text">Verify issuer</span>
+                  <span class="loading-spinner" style="display: none;"></span>
+                </button>
+              </form>
+            </div>
+
+            <div id="result-container" class="result-container" role="status" aria-live="polite">
+              <div class="result-title">
+                <span class="result-icon"></span>
+                <span class="result-text"></span>
+              </div>
+              <div class="result-details"></div>
+            </div>
+
+            <div class="examples">
+              <h3>Quick examples</h3>
+              <div class="example-links">
+                <a href="#" class="example-link" data-example="live">Live signed test</a>
+                <a href="#" class="example-link" data-example="unsigned">Unsigned sample</a>
+                <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
+                <a href="#" class="example-link" data-example="domain">openbadges.org</a>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right: trust state legend -->
+          <aside class="panel verify-panel scroll-animate">
+            <div class="signal-stack">
+              <div class="status-pill status-pass" style="justify-content: center; padding: 0.65rem; width: 100%;">
+                Signature + domain key pass</div>
+              <div class="status-pill status-warn" style="justify-content: center; padding: 0.65rem; width: 100%;">Valid
+                signature, reserved demo domain</div>
+              <div class="status-pill status-fail" style="justify-content: center; padding: 0.65rem; width: 100%;">Issuer
+                not cryptographically verified</div>
+            </div>
+            <p class="signal-note" style="margin-top: 1rem; text-align: center;">
+              This verifies domain/key control. It does not certify assessment quality or accreditation.
+            </p>
+
+            <div class="card" style="margin-top: 1.5rem; text-align: center;">
+              <p class="eyebrow">Integrating?</p>
+              <p class="small-note" style="margin-bottom: 0.8rem;">Build automated trust checks into your own application
+                or agent.</p>
+              <a href="/api.html" class="btn btn-secondary btn-block"
+                style="padding: 0.5rem; font-size: var(--text-sm);">View API Documentation</a>
+            </div>
+
+            <div class="card" style="margin-top: 0.75rem; text-align: center;">
+              <p class="eyebrow">Ready to issue?</p>
+              <p class="small-note" style="margin-bottom: 0.8rem;">Set up your own domain-verified issuer and sign
+                badges with your own keys.</p>
+              <a href="/issuer.html" class="btn btn-secondary btn-block"
+                style="padding: 0.5rem; font-size: var(--text-sm);">Issuer Setup Guide</a>
+            </div>
+          </aside>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="section" style="padding-top: 0.5rem;">
-      <div class="container verify-layout">
-        <section class="panel verify-panel">
-          <div class="verify-tabs">
-            <div class="verify-tab active" data-tab="url">By URL</div>
-            <div class="verify-tab" data-tab="json">By JSON</div>
-            <div class="verify-tab" data-tab="issuer">Issuer</div>
+    <!-- ══════════════════════════════════════════════════════════
+         TAB B: Create a Signed Demo Badge
+    ══════════════════════════════════════════════════════════ -->
+    <div id="tab-section-demo" class="page-tab-section">
+      <section class="section" style="padding-top: 1rem; padding-bottom: 3rem;">
+        <div class="container" style="max-width: 860px;">
+
+          <div style="margin-bottom: 1.5rem;">
+            <h2 class="section-title" style="font-size: var(--text-xl);">Create a signed demo badge</h2>
+            <p class="section-lede">Fill in the details below and we'll generate a cryptographically signed
+              Open Badge on the <code>example.com</code> demo domain. The result is a real verifiable credential —
+              anyone can verify it via the public API. Use the MCP server or CLI to issue badges on your own verified domain.</p>
           </div>
 
-          <div class="tab-content active" id="url-tab">
-            <form id="url-form">
+          <article class="panel challenge-panel">
+            <form id="prompt-badge-form" class="challenge-form">
               <div class="form-group">
-                <label class="form-label" for="badge-url">Badge or credential URL</label>
-                <input type="url" id="badge-url" class="form-input"
-                  placeholder="https://example.com/badges/assertion.json" required>
-                <small class="form-help">Fetches the resource and runs trust checks.</small>
+                <label class="form-label" for="badge-name">Badge name</label>
+                <input class="form-input" id="badge-name" name="badgeName" placeholder="Paper Comprehension Badge">
               </div>
-              <button type="submit" class="verify-button">
-                <span class="button-text">Verify URL</span>
-                <span class="loading-spinner" style="display: none;"></span>
-              </button>
-            </form>
-          </div>
-
-          <div class="tab-content" id="json-tab">
-            <form id="json-form">
               <div class="form-group">
-                <label class="form-label" for="badge-json">Badge JSON payload</label>
-                <textarea id="badge-json" class="form-input form-textarea"
-                  placeholder='{"@context":"https://www.w3.org/ns/credentials/v2","type":["VerifiableCredential","OpenBadgeCredential"],...}'
-                  required></textarea>
-                <small class="form-help">Paste a full JSON object.</small>
+                <label class="form-label" for="learner-name">Learner name</label>
+                <input class="form-input" id="learner-name" name="learnerName" placeholder="Your name">
               </div>
-              <button type="submit" class="verify-button">
-                <span class="button-text">Verify JSON</span>
-                <span class="loading-spinner" style="display: none;"></span>
-              </button>
-            </form>
-          </div>
-
-          <div class="tab-content" id="issuer-tab">
-            <form id="issuer-form">
               <div class="form-group">
-                <label class="form-label" for="issuer-url">Issuer URL</label>
-                <input type="url" id="issuer-url" class="form-input"
-                  placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
-                <small class="form-help">Checks issuer resource validity and key discoverability.</small>
+                <label class="form-label" for="source-url">Source URL <span style="font-weight: 400; color: var(--steel);">(optional)</span></label>
+                <input class="form-input" id="source-url" name="sourceUrl" placeholder="https://example.org/paper">
               </div>
-              <button type="submit" class="verify-button">
-                <span class="button-text">Verify issuer</span>
-                <span class="loading-spinner" style="display: none;"></span>
-              </button>
+              <div class="form-group">
+                <label class="form-label" for="skills">Skills <span style="font-weight: 400; color: var(--steel);">(comma separated)</span></label>
+                <input class="form-input" id="skills" name="skills" placeholder="critical reading, synthesis">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="proficiency">Self-assessed proficiency</label>
+                <select class="form-input" id="proficiency" name="proficiency">
+                  <option value="">Select one</option>
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                  <option value="expert">Expert</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="summary">Assessment summary</label>
+                <textarea class="form-input form-textarea" id="summary" name="summary" required
+                  placeholder="Summarize what you learned and how you were assessed."></textarea>
+              </div>
+              <button class="verify-button" type="submit">Generate signed demo badge</button>
             </form>
+            <div id="prompt-badge-result" class="challenge-result"></div>
+          </article>
+
+          <div class="card" style="margin-top: 1.2rem; background: var(--trust-light); border-color: rgba(29,78,216,0.2);">
+            <p class="eyebrow" style="margin-bottom: 0.3rem;">Locked caveat</p>
+            <p style="font-size: var(--text-sm); color: var(--ink-soft); line-height: 1.55;">
+              Demo badges use the reserved <code>example.com</code> domain and are labeled <strong>DEMO</strong>.
+              This verifies domain/key control — it does not certify assessment quality or accreditation.
+              <a href="/issuer.html" style="color: var(--trust);">Set up your own issuer</a> to issue badges on a real verified domain.
+            </p>
           </div>
 
-          <div id="result-container" class="result-container" role="status" aria-live="polite">
-            <div class="result-title">
-              <span class="result-icon"></span>
-              <span class="result-text"></span>
-            </div>
-            <div class="result-details"></div>
-          </div>
+        </div>
+      </section>
+    </div>
 
-          <div class="examples">
-            <h3>Quick examples</h3>
-            <div class="example-links">
-              <a href="#" class="example-link" data-example="live">Live signed test</a>
-              <a href="#" class="example-link" data-example="unsigned">Unsigned sample</a>
-              <a href="#" class="example-link" data-example="issuer">Sample issuer</a>
-              <a href="#" class="example-link" data-example="domain">openbadges.org</a>
-            </div>
-          </div>
-        </section>
-
-        <aside class="panel verify-panel scroll-animate">
-          <div class="signal-stack">
-            <div class="status-pill status-pass" style="justify-content: center; padding: 0.65rem; width: 100%;">
-              Signature + domain key pass</div>
-            <div class="status-pill status-warn" style="justify-content: center; padding: 0.65rem; width: 100%;">Valid
-              signature, reserved demo domain</div>
-            <div class="status-pill status-fail" style="justify-content: center; padding: 0.65rem; width: 100%;">Issuer
-              not cryptographically verified</div>
-          </div>
-          <p class="signal-note" style="margin-top: 1rem; text-align: center;">
-            This verifies domain/key control. It does not certify assessment quality or accreditation.
-          </p>
-
-          <div class="card" style="margin-top: 1.5rem; text-align: center;">
-            <p class="eyebrow">Integrating?</p>
-            <p class="small-note" style="margin-bottom: 0.8rem;">Build automated trust checks into your own application
-              or agent.</p>
-            <a href="/api.html" class="btn btn-secondary btn-block"
-              style="padding: 0.5rem; font-size: var(--text-sm);">View API Documentation</a>
-          </div>
-        </aside>
-      </div>
-    </section>
   </main>
 
   <footer>
@@ -158,14 +248,36 @@
       <div class="footer-links">
         <a href="/">Home</a>
         <a href="/api.html">API</a>
-        <a href="/vision.html">Vision</a>
-        <a href="/challenge.html">Challenge</a>
+        <a href="/issuer.html">Issuer Setup</a>
         <a href="/llms.txt">llms.txt</a>
       </div>
     </div>
   </footer>
 
   <script>
+    // ── Page-level tab switching ───────────────────────────────
+    const pageTabs = document.querySelectorAll('.page-tab[data-page-tab]');
+    const pageTabSections = document.querySelectorAll('.page-tab-section');
+
+    function activatePageTab(name) {
+      pageTabs.forEach((t) => t.classList.toggle('active', t.dataset.pageTab === name));
+      pageTabSections.forEach((s) => s.classList.toggle('active', s.id === `tab-section-${name}`));
+    }
+
+    pageTabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        activatePageTab(tab.dataset.pageTab);
+        history.replaceState(null, '', `#${tab.dataset.pageTab}`);
+      });
+    });
+
+    // Activate tab from URL hash on load
+    const initialHash = window.location.hash.slice(1);
+    if (initialHash === 'demo' || initialHash === 'verify') {
+      activatePageTab(initialHash);
+    }
+
+    // ── Sub-tab switching (URL / JSON / Issuer) ───────────────
     const TRUST_STATES = {
       UNVERIFIED: 'UNVERIFIED',
       DOMAIN_VERIFIED_SIGNATURE: 'DOMAIN_VERIFIED_SIGNATURE',
@@ -278,7 +390,6 @@
           document.getElementById('issuer-url').value = examples.domain;
           return;
         }
-
         document.querySelector('[data-tab="issuer"]').click();
         document.getElementById('issuer-url').value = examples.issuer;
       });
@@ -504,6 +615,7 @@
       spinner.style.display = 'none';
     }
 
+    // Handle ?url=&autoverify=1 query params (for incoming links)
     const params = new URLSearchParams(window.location.search);
     const queryUrl = params.get('url');
     const autoVerify = params.get('autoverify') === '1';
