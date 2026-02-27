@@ -57,57 +57,76 @@
       </div>
     </section>
 
-    <!-- ── Quickstart ─────────────────────────────────────────── -->
+    <!-- ── Quickstart: vertical step flow ─────────────────────── -->
     <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
       <div class="container">
-        <h2 class="section-title">Issue and verify in four calls</h2>
+        <h2 class="section-title">Issue and verify</h2>
         <p class="section-lede">Minimal sequence from domain readiness to public verification.</p>
-        <div class="api-steps" style="margin-top: 1.4rem;">
-          <article class="api-step scroll-animate">
-            <div class="step-num">01</div>
-            <h4>Verify issuer domain</h4>
-            <code class="code-chip">POST /public/api/issuers/verify</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <div class="step-num">02</div>
-            <h4>Create issuer + badge class</h4>
-            <code class="code-chip">POST /api/issuer<br>POST /api/badge-class</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <div class="step-num">03</div>
-            <h4>Issue + sign</h4>
-            <code class="code-chip">POST /api/credential-subject<br>POST /api/sign-badge</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <div class="step-num">04</div>
-            <h4>Verify publicly</h4>
-            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
-          </article>
+        <div class="api-flow" style="margin-top: 2rem;">
+
+          <div class="api-flow-step scroll-animate">
+            <div class="api-flow-num">01</div>
+            <div class="api-flow-body">
+              <h4>Verify issuer domain</h4>
+              <code class="code-chip" style="margin-top: 0.5rem;">POST /public/api/issuers/verify</code>
+              <p class="api-flow-desc">Check that your domain's <code>/.well-known/openbadges-issuer.json</code> endpoint is reachable and returns a valid issuer profile. Rate-limited — no API key required.</p>
+            </div>
+          </div>
+
+          <div class="api-flow-step scroll-animate">
+            <div class="api-flow-num">02</div>
+            <div class="api-flow-body">
+              <h4>Create issuer and badge class</h4>
+              <code class="code-chip" style="margin-top: 0.5rem;">POST /api/issuer
+POST /api/badge-class</code>
+              <p class="api-flow-desc">Register your issuer profile and define the badge class — the template that describes what the credential represents. Both endpoints require an API key.</p>
+            </div>
+          </div>
+
+          <div class="api-flow-step scroll-animate">
+            <div class="api-flow-num">03</div>
+            <div class="api-flow-body">
+              <h4>Issue and sign</h4>
+              <code class="code-chip" style="margin-top: 0.5rem;">POST /api/credential-subject
+POST /api/sign-badge</code>
+              <p class="api-flow-desc">Create a credential subject record for the earner, then sign the badge with your Ed25519 private key. The result is a self-contained, portable JSON assertion.</p>
+            </div>
+          </div>
+
+          <div class="api-flow-step scroll-animate">
+            <div class="api-flow-num">04</div>
+            <div class="api-flow-body">
+              <h4>Verify publicly</h4>
+              <code class="code-chip" style="margin-top: 0.5rem;">GET /public/api/verify/badge/:badgeUrl(*)</code>
+              <p class="api-flow-desc">Anyone can verify a badge by URL. The public verifier fetches the JSON, validates structure and signature, and checks issuer key discoverability — returning a clear trust state with no authentication required.</p>
+            </div>
+          </div>
+
         </div>
       </div>
     </section>
 
-    <!-- ── No-key + Authenticated ─────────────────────────────── -->
-    <section class="section" style="padding-top: 3.5rem;">
-      <div class="container api-layout">
-        <article class="api-group scroll-animate">
-          <p class="eyebrow">Public — no key required</p>
-          <h3>Verify and discover trust without authentication</h3>
+    <!-- ── Public API ──────────────────────────────────────────── -->
+    <section class="section" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+      <div class="container" style="max-width: 860px;">
+        <p class="eyebrow">Public — no key required</p>
+        <h2 class="section-title">Verify and discover trust</h2>
+        <p class="section-lede">All verification and trust-discovery operations run without authentication.</p>
 
-          <div class="code-block" style="margin-top: 1rem;">
-            <div class="code-block-head">
-              <span>Verify a signed sample</span>
-              <button class="copy-btn" data-copy-target="api-verify-snippet">Copy</button>
-            </div>
-            <pre id="api-verify-snippet">curl "https://badges.firmament.works/public/api/verify/badge/https%3A%2F%2Fbadges.firmament.works%2Fsamples%2Fdemo-openbadge-v3-signed.json"</pre>
+        <div class="code-block" style="margin-top: 1.6rem;">
+          <div class="code-block-head">
+            <span>Verify a signed sample</span>
+            <button class="copy-btn" data-copy-target="api-verify-snippet">Copy</button>
           </div>
+          <pre id="api-verify-snippet">curl "https://badges.firmament.works/public/api/verify/badge/https%3A%2F%2Fbadges.firmament.works%2Fsamples%2Fdemo-openbadge-v3-signed.json"</pre>
+        </div>
 
-          <div class="code-block">
-            <div class="code-block-head">
-              <span>Expected response fields</span>
-              <button class="copy-btn" data-copy-target="api-verify-response">Copy</button>
-            </div>
-            <pre id="api-verify-response">{
+        <div class="code-block">
+          <div class="code-block-head">
+            <span>Expected response fields</span>
+            <button class="copy-btn" data-copy-target="api-verify-response">Copy</button>
+          </div>
+          <pre id="api-verify-response">{
   "trustState": "DEMO_DOMAIN_VERIFIED_SIGNATURE",
   "issuerDomain": "example.com",
   "validationLabel": "DEMO",
@@ -115,47 +134,51 @@
   "verificationReason": "Signature is valid. Issuer uses the reserved example.com demo domain.",
   "issuerClaimedName": "EXAMPLE.com Demo Issuer"
 }</pre>
-          </div>
+        </div>
 
-          <div class="code-block">
-            <div class="code-block-head">
-              <span>Trust discovery</span>
-              <button class="copy-btn" data-copy-target="api-trust-discovery">Copy</button>
-            </div>
-            <pre id="api-trust-discovery">curl "https://badges.firmament.works/public/api/trust/issuer/badges.firmament.works"
+        <div class="code-block">
+          <div class="code-block-head">
+            <span>Trust discovery</span>
+            <button class="copy-btn" data-copy-target="api-trust-discovery">Copy</button>
+          </div>
+          <pre id="api-trust-discovery">curl "https://badges.firmament.works/public/api/trust/issuer/badges.firmament.works"
 curl "https://badges.firmament.works/public/api/trust/events/badges.firmament.works"
 curl "https://badges.firmament.works/public/api/trust/issuers?status=verified"</pre>
-          </div>
+        </div>
 
-          <div class="code-block">
-            <div class="code-block-head">
-              <span>Trust write (rate-limited, no key)</span>
-              <button class="copy-btn" data-copy-target="api-trust-write">Copy</button>
-            </div>
-            <pre id="api-trust-write">curl -X POST "https://badges.firmament.works/public/api/issuers/verify" \
+        <div class="code-block">
+          <div class="code-block-head">
+            <span>Trust write (rate-limited, no key)</span>
+            <button class="copy-btn" data-copy-target="api-trust-write">Copy</button>
+          </div>
+          <pre id="api-trust-write">curl -X POST "https://badges.firmament.works/public/api/issuers/verify" \
   -H "Content-Type: application/json" \
   -d '{"domain":"example.org"}'</pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Authenticated API ───────────────────────────────────── -->
+    <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+      <div class="container" style="max-width: 860px;">
+        <p class="eyebrow">Authenticated — X-API-Key required</p>
+        <h2 class="section-title">Issuance and signing</h2>
+        <p class="section-lede">Issuance, signing, and admin operations require a valid API key in the request header.</p>
+
+        <div class="code-block" style="margin-top: 1.6rem;">
+          <div class="code-block-head">
+            <span>Auth header</span>
+            <button class="copy-btn" data-copy-target="api-header-snippet">Copy</button>
           </div>
-        </article>
+          <pre id="api-header-snippet">X-API-Key: &lt;API_KEY&gt;</pre>
+        </div>
 
-        <article class="api-group scroll-animate">
-          <p class="eyebrow">Authenticated — X-API-Key required</p>
-          <h3>Issuance, signing, and admin operations</h3>
-
-          <div class="code-block" style="margin-top: 1rem;">
-            <div class="code-block-head">
-              <span>Auth header</span>
-              <button class="copy-btn" data-copy-target="api-header-snippet">Copy</button>
-            </div>
-            <pre id="api-header-snippet">X-API-Key: &lt;API_KEY&gt;</pre>
+        <div class="code-block">
+          <div class="code-block-head">
+            <span>Authenticated endpoint map</span>
+            <button class="copy-btn" data-copy-target="api-issue-map">Copy</button>
           </div>
-
-          <div class="code-block">
-            <div class="code-block-head">
-              <span>Authenticated endpoint map</span>
-              <button class="copy-btn" data-copy-target="api-issue-map">Copy</button>
-            </div>
-            <pre id="api-issue-map">GET  /api/validate-issuer-domain
+          <pre id="api-issue-map">GET  /api/validate-issuer-domain
 POST /api/issuer
 POST /api/badge-class
 POST /api/credential-subject
@@ -163,20 +186,19 @@ POST /api/sign-badge
 POST /api/cache-public-key
 GET  /api/badge-files
 GET  /api/metrics</pre>
-          </div>
+        </div>
 
-          <div class="card" style="margin-top: 1rem; background: var(--trust-light); border-color: rgba(29,78,216,0.2);">
-            <p class="eyebrow" style="margin-bottom: 0.3rem;">Agent-native</p>
-            <p style="font-size: var(--text-sm); color: var(--ink-soft); line-height: 1.55;">
-              Human and LLM workflows use the same contract. See <a href="/llms.txt" style="color: var(--trust);">llms.txt</a> for machine-readable docs, or connect via the MCP server for tool-native operations.
-            </p>
-          </div>
-        </article>
+        <div class="card" style="margin-top: 1.2rem; background: var(--trust-light); border-color: rgba(29,78,216,0.2);">
+          <p class="eyebrow" style="margin-bottom: 0.3rem;">Agent-native</p>
+          <p style="font-size: var(--text-sm); color: var(--ink-soft); line-height: 1.55;">
+            Human and LLM workflows use the same contract. See <a href="/llms.txt" style="color: var(--trust);">llms.txt</a> for machine-readable docs, or connect via the MCP server for tool-native operations.
+          </p>
+        </div>
       </div>
     </section>
 
     <!-- ── Implementation specifics ───────────────────────────── -->
-    <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+    <section class="section" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
       <div class="container">
         <h2 class="section-title">Implementation-specific behavior</h2>
         <p class="section-lede">Distinct additions beyond baseline issuance and verification.</p>
@@ -201,7 +223,7 @@ GET  /api/metrics</pre>
     </section>
 
     <!-- ── Endpoint reference ──────────────────────────────────── -->
-    <section class="section" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+    <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
       <div class="container">
         <h2 class="section-title">Endpoint reference</h2>
         <p class="section-lede" style="margin-bottom: 1.6rem;">All public routes. No authentication required.</p>
