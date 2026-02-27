@@ -1,12 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vision | Open Badges by Firmament Works</title>
-  <meta name="description" content="The Let's Encrypt direction for credentials: domain-bound trust now, circles-of-trust later.">
+  <title>Vision | Signet by Firmament Works</title>
+  <meta name="description"
+    content="The Let's Encrypt direction for credentials: domain-bound trust now, circles-of-trust later.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="Vision | Open Badges by Firmament Works">
+  <meta property="og:title" content="Vision | Signet by Firmament Works">
   <meta property="og:description" content="Domain/key trust now. Vouching and circles-of-trust next.">
   <meta property="og:image" content="https://badges.firmament.works/og-image.png">
   <meta property="og:url" content="https://badges.firmament.works/vision.html">
@@ -14,9 +16,12 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -24,7 +29,7 @@
     <nav class="site-nav container" aria-label="Primary">
       <a href="/" class="logo">
         <span class="logo-mark" aria-hidden="true"></span>
-        <span class="logo-main">Open Badges</span>
+        <span class="logo-main">Signet</span>
         <span class="logo-byline">by Firmament Works</span>
       </a>
       <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
@@ -38,18 +43,23 @@
   </header>
 
   <main id="main-content">
-    <section class="manifesto-hero">
-      <div class="container">
+    <section class="manifesto-hero" style="text-align: center;">
+      <div class="container" style="max-width: 800px; margin: 0 auto;">
         <p class="kicker">Vision</p>
         <h1 class="section-title">The Let's Encrypt moment for credentials</h1>
-        <p class="section-lede">
-          Credentials should be as easy to verify as HTTPS certificates: open standards, no lock-in, and strong proof by default.
+        <p class="section-lede" style="margin: 0 auto;">
+          Credentials should be as easy to verify as HTTPS certificates: open standards, no lock-in, and strong proof by
+          default.
         </p>
-        <div class="cta-row" style="margin-top: 0.9rem;">
+        <div class="cta-row" style="justify-content: center; margin-top: 1.5rem;">
           <a href="/challenge.html" class="btn btn-primary">Run 60-second challenge</a>
           <a href="/verify.html" class="btn btn-secondary">Open verifier</a>
         </div>
+      </div>
+    </section>
 
+    <section class="section" style="padding-top: 0;">
+      <div class="container">
         <div class="manifesto-grid">
           <article class="card scroll-animate">
             <p class="eyebrow">Current state</p>
@@ -77,12 +87,15 @@
           <article class="card scroll-animate">
             <p class="eyebrow">Trust model</p>
             <h3>Three-state verifier output</h3>
-            <p><code>DOMAIN_VERIFIED_SIGNATURE</code>, <code>DEMO_DOMAIN_VERIFIED_SIGNATURE</code>, or <code>UNVERIFIED</code>, with explicit caveat about assessment quality.</p>
+            <p><code>DOMAIN_VERIFIED_SIGNATURE</code>, <code>DEMO_DOMAIN_VERIFIED_SIGNATURE</code>, or
+              <code>UNVERIFIED</code>, with explicit caveat about assessment quality.
+            </p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Security posture</p>
             <h3>Public verifier hardening</h3>
-            <p>SSRF protections, request limits, trust-write rate limits, and cooldown controls for abuse resistance.</p>
+            <p>SSRF protections, request limits, trust-write rate limits, and cooldown controls for abuse resistance.
+            </p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Interfaces</p>
@@ -123,7 +136,8 @@
           </article>
           <article class="card roadmap-item scroll-animate">
             <h3>Next: Issuer onboarding UX</h3>
-            <p>Guided flows for non-technical institutions: key generation, well-known hosting, and first issued badge.</p>
+            <p>Guided flows for non-technical institutions: key generation, well-known hosting, and first issued badge.
+            </p>
           </article>
           <article class="card roadmap-item scroll-animate">
             <h3>Later: Circles of trust</h3>
@@ -137,7 +151,8 @@
       <div class="container">
         <div class="cta-band">
           <div>
-            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">Build on open trust primitives</h2>
+            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">Build on open trust primitives
+            </h2>
             <p>Start by verifying a badge, then issue one with your own domain and keys.</p>
           </div>
           <a href="/challenge.html" class="btn btn-primary">Start challenge</a>
@@ -161,4 +176,5 @@
 
   <script src="/scripts.js"></script>
 </body>
+
 </html>

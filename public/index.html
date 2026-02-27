@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Open Badges by Firmament Works | Open Trust Infrastructure</title>
-  <meta name="description" content="Sign badges, verify domains, and share proof with open trust infrastructure for Open Badges.">
+  <title>Signet by Firmament Works | Open Trust Infrastructure</title>
+  <meta name="description"
+    content="Sign credentials, verify domains, and share proof with open trust infrastructure for Signet.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="Open Badges by Firmament Works">
-  <meta property="og:description" content="Domain-bound signatures and public verification for Open Badges.">
+  <meta property="og:title" content="Signet by Firmament Works">
+  <meta property="og:description" content="Domain-bound signatures and public verification for Signet credentials.">
   <meta property="og:image" content="https://badges.firmament.works/og-image.png">
   <meta property="og:url" content="https://badges.firmament.works/">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -24,7 +29,7 @@
     <nav class="site-nav container" aria-label="Primary">
       <a href="/" class="logo">
         <span class="logo-mark" aria-hidden="true"></span>
-        <span class="logo-main">Open Badges</span>
+        <span class="logo-main">Signet</span>
         <span class="logo-byline">by Firmament Works</span>
       </a>
       <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
@@ -38,30 +43,32 @@
   </header>
 
   <main id="main-content">
-    <section class="hero">
-      <div class="container hero-grid">
-        <div>
-          <p class="kicker">Open Trust Infrastructure</p>
-          <h1>Sign badges. Verify domains. Share proof.</h1>
-          <p>
-            Issue Open Badges with domain-bound signatures and verify them through public endpoints.
-            No lock-in, no platform-only trust claims, and no API key needed for verification.
-          </p>
-          <div class="cta-row">
-            <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
-            <a href="/challenge.html" class="btn btn-secondary">Try prompt-to-badge demo</a>
-            <a href="#issue" class="btn btn-secondary">See issuing flow</a>
-          </div>
-          <ul class="proof-chips" aria-label="Trust claims">
-            <li>Open Badges v2 and v3</li>
-            <li>W3C VC compatible</li>
-            <li>Ed25519 signatures</li>
-            <li>Public verifier APIs</li>
-          </ul>
+    <section class="hero" style="text-align: center; padding: 6rem 0 4rem;">
+      <div class="container" style="max-width: 800px; margin: 0 auto;">
+        <p class="kicker">Open Trust Infrastructure</p>
+        <h1 style="margin-left: auto; margin-right: auto;">Sign badges. Verify domains. Share proof.</h1>
+        <p style="font-size: var(--text-lg); margin: 0 auto var(--space-lg); max-width: 60ch;">
+          Issue Signet credentials with domain-bound signatures and verify them through public endpoints.
+          No lock-in, no platform-only trust claims, and no API key needed for verification.
+        </p>
+        <div class="cta-row" style="justify-content: center;">
+          <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
+          <a href="/challenge.html" class="btn btn-secondary">Try prompt-to-badge demo</a>
         </div>
+        <ul class="proof-chips" aria-label="Trust claims" style="justify-content: center; margin-top: 2rem;">
+          <li>Signet v2 and v3</li>
+          <li>W3C VC compatible</li>
+          <li>Ed25519 signatures</li>
+          <li>Public verifier APIs</li>
+        </ul>
+      </div>
+    </section>
 
-        <aside class="panel hero-proof-card scroll-animate" aria-label="Verification ladder">
-          <h2 class="panel-title">Trust ladder</h2>
+    <section class="section" style="padding-top: 0;">
+      <div class="container">
+        <aside class="panel hero-proof-card scroll-animate" aria-label="Verification ladder"
+          style="max-width: 600px; margin: 0 auto; margin-top: -1rem; position: relative; z-index: 10;">
+          <h2 class="panel-title" style="text-align: center; margin-bottom: 1.2rem;">The Trust Ladder</h2>
           <div class="signal-stack">
             <div class="signal-row">
               <span class="signal-key">Trust state</span>
@@ -80,7 +87,7 @@
               <span class="signal-value signal-ok">pass</span>
             </div>
           </div>
-          <div class="caveat-banner" style="margin-top:0.75rem;">
+          <div class="caveat-banner" style="margin-top:0.75rem; text-align: center;">
             This verifies domain/key control. It does not certify assessment quality or accreditation.
           </div>
         </aside>
@@ -90,22 +97,27 @@
     <section class="section section-muted" id="pillars">
       <div class="container">
         <h2 class="section-title">What this proves</h2>
-        <p class="section-lede">Domain identity, cryptographic integrity, and public verification in one open workflow.</p>
+        <p class="section-lede">Domain identity, cryptographic integrity, and public verification in one open workflow.
+        </p>
         <div class="grid-3" style="margin-top: 1rem;">
           <article class="card scroll-animate">
             <p class="eyebrow">Domain-bound signatures</p>
             <h3>Identity anchored to domains</h3>
-            <p>Badges are signed with Ed25519 keys and checked against issuer domain metadata at well-known endpoints.</p>
+            <p>Badges are signed with Ed25519 keys and checked against issuer domain metadata at well-known endpoints.
+            </p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Public verification</p>
             <h3>No-key verification endpoints</h3>
-            <p>Anyone can verify badges by URL or JSON through public APIs with SSRF protections for untrusted input.</p>
+            <p>Anyone can verify badges by URL or JSON through public APIs with SSRF protections for untrusted input.
+            </p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Three trust states</p>
             <h3>Clear output, no inflation</h3>
-            <p><code>DOMAIN_VERIFIED_SIGNATURE</code>, <code>DEMO_DOMAIN_VERIFIED_SIGNATURE</code>, or <code>UNVERIFIED</code>. Assessment rigor remains issuer policy.</p>
+            <p><code>DOMAIN_VERIFIED_SIGNATURE</code>, <code>DEMO_DOMAIN_VERIFIED_SIGNATURE</code>, or
+              <code>UNVERIFIED</code>. Assessment rigor remains issuer policy.
+            </p>
           </article>
         </div>
       </div>
@@ -124,12 +136,14 @@
           <article class="card scroll-animate">
             <p class="eyebrow">Trust policy</p>
             <h3>Anti-impersonation domain checks</h3>
-            <p>Issuer verification is tied to <code>/.well-known/openbadges-issuer.json</code>, with rate limits and cooldowns.</p>
+            <p>Issuer verification is tied to <code>/.well-known/openbadges-issuer.json</code>, with rate limits and
+              cooldowns.</p>
           </article>
           <article class="card scroll-animate">
             <p class="eyebrow">Agent-native ops</p>
             <h3>API + CLI + MCP + llms.txt</h3>
-            <p>Run the same trust flow manually or programmatically with markdown-first and MCP-compatible interfaces.</p>
+            <p>Run the same trust flow manually or programmatically with markdown-first and MCP-compatible interfaces.
+            </p>
           </article>
         </div>
       </div>
@@ -138,7 +152,8 @@
     <section class="section" id="issue">
       <div class="container">
         <h2 class="section-title">Issue in four API calls</h2>
-        <p class="section-lede">From issuer setup to verifiable assertion URL in one pipeline. Or run the same flow via CLI.</p>
+        <p class="section-lede">From issuer setup to verifiable assertion URL in one pipeline. Or run the same flow via
+          CLI.</p>
 
         <div class="api-steps">
           <article class="api-step scroll-animate">
@@ -169,12 +184,14 @@
     <section class="section section-muted">
       <div class="container">
         <h2 class="section-title">Who this serves</h2>
-        <p class="section-lede">Separate paths for issuance operations and verification operations, both on open rails.</p>
+        <p class="section-lede">Separate paths for issuance operations and verification operations, both on open rails.
+        </p>
         <div class="grid-2" style="margin-top: 1rem;">
           <article class="card scroll-animate">
             <p class="eyebrow">For issuers</p>
             <h3>Issue from your own domain and keys</h3>
-            <p>Generate issuer metadata, publish <code>/.well-known/openbadges-issuer.json</code>, verify domain control, and sign badges without platform lock-in.</p>
+            <p>Generate issuer metadata, publish <code>/.well-known/openbadges-issuer.json</code>, verify domain
+              control, and sign badges without platform lock-in.</p>
             <div class="cta-row" style="margin-top: 0.75rem;">
               <a href="/challenge.html" class="btn btn-secondary">Try issuer flow</a>
               <a href="/api.html" class="btn btn-primary">See API steps</a>
@@ -183,7 +200,8 @@
           <article class="card scroll-animate">
             <p class="eyebrow">For verifiers</p>
             <h3>Verify badges without private access</h3>
-            <p>Paste badge URLs or JSON, inspect trust state and key fingerprint, and automate checks with public verifier endpoints.</p>
+            <p>Paste badge URLs or JSON, inspect trust state and key fingerprint, and automate checks with public
+              verifier endpoints.</p>
             <div class="cta-row" style="margin-top: 0.75rem;">
               <a href="/verify.html" class="btn btn-primary">Open verifier</a>
               <a href="/challenge.html" class="btn btn-secondary">Run challenge</a>
@@ -197,7 +215,8 @@
       <div class="container challenge-grid">
         <article class="demo-card scroll-animate">
           <h3 class="demo-card__title">Step 0: Prompt-to-badge activation</h3>
-          <p class="demo-card__description">Use a short learning summary, generate a signed sample badge, and share a verify link. This is the fastest path for enthusiasts to test the system end-to-end.</p>
+          <p class="demo-card__description">Use a short learning summary, generate a signed sample badge, and share a
+            verify link. This is the fastest path for enthusiasts to test the system end-to-end.</p>
           <div class="cta-row" style="margin-top: 0.85rem;">
             <a class="btn btn-primary" href="/challenge.html">Start challenge</a>
           </div>
@@ -206,7 +225,8 @@
         <article class="card scroll-animate">
           <p class="eyebrow">Trust caveat</p>
           <h3>Verifier proves signer identity</h3>
-          <p>Verification answers who signed the badge and whether the key is discoverable for that domain. It does not score educational quality or accreditation.</p>
+          <p>Verification answers who signed the badge and whether the key is discoverable for that domain. It does not
+            score educational quality or accreditation.</p>
           <div class="cta-row" style="margin-top: 0.8rem;">
             <a class="btn btn-secondary" href="/verify.html">Inspect verifier output</a>
           </div>
@@ -218,7 +238,8 @@
       <div class="container">
         <div class="cta-band">
           <div>
-            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for credentials</h2>
+            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for
+              credentials</h2>
             <p>Free, interoperable trust rails for issuers and verifiers. Built by Firmament Works.</p>
           </div>
           <a href="/vision.html" class="btn btn-primary">Read the vision</a>
@@ -242,4 +263,5 @@
 
   <script src="/scripts.js"></script>
 </body>
+
 </html>

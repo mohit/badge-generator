@@ -1,22 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>60-Second Verify Challenge | Open Badges by Firmament Works</title>
-  <meta name="description" content="Verify a badge in under 60 seconds, then generate your own signed sample badge.">
+  <title>60-Second Verify Challenge | Signet by Firmament Works</title>
+  <meta name="description"
+    content="Verify a credential in under 60 seconds, then generate your own signed sample credential.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="60-Second Verify Challenge | Open Badges by Firmament Works">
-  <meta property="og:description" content="Verify a badge in under 60 seconds, then generate your own signed sample.">
+  <meta property="og:title" content="60-Second Verify Challenge | Signet by Firmament Works">
+  <meta property="og:description"
+    content="Verify a credential in under 60 seconds, then generate your own signed sample.">
   <meta property="og:image" content="https://badges.firmament.works/og-image.png">
   <meta property="og:url" content="https://badges.firmament.works/challenge.html">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -24,7 +30,7 @@
     <nav class="site-nav container" aria-label="Primary">
       <a href="/" class="logo">
         <span class="logo-mark" aria-hidden="true"></span>
-        <span class="logo-main">Open Badges</span>
+        <span class="logo-main">Signet</span>
         <span class="logo-byline">by Firmament Works</span>
       </a>
       <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
@@ -38,16 +44,20 @@
   </header>
 
   <main id="main-content">
-    <section class="challenge-hero">
-      <div class="container">
-        <p class="kicker">Open Badges Challenge</p>
-        <h1 class="section-title">Verify this badge in under 60 seconds</h1>
-        <p class="section-lede">Click start. We run structure, issuer, and signature checks and show the trust verdict with issuer domain and key fingerprint. Reserved <code>example.com</code> issuers are labeled <strong>DEMO</strong>.</p>
-        <div class="cta-row" style="margin-top: 0.9rem;">
+    <section class="challenge-hero" style="text-align: center; padding: 4rem 0 2rem;">
+      <div class="container" style="max-width: 800px; margin: 0 auto;">
+        <p class="kicker">Signet Challenge</p>
+        <h1 class="section-title">Verify this credential in under 60 seconds</h1>
+        <p class="section-lede" style="margin: 0 auto;">Click start. We run structure, issuer, and signature checks and
+          show the trust verdict
+          with issuer domain and key fingerprint. Reserved <code>example.com</code> issuers are labeled
+          <strong>DEMO</strong>.
+        </p>
+        <div class="cta-row" style="justify-content: center; margin-top: 1.5rem;">
           <a href="#" class="btn btn-primary" data-challenge-start>Start the challenge</a>
           <a href="/verify.html" class="btn btn-secondary">Open full verifier</a>
         </div>
-        <div class="challenge-progress">
+        <div class="challenge-progress" style="text-align: left; margin-top: 2rem;">
           <div class="challenge-step"><strong>Step 1:</strong> Run verification on a live signed sample.</div>
           <div class="challenge-step"><strong>Step 2:</strong> Inspect trust state and issuer identity.</div>
           <div class="challenge-step"><strong>Step 3:</strong> Share result or issue your own sample badge.</div>
@@ -55,10 +65,10 @@
       </div>
     </section>
 
-    <section class="section" style="padding-top: 0.3rem;">
+    <section class="section" style="padding-top: 1rem;">
       <div class="container">
-        <section class="panel challenge-panel">
-          <h2 class="panel-title">Challenge result</h2>
+        <section class="panel challenge-panel" style="max-width: 800px; margin: 0 auto;">
+          <h2 class="panel-title" style="text-align: center; font-size: 1.25rem;">Challenge result</h2>
           <div id="challenge-result-card" class="challenge-result"></div>
         </section>
       </div>
@@ -76,8 +86,10 @@
           <div class="cta-row" style="margin-top:0.7rem;">
             <button class="copy-btn copy-btn-light" data-copy-target="challenge-share-text">Copy text</button>
             <a id="challenge-share-x" class="btn btn-secondary" target="_blank" rel="noreferrer">Share on X</a>
-            <a id="challenge-share-linkedin" class="btn btn-secondary" target="_blank" rel="noreferrer">Share on LinkedIn</a>
-            <a id="challenge-share-mastodon" class="btn btn-secondary" target="_blank" rel="noreferrer">Share on Mastodon</a>
+            <a id="challenge-share-linkedin" class="btn btn-secondary" target="_blank" rel="noreferrer">Share on
+              LinkedIn</a>
+            <a id="challenge-share-mastodon" class="btn btn-secondary" target="_blank" rel="noreferrer">Share on
+              Mastodon</a>
           </div>
         </article>
 
@@ -85,10 +97,14 @@
           <p class="eyebrow">Issue your first badge</p>
           <h3>How to issue your own</h3>
           <div class="challenge-progress" style="margin-top:0.7rem;">
-            <div class="challenge-step"><strong>1.</strong> Generate keys and issuer profile JSON (<code>badge-cli onboard-issuer</code>).</div>
-            <div class="challenge-step"><strong>2.</strong> Host <code>/.well-known/openbadges-issuer.json</code> on your domain.</div>
-            <div class="challenge-step"><strong>3.</strong> Verify domain: <code>POST /public/api/issuers/verify</code>.</div>
-            <div class="challenge-step"><strong>4.</strong> Issue and sign your first badge, then share verify link.</div>
+            <div class="challenge-step"><strong>1.</strong> Generate keys and issuer profile JSON
+              (<code>badge-cli onboard-issuer</code>).</div>
+            <div class="challenge-step"><strong>2.</strong> Host <code>/.well-known/openbadges-issuer.json</code> on
+              your domain.</div>
+            <div class="challenge-step"><strong>3.</strong> Verify domain: <code>POST /public/api/issuers/verify</code>.
+            </div>
+            <div class="challenge-step"><strong>4.</strong> Issue and sign your first badge, then share verify link.
+            </div>
           </div>
         </article>
       </div>
@@ -99,7 +115,8 @@
         <article class="panel challenge-panel scroll-animate">
           <p class="eyebrow">Prompt-to-badge demo</p>
           <h2 class="panel-title" style="font-size:1.25rem;">Generate a signed sample badge</h2>
-          <p class="small-note">This v1 web flow is self-assessment mode. AI-assisted mode is handled through MCP/LLM workflows.</p>
+          <p class="small-note">This v1 web flow is self-assessment mode. AI-assisted mode is handled through MCP/LLM
+            workflows.</p>
 
           <form id="prompt-badge-form" class="challenge-form" style="margin-top:0.85rem;">
             <div class="form-group">
@@ -130,7 +147,8 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="summary">Assessment summary</label>
-              <textarea class="form-input form-textarea" id="summary" name="summary" required placeholder="Summarize what you learned and how you were assessed."></textarea>
+              <textarea class="form-input form-textarea" id="summary" name="summary" required
+                placeholder="Summarize what you learned and how you were assessed."></textarea>
             </div>
             <button class="verify-button" type="submit">Generate signed sample badge</button>
           </form>
@@ -140,8 +158,10 @@
         <article class="card scroll-animate">
           <p class="eyebrow">Locked caveat</p>
           <h3>Trust scope is explicit</h3>
-          <div class="caveat-banner">This verifies domain/key control. It does not certify assessment quality or accreditation.</div>
-          <p class="small-note" style="margin-top:0.7rem;">Issuer domain is canonical identity. Claimed issuer name is non-canonical metadata.</p>
+          <div class="caveat-banner">This verifies domain/key control. It does not certify assessment quality or
+            accreditation.</div>
+          <p class="small-note" style="margin-top:0.7rem;">Issuer domain is canonical identity. Claimed issuer name is
+            non-canonical metadata.</p>
         </article>
       </div>
     </section>
@@ -162,4 +182,5 @@
 
   <script src="/scripts.js"></script>
 </body>
+
 </html>

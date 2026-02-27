@@ -1,22 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Credentials | Open Badges by Firmament Works</title>
-  <meta name="description" content="Check any badge trust state by URL or JSON. Domain-bound verification with explicit result details.">
+  <title>Verify Credentials | Signet by Firmament Works</title>
+  <meta name="description"
+    content="Check any credential trust state by URL or JSON. Domain-bound verification with explicit result details.">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <meta property="og:title" content="Verify Credentials | Open Badges by Firmament Works">
-  <meta property="og:description" content="Public Open Badges verifier with domain-bound trust state and auditable details.">
+  <meta property="og:title" content="Verify Credentials | Signet by Firmament Works">
+  <meta property="og:description" content="Public Signet verifier with domain-bound trust state and auditable details.">
   <meta property="og:image" content="https://badges.firmament.works/og-image.png">
   <meta property="og:url" content="https://badges.firmament.works/verify.html">
   <meta property="og:type" content="website">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <a href="#main-content" class="skip-link">Skip to main content</a>
 
@@ -24,7 +29,7 @@
     <nav class="site-nav container" aria-label="Primary">
       <a href="/" class="logo">
         <span class="logo-mark" aria-hidden="true"></span>
-        <span class="logo-main">Open Badges</span>
+        <span class="logo-main">Signet</span>
         <span class="logo-byline">by Firmament Works</span>
       </a>
       <button class="mobile-menu-btn" type="button" aria-expanded="false" aria-controls="primary-nav">Menu</button>
@@ -41,8 +46,9 @@
     <section class="verify-hero">
       <div class="container">
         <p class="kicker">Public Verifier</p>
-        <h1 class="section-title" style="margin-bottom: 0.45rem;">Check any badge's trust state</h1>
-        <p class="section-lede">Paste a URL, drop in JSON, or inspect an issuer profile. The verifier checks structure, issuer reachability, and signature, then shows exactly what it found.</p>
+        <h1 class="section-title" style="margin-bottom: 0.45rem;">Check any credential's trust state</h1>
+        <p class="section-lede">Paste a URL, drop in JSON, or inspect an issuer profile. The verifier checks structure,
+          issuer reachability, and signature, then shows exactly what it found.</p>
         <div class="cta-row" style="margin-top: 0.85rem;">
           <a href="#" class="btn btn-primary" data-demo-fill-link>Load live signed credential</a>
           <a href="/challenge.html" class="btn btn-secondary">Verify challenge</a>
@@ -63,7 +69,8 @@
             <form id="url-form">
               <div class="form-group">
                 <label class="form-label" for="badge-url">Badge or credential URL</label>
-                <input type="url" id="badge-url" class="form-input" placeholder="https://example.com/badges/assertion.json" required>
+                <input type="url" id="badge-url" class="form-input"
+                  placeholder="https://example.com/badges/assertion.json" required>
                 <small class="form-help">Fetches the resource and runs trust checks.</small>
               </div>
               <button type="submit" class="verify-button">
@@ -77,7 +84,9 @@
             <form id="json-form">
               <div class="form-group">
                 <label class="form-label" for="badge-json">Badge JSON payload</label>
-                <textarea id="badge-json" class="form-input form-textarea" placeholder='{"@context":"https://www.w3.org/ns/credentials/v2","type":["VerifiableCredential","OpenBadgeCredential"],...}' required></textarea>
+                <textarea id="badge-json" class="form-input form-textarea"
+                  placeholder='{"@context":"https://www.w3.org/ns/credentials/v2","type":["VerifiableCredential","OpenBadgeCredential"],...}'
+                  required></textarea>
                 <small class="form-help">Paste a full JSON object.</small>
               </div>
               <button type="submit" class="verify-button">
@@ -91,7 +100,8 @@
             <form id="issuer-form">
               <div class="form-group">
                 <label class="form-label" for="issuer-url">Issuer URL</label>
-                <input type="url" id="issuer-url" class="form-input" placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
+                <input type="url" id="issuer-url" class="form-input"
+                  placeholder="https://example.com/.well-known/openbadges-issuer.json" required>
                 <small class="form-help">Checks issuer resource validity and key discoverability.</small>
               </div>
               <button type="submit" class="verify-button">
@@ -121,23 +131,24 @@
         </section>
 
         <aside class="panel verify-panel scroll-animate">
-          <h2 class="panel-title">How to read the verdict</h2>
           <div class="signal-stack">
-            <div class="signal-row"><span class="signal-key">DOMAIN_VERIFIED_SIGNATURE</span><span class="status-pill status-pass">signature + domain key pass</span></div>
-            <div class="signal-row"><span class="signal-key">DEMO_DOMAIN_VERIFIED_SIGNATURE</span><span class="status-pill status-warn">valid signature, reserved demo domain</span></div>
-            <div class="signal-row"><span class="signal-key">UNVERIFIED</span><span class="status-pill status-fail">issuer not cryptographically verified</span></div>
+            <div class="status-pill status-pass" style="justify-content: center; padding: 0.65rem; width: 100%;">
+              Signature + domain key pass</div>
+            <div class="status-pill status-warn" style="justify-content: center; padding: 0.65rem; width: 100%;">Valid
+              signature, reserved demo domain</div>
+            <div class="status-pill status-fail" style="justify-content: center; padding: 0.65rem; width: 100%;">Issuer
+              not cryptographically verified</div>
           </div>
-          <p class="signal-note" style="margin-top: 0.8rem;">
+          <p class="signal-note" style="margin-top: 1rem; text-align: center;">
             This verifies domain/key control. It does not certify assessment quality or accreditation.
           </p>
 
-          <div class="card" style="margin-top: 0.95rem;">
-            <p class="eyebrow">Public endpoint</p>
-            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
-          </div>
-          <div class="card" style="margin-top: 0.75rem;">
-            <p class="eyebrow">Need implementation details?</p>
-            <p class="small-note">See API and llms.txt links in the footer.</p>
+          <div class="card" style="margin-top: 1.5rem; text-align: center;">
+            <p class="eyebrow">Integrating?</p>
+            <p class="small-note" style="margin-bottom: 0.8rem;">Build automated trust checks into your own application
+              or agent.</p>
+            <a href="/api.html" class="btn btn-secondary btn-block"
+              style="padding: 0.5rem; font-size: var(--text-sm);">View API Documentation</a>
           </div>
         </aside>
       </div>
@@ -175,8 +186,8 @@
     });
 
     const examples = {
-      live: `${window.location.origin}/samples/demo-openbadge-v3-signed.json`,
-      unsigned: `${window.location.origin}/samples/demo-openbadge-v3.json`,
+      live: 'https://badges.firmament.works/samples/demo-openbadge-v3-signed.json',
+      unsigned: 'https://badges.firmament.works/samples/demo-openbadge-v3.json',
       issuer: 'https://example.com/.well-known/openbadges-issuer.json',
       domain: 'https://openbadges.org'
     };
@@ -509,4 +520,5 @@
   </script>
   <script src="/scripts.js"></script>
 </body>
+
 </html>
