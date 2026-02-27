@@ -1310,6 +1310,82 @@ footer {
   border-bottom: 2px solid var(--line);
 }
 
+/* ─── Combined page: sticky tab bar ───────────────────────── */
+
+.page-tabs-bar {
+  background: var(--surface);
+  border-bottom: 2px solid var(--line);
+  position: sticky;
+  top: 70px;
+  z-index: 70;
+}
+
+.page-tabs {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.page-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.85rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  background: none;
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--steel);
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: color 120ms, border-color 120ms;
+}
+
+.page-tab:hover {
+  color: var(--ink);
+}
+
+.page-tab.active {
+  color: var(--trust);
+  border-bottom-color: var(--trust);
+}
+
+.page-tab-ext {
+  margin-left: auto;
+}
+
+.page-tab-section {
+  display: none;
+}
+
+.page-tab-section.active {
+  display: block;
+}
+
+.hero-tagline {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-style: italic;
+  color: var(--ink-muted);
+  margin-top: -0.15rem;
+  margin-bottom: var(--space-md);
+}
+
+@media (max-width: 640px) {
+  .page-tab {
+    padding: 0.7rem 0.85rem;
+    font-size: var(--text-sm);
+  }
+}
+
 /* ─── API: vertical issue flow ─────────────────────────────── */
 
 .api-flow {

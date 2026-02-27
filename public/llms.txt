@@ -1,21 +1,394 @@
-# Open Badges by Firmament Works
+# Signet by Firmament Works — LLM Docs
 
-Open Badges by Firmament Works is domain-bound trust infrastructure for issuing, signing, and verifying Open Badges and VC-compatible credential JSON.
+Signet is domain-bound trust infrastructure for issuing, signing, and verifying Open Badges and W3C VC-compatible credential JSON.
 
-This file lists markdown-first docs that are easier for LLMs and automation agents to consume.
+This single file contains the complete machine-readable documentation. One fetch gives you everything.
 
-## Canonical LLM Docs
+Production base URL: `https://badges.firmament.works`
 
-- https://badges.firmament.works/docs/llm/README.md
-- https://badges.firmament.works/docs/llm/API.md
-- https://badges.firmament.works/docs/llm/DEPLOYMENT.md
-- https://badges.firmament.works/docs/llm/CLI.md
-- https://badges.firmament.works/docs/llm/MCP.md
-- https://badges.firmament.works/challenge.html
+---
+
+## Overview
+
+**Scope**
+
+- Issuer creation and hosting
+- Badge class creation
+- Credential subject (assertion) creation
+- Cryptographic signing (Ed25519 / DataIntegrityProof)
+- Badge and issuer verification
+- Domain verification and impersonation prevention
+- Trust discovery APIs and prompt-to-badge demo flow
+
+**Route namespaces**
+
+- `/public/api/*` — no API key required; SSRF-hardened; safe for browser and untrusted user input
+- `/api/*` — requires `X-API-Key` header; write and admin operations
+
+**Trust states returned by verification**
+
+- `DOMAIN_VERIFIED_SIGNATURE` — signature valid, issuer key discoverable on a real domain
+- `DEMO_DOMAIN_VERIFIED_SIGNATURE` — signature valid, issuer domain is the reserved `example.com` demo domain
+- `UNVERIFIED` — signature absent, invalid, or issuer key not discoverable
+
+---
+
+## API Reference
+
+### Authentication
+
+Authenticated endpoints require:
+
+```
+X-API-Key: <API_KEY>
+```
+
+### Public Verification Endpoints (No API Key)
+
+These are SSRF-hardened and block private/internal network targets.
+
+**Verify Badge by URL**
+
+```
+GET /public/api/verify/badge/:badgeUrl(*)
+```
+
+```bash
+curl "https://badges.firmament.works/public/api/verify/badge/https%3A%2F%2Fexample.com%2Fbadges%2Fassertion.json"
+```
+
+**Verify Issuer by URL**
+
+```
+GET /public/api/verify/issuer/:issuerUrl(*)
+```
+
+```bash
+curl "https://badges.firmament.works/public/api/verify/issuer/https%3A%2F%2Fexample.com%2Fissuer.json"
+```
+
+**Verify Badge from Inline JSON**
+
+```
+POST /public/api/verify/json
+Body: {"badgeData": { ... }}
+```
+
+**Add Verified Issuer to Trust Log (Rate-Limited)**
+
+```
+POST /public/api/issuers/verify
+Body: {"domain":"example.com"}
+```
+
+Rate limited per client IP (default: 10 requests / hour). Verifies issuer well-known profile and writes to trust log on success.
+
+**Prompt-to-Badge Demo (Rate-Limited)**
+
+```
+POST /public/api/demo/prompt-to-badge
+```
+
+Body fields:
+- `summary` (required, min length 12)
+- `learnerName`, `sourceUrl`, `proficiency`, `skills[]`, `badgeName` (optional)
+
+Returns: `badgeUrl`, `verifyUrl`, `shareText`, `signedBadge`
+
+**Trust Discovery APIs**
+
+```
+GET /public/api/trust/issuer/:domain
+GET /public/api/trust/events/:domain
+GET /public/api/trust/issuers?status=verified
+```
+
+### Authenticated Endpoints (Require `X-API-Key`)
+
+**File listing and metrics**
+
+```
+GET /api/badge-files       — hosted JSON files under /badges/*
+GET /api/metrics           — verification volume, cache hit rate, trust writes
+```
+
+**Domain validation**
+
+```
+GET /api/validate-issuer-domain?url=<issuer_or_resource_url>
+```
+
+Domain result `type` values: `verified`, `verified-external`, `testing`, `unverified`, `verification-failed`, `unregistered`, `invalid`
+
+**Issuer management**
+
+```
+POST /api/issuers/verify           — admin trust write (body: {"domain":"example.com"})
+GET  /api/issuers/:domain
+GET  /api/issuers
+POST /api/issuers/:domain/reverify
+```
+
+**Key and signing operations**
+
+```
+POST /api/cache-public-key         — body: {"issuerUrl":"https://example.com/issuer.json"}
+POST /api/sign-badge               — body: {"badgeData":{...},"domain":"example.com"}
+```
+
+**Resource creation**
+
+```
+POST /api/issuer                   — required: id, name, url
+POST /api/badge-class              — required: id, name, description, criteria, issuer
+POST /api/credential-subject       — required: id, recipient, badge
+```
+
+All creation endpoints validate domain, persist JSON to `uploads/`, and return a hosted URL under `/badges/<filename>.json`.
+
+### Common Verification Response Fields
+
+- `valid` (boolean)
+- `version` (`v2.0` or `v3.0`)
+- `structure` — field checks, errors, warnings
+- `issuer` — issuer validation result
+- `signature` — cryptographic proof validation result
+- `verificationLevel` — `cryptographically_verified`, `fully_verified`, `remote_verified`, or `invalid`
+- `trustState` — `DOMAIN_VERIFIED_SIGNATURE`, `DEMO_DOMAIN_VERIFIED_SIGNATURE`, or `UNVERIFIED`
+- `issuerDomain` — canonical domain identity
+- `keyFingerprint` — SHA-256 fingerprint when key is discoverable
+- `verificationReason` — human-readable trust reason
+- `issuerClaimedName` — non-canonical issuer name claim
+- `verifiedAt` — ISO timestamp
+
+### Error Patterns
+
+- `400` — invalid input, invalid URL, blocked URL, or domain validation failures
+- `401` — invalid API key for authenticated endpoints
+- `500` — unexpected server error
+
+### Minimal Issuing Workflow
+
+1. Validate domain: `GET /api/validate-issuer-domain`
+2. Create issuer: `POST /api/issuer`
+3. Create badge class: `POST /api/badge-class`
+4. Create credential: `POST /api/credential-subject`
+5. Sign (optional): `POST /api/sign-badge`
+6. Verify: `GET /public/api/verify/badge/:url`
+
+---
+
+## CLI Reference
+
+CLI entrypoint: `cli/badge-cli.js`
+
+### Install and configure
+
+```bash
+npm install
+node cli/badge-cli.js config --base-url "https://badges.firmament.works"
+node cli/badge-cli.js config --api-key "<API_KEY>"   # only needed for write/admin ops
+node cli/badge-cli.js config --show
+```
+
+Config file: `.badge-cli-config.json`
+
+### Core commands
+
+**Connectivity**
+
+```bash
+node cli/badge-cli.js test-connection
+```
+
+**Domain validation**
+
+```bash
+node cli/badge-cli.js validate "https://demo.example.org/issuer"
+node cli/badge-cli.js validate "https://demo.example.org/issuer" --server-policy
+```
+
+**Issuer and badge creation**
+
+```bash
+node cli/badge-cli.js create-issuer \
+  --name "Demo University" \
+  --url "https://demo.example.org" \
+  --email "badges@demo.example.org"
+
+node cli/badge-cli.js create-badge \
+  --name "Web Development Certificate" \
+  --description "Completed web development curriculum" \
+  --issuer "https://demo.example.org/issuer"
+```
+
+**Keys and domain verification**
+
+```bash
+node cli/badge-cli.js generate-keys \
+  --name "Demo University" \
+  --url "https://demo.example.org" \
+  --email "badges@demo.example.org"
+
+node cli/badge-cli.js verify "demo.example.org"
+node cli/badge-cli.js verify "demo.example.org" --log-trust
+node cli/badge-cli.js get-issuer "demo.example.org"
+node cli/badge-cli.js onboard-issuer \
+  --name "Demo University" \
+  --url "https://demo.example.org" \
+  --email "badges@demo.example.org"
+```
+
+`verify --log-trust` works without API key via public trust-write API (rate-limited).
+If API key is configured, CLI uses admin trust-write mode and supports `--force`.
+
+**Verification**
+
+```bash
+node cli/badge-cli.js verify-badge "https://example.com/assertion.json"
+node cli/badge-cli.js verify-badge "./sample-badge-v3-signed.json"
+node cli/badge-cli.js verify-issuer-url "https://example.com/issuer.json"
+```
+
+**Signing**
+
+```bash
+# Managed signing via server key (requires API key)
+node cli/badge-cli.js sign-badge ./badge.json demo.example.org --output ./badge-signed.json
+
+# Local signing via your private key (no API key required)
+node cli/badge-cli.js sign-badge ./badge.json --local \
+  --private-key-file ./issuer-verification-files/private-key.pem \
+  --issuer-url "https://demo.example.org/.well-known/openbadges-issuer.json" \
+  --output ./badge-signed.json
+```
+
+### Typical CLI workflow
+
+1. `config --base-url`
+2. `validate` and `verify` (public, no trust log write)
+3. `verify-badge` and `verify-issuer-url`
+4. Add API key when you need trust-log reads, issuing endpoints, or managed server signing
+
+---
+
+## MCP Server Integration
+
+MCP server location: `mcp-server/index.js`
+
+Exposes badge operations to LLM clients (Claude Desktop, Cursor, or any MCP-compatible client) through tool calls.
+
+### Claude Desktop config
+
+```json
+{
+  "mcpServers": {
+    "badge-generator": {
+      "command": "node",
+      "args": ["/absolute/path/to/badge-generator/mcp-server/index.js"],
+      "env": {
+        "BADGE_BASE_URL": "https://badges.firmament.works",
+        "BADGE_API_KEY": "<API_KEY>"
+      }
+    }
+  }
+}
+```
+
+### Available MCP tool capabilities
+
+- Configure and test server connection
+- Validate issuer domains
+- Create issuer, badge class, credential subject
+- Verify badge and issuer resources
+- List and fetch hosted badge files
+- Generate issuer profile templates (`generate_issuer_profile_template`)
+- Issue signed sample badges via public demo API (`issue_sample_badge`)
+- Explain verifier JSON in plain language (`explain_verification_result`)
+
+### MCP operational guidance
+
+1. Use `example.com` variants for demos; they produce `DEMO_DOMAIN_VERIFIED_SIGNATURE` results.
+2. For real domains, publish `/.well-known/openbadges-issuer.json` first, then call the domain verify API.
+3. Keep `BADGE_API_KEY` scoped and rotate regularly.
+4. Prefer `/public/api/*` endpoints for untrusted user-provided URLs.
+
+---
+
+## Deployment
+
+### Runtime requirements
+
+- Node.js 18+
+- Persistent storage for `uploads/`
+- HTTPS domain for production
+
+### Required environment variables
+
+- `PUBLIC_DOMAIN` — no scheme, e.g. `badges.firmament.works`
+- `UPLOAD_PASSWORD`
+- `API_KEY`
+- `DEFAULT_PRIVATE_KEY` — PEM string
+- `DEFAULT_PUBLIC_KEY` — PEM string
+- `NODE_ENV=production`
+
+Optional:
+- `PORT` — set automatically on most platforms
+- `UPLOADS_DIR` — writable storage directory (default: `uploads`)
+
+### Key generation
+
+```bash
+npm run cli generate-keys \
+  --name "Your Organization" \
+  --url "https://your-domain.com" \
+  --email "badges@your-domain.com"
+```
+
+Outputs under `issuer-verification-files/`: `openbadges-issuer.json`, `private-key.pem`, `public-key.pem`
+
+### Fast local start
+
+```bash
+npm install
+cp .env.example .env
+npm start
+```
+
+### Docker
+
+```bash
+docker build -t badge-generator .
+docker run -p 3000:3000 \
+  -e PUBLIC_DOMAIN=your-domain.com \
+  -e DEFAULT_PRIVATE_KEY="$(cat issuer-verification-files/private-key.pem)" \
+  -e DEFAULT_PUBLIC_KEY="$(cat issuer-verification-files/public-key.pem)" \
+  -e API_KEY=your-api-key \
+  -e UPLOAD_PASSWORD=your-password \
+  -e NODE_ENV=production \
+  -v badge-uploads:/app/uploads \
+  badge-generator
+```
+
+### Railway
+
+1. Connect repo.
+2. Add a Railway Volume, mount at `/data/uploads`.
+3. Set env vars above, plus `UPLOADS_DIR=/data/uploads`.
+4. Deploy.
+5. Confirm mounted volume is writable.
+
+### Post-deploy checks
+
+1. `GET /public/api/verify/issuer/<encoded_issuer_url>` works.
+2. `POST /api/issuer` works with `X-API-Key`.
+3. `GET /api/badge-files` returns hosted files.
+4. `/.well-known/openbadges-issuer.json` is reachable on your domain.
+
+---
 
 ## Source Repository Docs
 
-- https://github.com/mohit/badge-generator?tab=readme-ov-file#badge-generator
 - https://github.com/mohit/badge-generator/blob/main/README.md
 - https://github.com/mohit/badge-generator/blob/main/DEPLOYMENT.md
 - https://github.com/mohit/badge-generator/blob/main/README-CLI.md

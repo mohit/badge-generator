@@ -34,7 +34,7 @@
         <li><a href="/" class="active">Home</a></li>
         <li><a href="/verify.html">Verify</a></li>
         <li><a href="/api.html">API</a></li>
-        <li><a href="/vision.html">Vision</a></li>
+        <li><a href="/issuer.html">Issuer Setup</a></li>
       </ul>
     </nav>
   </header>
@@ -46,13 +46,14 @@
       <div class="container" style="max-width: 800px; margin: 0 auto;">
         <p class="kicker">Open Trust Infrastructure</p>
         <h1 style="margin-left: auto; margin-right: auto;">Sign badges. Verify domains. Share proof.</h1>
-        <p style="font-size: var(--text-lg); margin: 0 auto var(--space-lg); max-width: 60ch;">
-          Issue Signet credentials with domain-bound signatures and verify them through public endpoints.
-          No lock-in, no platform-only trust claims, and no API key needed for verification.
+        <p class="hero-tagline">The Let's Encrypt moment for credentials.</p>
+        <p style="font-size: var(--text-md); margin: 0 auto var(--space-lg); max-width: 60ch; color: var(--steel);">
+          Credentials should be as easy to verify as HTTPS certificates — open standards,
+          no lock-in, and strong cryptographic proof by default.
         </p>
         <div class="cta-row" style="justify-content: center;">
           <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
-          <a href="/challenge.html" class="btn btn-secondary">Try prompt-to-badge demo</a>
+          <a href="/verify.html#demo" class="btn btn-secondary">Create a signed demo badge</a>
         </div>
         <ul class="proof-chips" aria-label="Trust claims" style="justify-content: center; margin-top: 2rem;">
           <li>Signet v2 and v3</li>
@@ -221,7 +222,7 @@
           </div>
           <div class="cta-row" style="margin-top: 0;">
             <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
-            <a href="/challenge.html" class="btn btn-secondary">Try the demo</a>
+            <a href="/verify.html#demo" class="btn btn-secondary">Create a demo badge</a>
           </div>
         </div>
       </div>
@@ -235,8 +236,7 @@
       <div class="footer-links">
         <a href="/verify.html">Verify</a>
         <a href="/api.html">API</a>
-        <a href="/vision.html">Vision</a>
-        <a href="/challenge.html">Challenge</a>
+        <a href="/issuer.html">Issuer Setup</a>
         <a href="/llms.txt">llms.txt</a>
       </div>
     </div>
