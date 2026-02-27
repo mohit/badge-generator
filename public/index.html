@@ -40,6 +40,8 @@
   </header>
 
   <main id="main-content">
+
+    <!-- ── Hero ───────────────────────────────────────────────── -->
     <section class="hero" style="text-align: center; padding: 6rem 0 4rem;">
       <div class="container" style="max-width: 800px; margin: 0 auto;">
         <p class="kicker">Open Trust Infrastructure</p>
@@ -61,6 +63,7 @@
       </div>
     </section>
 
+    <!-- ── Trust Ladder ────────────────────────────────────────── -->
     <section class="section" style="padding-top: 0;">
       <div class="container">
         <aside class="panel hero-proof-card scroll-animate" aria-label="Verification ladder"
@@ -91,158 +94,139 @@
       </div>
     </section>
 
-    <section class="section section-muted" id="pillars">
+    <!-- ── Problem → Solution flow ────────────────────────────── -->
+    <section class="section" style="padding-top: 3rem; padding-bottom: 3.5rem;">
       <div class="container">
-        <h2 class="section-title">What this proves</h2>
-        <p class="section-lede">Domain identity, cryptographic integrity, and public verification in one open workflow.
-        </p>
-        <div class="grid-3" style="margin-top: 1rem;">
-          <article class="card scroll-animate">
-            <p class="eyebrow">Domain-bound signatures</p>
-            <h3>Identity anchored to domains</h3>
-            <p>Badges are signed with Ed25519 keys and checked against issuer domain metadata at well-known endpoints.
-            </p>
-          </article>
-          <article class="card scroll-animate">
-            <p class="eyebrow">Public verification</p>
-            <h3>No-key verification endpoints</h3>
-            <p>Anyone can verify badges by URL or JSON through public APIs with SSRF protections for untrusted input.
-            </p>
-          </article>
-          <article class="card scroll-animate">
-            <p class="eyebrow">Three trust states</p>
-            <h3>Clear output, no inflation</h3>
+        <div class="vision-flow">
+          <div class="vision-flow-card">
+            <p class="vision-flow-label">Current state</p>
+            <h3 class="vision-flow-title">Fragmented platforms</h3>
+            <p class="vision-flow-desc">Credentials are trapped in closed networks and difficult to validate independently. Verification requires trusting the platform, not the proof.</p>
+          </div>
+          <div class="vision-flow-arrow" aria-hidden="true">→</div>
+          <div class="vision-flow-card" style="border-left: 1px solid var(--line);">
+            <p class="vision-flow-label">Target state</p>
+            <h3 class="vision-flow-title">Portable trust</h3>
+            <p class="vision-flow-desc">A badge is portable JSON with explicit issuer-domain proof and machine-verifiable signatures. Verification needs no account or platform access.</p>
+          </div>
+          <div class="vision-flow-arrow" aria-hidden="true">→</div>
+          <div class="vision-flow-card" style="border-left: 1px solid var(--line);">
+            <p class="vision-flow-label">Method</p>
+            <h3 class="vision-flow-title">Open trust rails</h3>
+            <p class="vision-flow-desc">Build free primitives anyone can deploy — not another centralized authority gate. Domain ownership is the trust anchor, not platform membership.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── What's here now ────────────────────────────────────── -->
+    <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+      <div class="container">
+        <h2 class="section-title">What's here now</h2>
+        <p class="section-lede">Live primitives you can use today.</p>
+        <div class="grid-3" style="margin-top: 1.4rem;">
+          <article class="card vision-card scroll-animate">
+            <p class="eyebrow">Trust model</p>
+            <h3>Three-state verifier output</h3>
             <p><code>DOMAIN_VERIFIED_SIGNATURE</code>, <code>DEMO_DOMAIN_VERIFIED_SIGNATURE</code>, or
-              <code>UNVERIFIED</code>. Assessment rigor remains issuer policy.
+              <code>UNVERIFIED</code> — each with explicit caveats about what is and isn't being asserted.
+            </p>
+          </article>
+          <article class="card vision-card scroll-animate">
+            <p class="eyebrow">Security posture</p>
+            <h3>Public verifier hardening</h3>
+            <p>SSRF protections, request limits, trust-write rate limits, and cooldown controls make the public API
+              resistant to abuse without requiring authentication.
+            </p>
+          </article>
+          <article class="card vision-card scroll-animate">
+            <p class="eyebrow">Interfaces</p>
+            <h3>API, CLI, MCP, llms.txt</h3>
+            <p>Human and agent workflows share the same trust primitives and verification semantics —
+              one contract, every interface.
             </p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="contributions">
+    <!-- ── How issuer identity works ──────────────────────────── -->
+    <section class="section" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
       <div class="container">
-        <h2 class="section-title">What this implementation contributes</h2>
-        <p class="section-lede">Distinctive strengths versus hosted badge platforms.</p>
-        <div class="grid-3" style="margin-top: 1rem;">
-          <article class="card scroll-animate">
-            <p class="eyebrow">Security</p>
-            <h3>SSRF-hardened public verifier</h3>
-            <p>Public verify routes block private/internal targets before any server-side fetch happens.</p>
+        <h2 class="section-title">How issuer identity works</h2>
+        <p class="section-lede">Three principles that define what "verified" means here.</p>
+        <div class="principle-grid" style="margin-top: 1.4rem;">
+          <article class="card principle-card scroll-animate" style="padding: 1.4rem;">
+            <div class="principle-num">01</div>
+            <h3>Canonical identity is the domain</h3>
+            <p>The issuer is identified as <em>issued by &lt;domain&gt;</em>. Domain ownership is the primary trust anchor — not a platform account or issuer name.</p>
           </article>
-          <article class="card scroll-animate">
-            <p class="eyebrow">Trust policy</p>
-            <h3>Anti-impersonation domain checks</h3>
-            <p>Issuer verification is tied to <code>/.well-known/openbadges-issuer.json</code>, with rate limits and
-              cooldowns.</p>
+          <article class="card principle-card scroll-animate" style="padding: 1.4rem;">
+            <div class="principle-num">02</div>
+            <h3>Claimed names are secondary</h3>
+            <p>Issuer profile names from the credential JSON are displayed as claims, not as canonical trust anchors. The domain speaks louder than the display name.</p>
           </article>
-          <article class="card scroll-animate">
-            <p class="eyebrow">Agent-native ops</p>
-            <h3>API + CLI + MCP + llms.txt</h3>
-            <p>Run the same trust flow manually or programmatically with markdown-first and MCP-compatible interfaces.
+          <article class="card principle-card scroll-animate" style="padding: 1.4rem;">
+            <div class="principle-num">03</div>
+            <h3>TLS org fields are metadata only</h3>
+            <p>Certificate org/CN fields often describe a hosting provider, not the actual issuer. Domain ownership remains the trust anchor regardless of TLS metadata.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Roadmap ─────────────────────────────────────────────── -->
+    <section class="section section-muted" style="padding-top: 3.5rem; padding-bottom: 3.5rem;">
+      <div class="container">
+        <h2 class="section-title">Now, next, later</h2>
+        <p class="section-lede">Where this is going, and in what order.</p>
+        <div class="roadmap-grid" style="margin-top: 1.4rem;">
+          <article class="card roadmap-item phase-now scroll-animate" style="padding: 1.4rem;">
+            <p class="phase-label">
+              <span class="phase-dot" aria-hidden="true"></span>
+              Now
             </p>
+            <h3>Domain/key trust</h3>
+            <p>Public verification, trust discovery APIs, signed demo credentials, and prompt-to-badge activation for early adopters and agent workflows.</p>
+          </article>
+          <article class="card roadmap-item phase-next scroll-animate" style="padding: 1.4rem;">
+            <p class="phase-label">
+              <span class="phase-dot" aria-hidden="true"></span>
+              Next
+            </p>
+            <h3>Issuer onboarding UX</h3>
+            <p>Guided flows for non-technical institutions: key generation, well-known hosting, and issuing a first verifiable badge without touching the CLI.</p>
+          </article>
+          <article class="card roadmap-item phase-later scroll-animate" style="padding: 1.4rem;">
+            <p class="phase-label">
+              <span class="phase-dot" aria-hidden="true"></span>
+              Later
+            </p>
+            <h3>Circles of trust</h3>
+            <p>Vouching networks for higher-order reputation, layered on top of domain-bound signature trust without replacing it.</p>
           </article>
         </div>
       </div>
     </section>
 
-    <section class="section" id="issue">
-      <div class="container">
-        <h2 class="section-title">Issue in four API calls</h2>
-        <p class="section-lede">From issuer setup to verifiable assertion URL in one pipeline. Or run the same flow via
-          CLI.</p>
-
-        <div class="api-steps">
-          <article class="api-step scroll-animate">
-            <h4>1. Verify issuer domain</h4>
-            <code class="code-chip">POST /public/api/issuers/verify</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <h4>2. Create issuer + badge class</h4>
-            <code class="code-chip">POST /api/issuer<br>POST /api/badge-class</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <h4>3. Issue + sign</h4>
-            <code class="code-chip">POST /api/credential-subject<br>POST /api/sign-badge</code>
-          </article>
-          <article class="api-step scroll-animate">
-            <h4>4. Verify publicly</h4>
-            <code class="code-chip">GET /public/api/verify/badge/:badgeUrl(*)</code>
-          </article>
-        </div>
-
-        <div class="cta-row" style="margin-top: 1rem;">
-          <a href="/verify.html" class="btn btn-primary">Run test credential verification</a>
-          <a href="/challenge.html" class="btn btn-secondary">Try 60-second challenge</a>
-        </div>
-      </div>
-    </section>
-
-    <section class="section section-muted">
-      <div class="container">
-        <h2 class="section-title">Who this serves</h2>
-        <p class="section-lede">Separate paths for issuance operations and verification operations, both on open rails.
-        </p>
-        <div class="grid-2" style="margin-top: 1rem;">
-          <article class="card scroll-animate">
-            <p class="eyebrow">For issuers</p>
-            <h3>Issue from your own domain and keys</h3>
-            <p>Generate issuer metadata, publish <code>/.well-known/openbadges-issuer.json</code>, verify domain
-              control, and sign badges without platform lock-in.</p>
-            <div class="cta-row" style="margin-top: 0.75rem;">
-              <a href="/challenge.html" class="btn btn-secondary">Try issuer flow</a>
-              <a href="/api.html" class="btn btn-primary">See API steps</a>
-            </div>
-          </article>
-          <article class="card scroll-animate">
-            <p class="eyebrow">For verifiers</p>
-            <h3>Verify badges without private access</h3>
-            <p>Paste badge URLs or JSON, inspect trust state and key fingerprint, and automate checks with public
-              verifier endpoints.</p>
-            <div class="cta-row" style="margin-top: 0.75rem;">
-              <a href="/verify.html" class="btn btn-primary">Open verifier</a>
-              <a href="/challenge.html" class="btn btn-secondary">Run challenge</a>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="container challenge-grid">
-        <article class="demo-card scroll-animate">
-          <h3 class="demo-card__title">Step 0: Prompt-to-badge activation</h3>
-          <p class="demo-card__description">Use a short learning summary, generate a signed sample badge, and share a
-            verify link. This is the fastest path for enthusiasts to test the system end-to-end.</p>
-          <div class="cta-row" style="margin-top: 0.85rem;">
-            <a class="btn btn-primary" href="/challenge.html">Start challenge</a>
-          </div>
-        </article>
-
-        <article class="card scroll-animate">
-          <p class="eyebrow">Trust caveat</p>
-          <h3>Verifier proves signer identity</h3>
-          <p>Verification answers who signed the badge and whether the key is discoverable for that domain. It does not
-            score educational quality or accreditation.</p>
-          <div class="cta-row" style="margin-top: 0.8rem;">
-            <a class="btn btn-secondary" href="/verify.html">Inspect verifier output</a>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <section class="section">
+    <!-- ── CTA ────────────────────────────────────────────────── -->
+    <section class="section" style="padding-top: 3rem; padding-bottom: 3.5rem;">
       <div class="container">
         <div class="cta-band">
           <div>
-            <h2 class="panel-title" style="font-size: 1.2rem; margin-bottom: 0.35rem;">The Let's Encrypt direction for
-              credentials</h2>
-            <p>Free, interoperable trust rails for issuers and verifiers. Built by Firmament Works.</p>
+            <h2 class="panel-title" style="font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 0.4rem;">
+              Build on open trust primitives
+            </h2>
+            <p>Start by verifying a badge, then issue one with your own domain and keys.</p>
           </div>
-          <a href="/vision.html" class="btn btn-primary">Read the vision</a>
+          <div class="cta-row" style="margin-top: 0;">
+            <a href="/verify.html" class="btn btn-primary">Verify a badge</a>
+            <a href="/challenge.html" class="btn btn-secondary">Try the demo</a>
+          </div>
         </div>
       </div>
     </section>
+
   </main>
 
   <footer>

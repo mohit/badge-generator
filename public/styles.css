@@ -1310,6 +1310,56 @@ footer {
   border-bottom: 2px solid var(--line);
 }
 
+/* ─── API: vertical issue flow ─────────────────────────────── */
+
+.api-flow {
+  border-top: 1px solid var(--line);
+}
+
+.api-flow-step {
+  display: grid;
+  grid-template-columns: 5rem minmax(0, 1fr);
+  gap: 1.4rem;
+  padding: 1.8rem 0;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+}
+
+.api-flow-num {
+  font-family: var(--font-display);
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: rgba(29, 78, 216, 0.15);
+  padding-top: 0.15rem;
+}
+
+.api-flow-body h4 {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  margin-bottom: 0;
+}
+
+.api-flow-desc {
+  color: var(--steel);
+  font-size: var(--text-base);
+  margin-top: 0.65rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 640px) {
+  .api-flow-step {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .api-flow-num {
+    font-size: 2rem;
+  }
+}
+
 /* ─── Vision page: flow grid ───────────────────────────────── */
 
 .vision-flow {
