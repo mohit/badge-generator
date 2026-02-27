@@ -43,8 +43,8 @@
   --shadow-card: 0 10px 32px rgba(12, 25, 58, 0.09);
   --shadow-soft: 0 6px 20px rgba(12, 25, 58, 0.08);
   --shadow-lifted: 0 14px 40px rgba(12, 25, 58, 0.12);
-  --font-display: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: 'Clash Display', system-ui, -apple-system, sans-serif;
+  --font-body: 'General Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: 'SFMono-Regular', Consolas, Menlo, monospace;
   --max-width: 1120px;
 }
@@ -1185,5 +1185,326 @@ footer {
   .cta-row .btn {
     width: 100%;
     justify-content: center;
+  }
+}
+
+/* ─── Shared typography upgrades ──────────────────────────── */
+
+.section-title {
+  font-weight: 700;
+}
+
+.card h3,
+.api-group h3,
+.roadmap-item h3 {
+  font-family: var(--font-display);
+}
+
+/* ─── Dark hero (API page) ─────────────────────────────────── */
+
+.api-dark-hero {
+  background: var(--ink);
+  color: #fff;
+  padding: 5.5rem 0 5rem;
+  text-align: center;
+}
+
+.api-dark-hero .kicker {
+  color: rgba(219, 231, 255, 0.5);
+}
+
+.api-dark-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 5.5vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.04;
+  color: #fff;
+  margin: 0.6rem auto 1.1rem;
+  max-width: 22ch;
+}
+
+.api-dark-hero .hero-lede {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: var(--text-md);
+  max-width: 54ch;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.api-dark-hero .cta-row {
+  justify-content: center;
+}
+
+.api-dark-hero .btn-secondary {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.api-dark-hero .btn-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+/* ─── Quickstart step numbers ──────────────────────────────── */
+
+.step-num {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: rgba(29, 78, 216, 0.18);
+  margin-bottom: 0.55rem;
+}
+
+.api-step h4 {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* ─── Method badges ────────────────────────────────────────── */
+
+.method-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 5px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 0.2rem 0.45rem;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.method-tag.get {
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--verify);
+  border: 1px solid rgba(15, 118, 110, 0.28);
+}
+
+.method-tag.post {
+  background: rgba(29, 78, 216, 0.1);
+  color: var(--trust);
+  border: 1px solid rgba(29, 78, 216, 0.25);
+}
+
+.endpoint-method-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
+.endpoint-group-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 2px solid var(--line);
+}
+
+/* ─── Vision page: flow grid ───────────────────────────────── */
+
+.vision-flow {
+  display: grid;
+  grid-template-columns: 1fr 3rem 1fr 3rem 1fr;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  margin-top: 1.4rem;
+  box-shadow: var(--shadow-card);
+}
+
+.vision-flow-card {
+  padding: 2.2rem 1.8rem;
+  background: var(--surface);
+}
+
+.vision-flow-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-sunken);
+  color: var(--line);
+  font-size: 1.3rem;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+
+.vision-flow-label {
+  font-size: var(--text-xs);
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--trust);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.vision-flow-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin-bottom: 0.55rem;
+  color: var(--ink);
+}
+
+.vision-flow-desc {
+  color: var(--steel);
+  font-size: var(--text-base);
+  line-height: 1.6;
+}
+
+/* ─── Vision hero ──────────────────────────────────────────── */
+
+.manifesto-hero {
+  padding: 5.5rem 0 4rem;
+}
+
+.manifesto-hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 5.5vw, 4.4rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.06;
+  margin: 0.55rem auto 1.1rem;
+  max-width: 22ch;
+}
+
+/* ─── Numbered principles ──────────────────────────────────── */
+
+.principle-num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: rgba(29, 78, 216, 0.15);
+  margin-bottom: 0.7rem;
+}
+
+.principle-card h3 {
+  font-size: 1.1rem;
+}
+
+/* ─── Phase/roadmap cards ──────────────────────────────────── */
+
+.phase-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.65rem;
+}
+
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.phase-now {
+  border-left: 3px solid var(--verify);
+}
+
+.phase-now .phase-label {
+  color: var(--verify);
+}
+
+.phase-now .phase-dot {
+  background: var(--verify);
+}
+
+.phase-next {
+  border-left: 3px solid var(--trust);
+}
+
+.phase-next .phase-label {
+  color: var(--trust);
+}
+
+.phase-next .phase-dot {
+  background: var(--trust);
+}
+
+.phase-later {
+  border-left: 3px solid var(--line);
+}
+
+.phase-later .phase-label {
+  color: var(--steel);
+}
+
+.phase-later .phase-dot {
+  background: var(--steel);
+  opacity: 0.5;
+}
+
+.roadmap-item h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ─── Vision cards (bigger) ────────────────────────────────── */
+
+.vision-card {
+  padding: 1.4rem;
+}
+
+.vision-card h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ─── Responsive overrides for new components ──────────────── */
+
+@media (max-width: 980px) {
+  .vision-flow {
+    grid-template-columns: 1fr;
+  }
+
+  .vision-flow-arrow {
+    display: none;
+  }
+
+  .vision-flow-card + .vision-flow-card {
+    border-top: 1px solid var(--line);
+    border-left: none;
+  }
+
+  .api-dark-hero h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+  }
+
+  .manifesto-hero h1 {
+    font-size: clamp(2rem, 6vw, 3rem);
+  }
+}
+
+@media (max-width: 640px) {
+  .vision-flow {
+    border-radius: var(--radius-md);
+  }
+
+  .api-dark-hero {
+    padding: 4rem 0 3.5rem;
+  }
+
+  .manifesto-hero {
+    padding: 4rem 0 3rem;
   }
 }
