@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  const liveDemoCredentialUrl = `${window.location.origin}/samples/demo-openbadge-v3-signed.json`;
+  const liveDemoCredentialUrl = 'https://badges.firmament.works/samples/demo-openbadge-v3-signed.json';
 
   function escapeHtml(input) {
     return String(input)

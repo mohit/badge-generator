@@ -31,9 +31,13 @@ const SSRF_BLOCKED_CIDRS = [
 function isPrivateIp(ip) {
   if (!ip) return true; // fail-closed
   for (const rule of SSRF_BLOCKED_CIDRS) {
-    if (rule.exact && ip === rule.prefix) return true;
-    if (rule.test && rule.test(ip)) return true;
-    if (!rule.exact && !rule.test && ip.startsWith(rule.prefix)) return true;
+    if (rule.exact) {
+      if (ip === rule.prefix) return true;
+    } else if (rule.test) {
+      if (ip.startsWith(rule.prefix) && rule.test(ip)) return true;
+    } else {
+      if (ip.startsWith(rule.prefix)) return true;
+    }
   }
   return false;
 }
@@ -199,7 +203,7 @@ if (process.env.NODE_ENV !== 'test' && !process.env.API_KEY) {
 const VERIFIED_ISSUER_DOMAIN = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
 const SAFE_TEST_DOMAINS = [
   'example.com',
-  'example.org', 
+  'example.org',
   'example.net',
   'test.example.com',
   'demo.example.org',
@@ -662,7 +666,7 @@ async function validateIssuerDomain(url) {
     const urlObj = new URL(url);
     const domain = urlObj.hostname.toLowerCase();
     const host = urlObj.host.toLowerCase();
-    
+
     // Check if it's our verified issuer
     if (host === VERIFIED_ISSUER_DOMAIN.host || domain === VERIFIED_ISSUER_DOMAIN.hostname) {
       return {
@@ -672,7 +676,7 @@ async function validateIssuerDomain(url) {
         message: 'Using verified Badge Generator issuer'
       };
     }
-    
+
     // Check if it's a verified external issuer
     const verifiedIssuer = getVerifiedIssuer(domain);
     if (verifiedIssuer && verifiedIssuer.status === 'verified') {
@@ -684,12 +688,12 @@ async function validateIssuerDomain(url) {
         issuer: verifiedIssuer
       };
     }
-    
+
     // Check if it's a safe testing domain
-    const isSafeTestDomain = SAFE_TEST_DOMAINS.some(safeDomain => 
+    const isSafeTestDomain = SAFE_TEST_DOMAINS.some(safeDomain =>
       domain === safeDomain || domain.endsWith('.' + safeDomain)
     );
-    
+
     if (isSafeTestDomain) {
       return {
         valid: true,
@@ -698,7 +702,7 @@ async function validateIssuerDomain(url) {
         message: 'Safe testing domain'
       };
     }
-    
+
     // Check if domain is registered (block real domains unless verified)
     try {
       await dns.lookup(domain);
@@ -713,7 +717,7 @@ async function validateIssuerDomain(url) {
           lastError: verifiedIssuer.lastError
         };
       }
-      
+
       // Domain exists but not verified - suggest verification
       return {
         valid: false,
@@ -731,7 +735,7 @@ async function validateIssuerDomain(url) {
         message: 'Unregistered domain allowed'
       };
     }
-    
+
   } catch (err) {
     return {
       valid: false,
@@ -798,7 +802,7 @@ async function verifyIssuerDomain(domain, options = {}) {
     let wellKnownUrl = null;
     const blockedUrls = [];
     const fetchErrors = [];
-    
+
     for (const candidateUrl of wellKnownUrls) {
       try {
         if (validateUrl) {
@@ -832,7 +836,7 @@ async function verifyIssuerDomain(domain, options = {}) {
         }
       }
     }
-    
+
     if (!response || !wellKnownUrl) {
       if (blockedUrls.length === wellKnownUrls.length) {
         return {
@@ -848,14 +852,14 @@ async function verifyIssuerDomain(domain, options = {}) {
       return {
         success: false,
         error: 'Failed to fetch issuer well-known file from supported paths',
-        details: { 
+        details: {
           urls: wellKnownUrls,
           blockedUrls,
           fetchErrors
         }
       };
     }
-    
+
     const contentType = response.headers.get('content-type');
     if (!contentType || !contentType.includes('application/json')) {
       return {
@@ -864,7 +868,7 @@ async function verifyIssuerDomain(domain, options = {}) {
         details: { url: wellKnownUrl, contentType }
       };
     }
-    
+
     let issuerData;
     try {
       issuerData = await response.json();
@@ -875,11 +879,11 @@ async function verifyIssuerDomain(domain, options = {}) {
         details: { url: wellKnownUrl }
       };
     }
-    
+
     // Validate required fields
     const requiredFields = ['id', 'type', 'name'];
     const missingFields = requiredFields.filter(field => !issuerData[field]);
-    
+
     if (missingFields.length > 0) {
       return {
         success: false,
@@ -887,7 +891,7 @@ async function verifyIssuerDomain(domain, options = {}) {
         details: { url: wellKnownUrl, missingFields }
       };
     }
-    
+
     // Validate that the ID matches the well-known URL or domain
     const validIds = [
       wellKnownUrl,
@@ -896,19 +900,19 @@ async function verifyIssuerDomain(domain, options = {}) {
       `https://${domain}${WELL_KNOWN_ISSUER_PATH}`,
       `https://${domain}${LEGACY_WELL_KNOWN_ISSUER_PATH}`
     ];
-    
+
     if (!validIds.includes(issuerData.id)) {
       return {
         success: false,
         error: `Issuer ID '${issuerData.id}' does not match domain '${domain}'`,
-        details: { 
-          url: wellKnownUrl, 
+        details: {
+          url: wellKnownUrl,
           issuerId: issuerData.id,
-          expectedIds: validIds 
+          expectedIds: validIds
         }
       };
     }
-    
+
     // Validate type (Open Badges v2.0 or v3.0)
     const validTypes = ['Issuer', 'Profile'];
     if (!validTypes.includes(issuerData.type)) {
@@ -918,7 +922,7 @@ async function verifyIssuerDomain(domain, options = {}) {
         details: { url: wellKnownUrl, type: issuerData.type }
       };
     }
-    
+
     const issuerPublicKeyPem = toPublicKeyPem(issuerData.publicKey) ||
       (Array.isArray(issuerData.publicKeys) ? toPublicKeyPem(issuerData.publicKeys[0]) : null);
     const keyFingerprint = computeKeyFingerprint(issuerPublicKeyPem);
@@ -940,15 +944,15 @@ async function verifyIssuerDomain(domain, options = {}) {
       verificationMethod: 'well-known',
       rawData: issuerData // Store original for debugging
     };
-    
+
     setVerifiedIssuer(domain, verifiedIssuer);
-    
+
     return {
       success: true,
       issuer: verifiedIssuer,
       message: `Successfully verified issuer: ${issuerData.name}`
     };
-    
+
   } catch (error) {
     console.error(`Error verifying issuer ${domain}:`, error);
     return {
@@ -1050,7 +1054,7 @@ app.get('/api/badge-files', requireApiKey, (req, res) => {
     if (err) {
       return res.status(500).json({ error: 'Unable to read files' });
     }
-    
+
     const fileList = files
       .filter(file => file.endsWith('.json'))
       .map(file => ({
@@ -1058,7 +1062,7 @@ app.get('/api/badge-files', requireApiKey, (req, res) => {
         url: `/badges/${file}`,
         fullUrl: `${req.protocol}://${req.get('host')}/badges/${file}`
       }));
-    
+
     res.json(fileList);
   });
 });
@@ -1070,11 +1074,11 @@ app.get('/api/metrics', requireApiKey, (req, res) => {
 // Domain validation endpoint
 app.get('/api/validate-issuer-domain', requireApiKey, async (req, res) => {
   const { url } = req.query;
-  
+
   if (!url) {
     return res.status(400).json({ error: 'URL parameter is required' });
   }
-  
+
   const validation = await validateIssuerDomain(url);
   res.json(validation);
 });
@@ -1227,14 +1231,14 @@ app.post('/public/api/issuers/verify', async (req, res) => {
 app.get('/api/issuers/:domain', requireApiKey, async (req, res) => {
   const { domain } = req.params;
   const issuer = getVerifiedIssuer(domain);
-  
+
   if (!issuer) {
-    return res.status(404).json({ 
+    return res.status(404).json({
       error: 'Issuer not found or not verified',
       domain: domain
     });
   }
-  
+
   res.json({
     issuer: issuer,
     status: issuer.status
@@ -1251,7 +1255,7 @@ app.get('/api/issuers', requireApiKey, async (req, res) => {
     lastVerified: issuer.lastVerified,
     type: issuer.type
   }));
-  
+
   res.json({
     issuers: issuerList,
     count: issuerList.length
@@ -1349,7 +1353,7 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
   incrementMetric('trustWriteRequests');
 
   const result = await verifyIssuerDomain(normalizedDomain);
-  
+
   if (result.success) {
     appendTrustEvent(normalizedDomain, {
       action: 'reverify_issuer_domain',
@@ -1384,7 +1388,7 @@ app.post('/api/issuers/:domain/reverify', requireApiKey, async (req, res) => {
       source: 'admin_api',
       error: result.error
     });
-    
+
     res.status(400).json({
       error: result.error,
       details: result.details,
@@ -1475,8 +1479,8 @@ async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl
   }
 
   const overallValid = verificationResults.valid &&
-                      (!issuerVerification || issuerVerification.valid) &&
-                      (!signatureVerification || signatureVerification.valid);
+    (!issuerVerification || issuerVerification.valid) &&
+    (!signatureVerification || signatureVerification.valid);
 
   const trustPayload = buildTrustPayload({
     structure: verificationResults,
@@ -1501,7 +1505,7 @@ async function verifyBadgeDataInternal(badgeData, badgeUrl = null, { validateUrl
 
 app.get('/api/verify/badge/:badgeUrl(*)', requireApiKey, async (req, res) => {
   const badgeUrl = req.params.badgeUrl;
-  
+
   if (!badgeUrl) {
     return res.status(400).json({ error: 'Badge URL is required', ...unverifiedTrustPayload() });
   }
@@ -1530,17 +1534,17 @@ app.get('/public/api/verify/badge/:badgeUrl(*)', applyPublicVerifyRateLimit, app
 
 app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
   const issuerUrl = req.params.issuerUrl;
-  
+
   if (!issuerUrl) {
     return res.status(400).json({ error: 'Issuer URL is required', ...unverifiedTrustPayload() });
   }
-  
+
   try {
     console.log(`🔍 Verifying issuer: ${issuerUrl}`);
-    
+
     const verification = await verifyIssuerFromBadge(issuerUrl);
     const trustPayload = buildIssuerTrustPayload(verification);
-    
+
     res.json({
       valid: verification.valid,
       issuerUrl: issuerUrl,
@@ -1549,7 +1553,7 @@ app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
       ...trustPayload,
       trustCaveat: 'This verifies domain/key control. It does not certify assessment quality or accreditation.'
     });
-    
+
   } catch (error) {
     console.error(`Error verifying issuer ${issuerUrl}:`, error);
     res.status(500).json({
@@ -1564,7 +1568,7 @@ app.get('/api/verify/issuer/:issuerUrl(*)', requireApiKey, async (req, res) => {
 app.get('/public/api/verify/issuer/:issuerUrl(*)', applyPublicVerifyRateLimit, applyPublicVerifyConcurrencyLimit, async (req, res) => {
   incrementMetric('verificationRequests');
   const issuerUrl = req.params.issuerUrl;
-  
+
   if (!issuerUrl) {
     return res.status(400).json({ error: 'Issuer URL is required', ...unverifiedTrustPayload() });
   }
@@ -1574,13 +1578,13 @@ app.get('/public/api/verify/issuer/:issuerUrl(*)', applyPublicVerifyRateLimit, a
   } catch (err) {
     return res.status(400).json({ error: `Blocked: ${err.message}`, ...unverifiedTrustPayload() });
   }
-  
+
   try {
     console.log(`🔍 Verifying issuer: ${issuerUrl}`);
-    
+
     const verification = await verifyIssuerFromBadge(issuerUrl);
     const trustPayload = buildIssuerTrustPayload(verification);
-    
+
     res.json({
       valid: verification.valid,
       issuerUrl: issuerUrl,
@@ -1589,7 +1593,7 @@ app.get('/public/api/verify/issuer/:issuerUrl(*)', applyPublicVerifyRateLimit, a
       ...trustPayload,
       trustCaveat: 'This verifies domain/key control. It does not certify assessment quality or accreditation.'
     });
-    
+
   } catch (error) {
     console.error(`Error verifying issuer ${issuerUrl}:`, error);
     res.status(500).json({
@@ -1638,7 +1642,7 @@ app.post('/public/api/verify/json', applyPublicVerifyRateLimit, applyPublicVerif
 async function verifyBadgeStructure(badgeData, isV3) {
   const errors = [];
   const warnings = [];
-  
+
   // Check required fields based on version
   if (isV3) {
     // Open Badges v3.0 validation
@@ -1675,12 +1679,12 @@ async function verifyBadgeStructure(badgeData, isV3) {
       warnings.push('Missing issuedOn date');
     }
   }
-  
+
   // URL validation
   if (badgeData.id && !isValidUrl(badgeData.id)) {
     errors.push('Invalid badge ID URL');
   }
-  
+
   return {
     valid: errors.length === 0,
     errors: errors,
@@ -1717,7 +1721,7 @@ async function verifyIssuerFromBadge(issuerUrl) {
     }
     const localIssuer = getVerifiedIssuer(domainHost) || getVerifiedIssuer(domainName);
     const domain = localIssuer?.domain || domainHost;
-    
+
     if (localIssuer && localIssuer.status === 'verified') {
       return {
         valid: true,
@@ -1730,14 +1734,14 @@ async function verifyIssuerFromBadge(issuerUrl) {
         message: `Issuer verified locally: ${localIssuer.displayName}`
       };
     }
-    
+
     // Try to fetch issuer data directly
     incrementMetric('externalFetchCount');
     const issuerResponse = await fetch(issuerUrl, {
       timeout: 10000,
       headers: { 'User-Agent': 'Badge-Generator-Verifier/1.0' }
     });
-    
+
     if (!issuerResponse.ok) {
       return {
         valid: false,
@@ -1745,7 +1749,7 @@ async function verifyIssuerFromBadge(issuerUrl) {
         details: { url: issuerUrl, status: issuerResponse.status }
       };
     }
-    
+
     let issuerData;
     try {
       issuerData = await issuerResponse.json();
@@ -1756,12 +1760,12 @@ async function verifyIssuerFromBadge(issuerUrl) {
         details: { url: issuerUrl }
       };
     }
-    
+
     // Validate issuer structure
     const isV3Issuer = issuerData.type === 'Profile';
     const requiredFields = isV3Issuer ? ['id', 'type', 'name'] : ['@context', 'type', 'name', 'url'];
     const missingFields = requiredFields.filter(field => !issuerData[field]);
-    
+
     if (missingFields.length > 0) {
       return {
         valid: false,
@@ -1770,24 +1774,24 @@ async function verifyIssuerFromBadge(issuerUrl) {
         issuerDomain: domain
       };
     }
-    
+
     // Check if issuer ID matches the URL (with some flexibility)
-    const isIdMatching = issuerData.id === issuerUrl || 
-                        issuerData.originalId === issuerUrl ||
-                        issuerData.id === issuerData.originalId;
-    
+    const isIdMatching = issuerData.id === issuerUrl ||
+      issuerData.originalId === issuerUrl ||
+      issuerData.id === issuerData.originalId;
+
     if (!isIdMatching) {
       // Allow some common URL variations
       const normalizedIssuerUrl = issuerUrl.replace(/\/$/, ''); // Remove trailing slash
       const normalizedIssuerId = issuerData.id.replace(/\/$/, '');
-      
+
       if (normalizedIssuerId !== normalizedIssuerUrl) {
         console.warn(`Issuer ID mismatch: ID='${issuerData.id}', URL='${issuerUrl}'`);
         // Don't fail verification for ID mismatch, just warn
         // This allows for more flexible badge verification
       }
     }
-    
+
     const publicKeyPem = toPublicKeyPem(issuerData.publicKey) ||
       (Array.isArray(issuerData.publicKeys) ? toPublicKeyPem(issuerData.publicKeys[0]) : null);
 
@@ -1801,7 +1805,7 @@ async function verifyIssuerFromBadge(issuerUrl) {
       validationLabel: getValidationLabelForDomain(domain),
       message: `Issuer verified from remote URL: ${issuerData.name}`
     };
-    
+
   } catch (error) {
     return {
       valid: false,
@@ -1818,27 +1822,27 @@ function determineVerificationLevel(structureVerification, issuerVerification, s
   if (!structureVerification.valid) {
     return 'invalid';
   }
-  
+
   if (!issuerVerification) {
     return 'structure_only';
   }
-  
+
   if (!issuerVerification.valid) {
     return 'structure_valid_issuer_invalid';
   }
-  
+
   if (signatureVerification && signatureVerification.valid) {
     return 'cryptographically_verified';
   }
-  
+
   if (issuerVerification.type === 'locally_verified') {
     return 'fully_verified';
   }
-  
+
   if (issuerVerification.type === 'remote_verified') {
     return 'remote_verified';
   }
-  
+
   return 'basic_verified';
 }
 
@@ -1858,13 +1862,13 @@ function signBadgeData(badgeData, privateKeyPem) {
     // Create a canonical string representation for signing
     const canonicalData = JSON.stringify(badgeData, null, 0);
     const dataBuffer = Buffer.from(canonicalData, 'utf8');
-    
+
     // Create private key object
     const privateKey = crypto.createPrivateKey(privateKeyPem);
-    
+
     // Sign the data
     const signature = crypto.sign(null, dataBuffer, privateKey);
-    
+
     // Convert to base64url for JSON-LD
     return signature.toString('base64url');
   } catch (error) {
@@ -1877,17 +1881,17 @@ function verifyBadgeSignature(badgeData, signature, publicKeyPem) {
     // Remove proof from badge data for verification
     const dataToVerify = { ...badgeData };
     delete dataToVerify.proof;
-    
+
     // Create canonical string representation
     const canonicalData = JSON.stringify(dataToVerify, null, 0);
     const dataBuffer = Buffer.from(canonicalData, 'utf8');
-    
+
     // Create public key object
     const publicKey = crypto.createPublicKey(publicKeyPem);
-    
+
     // Convert signature from base64url
     const signatureBuffer = Buffer.from(signature, 'base64url');
-    
+
     // Verify the signature
     return crypto.verify(null, dataBuffer, publicKey, signatureBuffer);
   } catch (error) {
@@ -1911,25 +1915,25 @@ async function getBadgeSigningKey(domain) {
 
   // Only support our own domain for non-demo signing
   const ourDomain = normalizePublicDomain(process.env.PUBLIC_DOMAIN || 'localhost:3000');
-  
+
   if (requestedDomain.host !== ourDomain.host && requestedDomain.hostname !== ourDomain.hostname) {
     console.warn(`Refusing to sign for external domain: ${domain}. We only sign for our domain: ${ourDomain.host}`);
     return null;
   }
-  
+
   // Use the default (our) private key from environment
   if (process.env.DEFAULT_PRIVATE_KEY) {
     console.log('Using default private key for badge signing');
     return process.env.DEFAULT_PRIVATE_KEY;
   }
-  
+
   // Local development: try to find our signing key in files
   if (process.env.NODE_ENV !== 'production') {
     const keyPaths = [
       path.join('issuer-verification-files', 'private-key.pem'),
       uploadsPath('default-private-key.pem')
     ];
-    
+
     for (const keyPath of keyPaths) {
       if (fs.existsSync(keyPath)) {
         try {
@@ -1941,7 +1945,7 @@ async function getBadgeSigningKey(domain) {
       }
     }
   }
-  
+
   console.error(`No private key configured. Set DEFAULT_PRIVATE_KEY environment variable.`);
   return null;
 }
@@ -2029,12 +2033,12 @@ async function cachePublicKey(issuerUrl, publicKey) {
     const domain = urlObj.hostname;
     const cacheDir = uploadsPath('cached-public-keys');
     const cachedKeyPath = path.join(cacheDir, `${domain}.pem`);
-    
+
     // Ensure cache directory exists
     if (!fs.existsSync(cacheDir)) {
       fs.mkdirSync(cacheDir, { recursive: true });
     }
-    
+
     // Cache the public key
     fs.writeFileSync(cachedKeyPath, publicKey);
     console.log(`Cached public key for domain: ${domain}`);
@@ -2053,7 +2057,7 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
         message: 'Badge has no cryptographic proof/signature'
       };
     }
-    
+
     // Extract signature from proof
     let signature = null;
     if (typeof badgeData.proof === 'string') {
@@ -2063,7 +2067,7 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
     } else if (badgeData.proof.proofValue) {
       signature = badgeData.proof.proofValue;
     }
-    
+
     if (!signature) {
       return {
         valid: false,
@@ -2071,7 +2075,7 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
         message: 'Unable to extract signature from proof'
       };
     }
-    
+
     // Get the issuer's public key
     const issuerUrl = issuerVerification.issuer.id || issuerVerification.issuer.url;
     const issuerDomain = normalizeDomainOrHost(issuerUrl);
@@ -2085,7 +2089,7 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
     );
 
     const verificationKey = await getBadgeVerificationKey(issuerVerification.issuer, issuerUrl);
-    
+
     if (!verificationKey?.publicKeyPem) {
       return {
         valid: false,
@@ -2097,10 +2101,10 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
         keyDiscoverable: false
       };
     }
-    
+
     // Verify the signature
     const isValidSignature = verifyBadgeSignature(badgeData, signature, verificationKey.publicKeyPem);
-    
+
     if (isValidSignature) {
       return {
         valid: true,
@@ -2129,7 +2133,7 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
         keyFingerprint: verificationKey.keyFingerprint || null
       };
     }
-    
+
   } catch (error) {
     return {
       valid: false,
@@ -2144,28 +2148,28 @@ async function verifyCryptographicSignature(badgeData, issuerVerification) {
 // Public key caching endpoint
 app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
   const { issuerUrl } = req.body;
-  
+
   if (!issuerUrl) {
     return res.status(400).json({ error: 'Issuer URL is required' });
   }
-  
+
   try {
     console.log(`🔍 Fetching and caching public key for: ${issuerUrl}`);
-    
+
     // Fetch the issuer data
     incrementMetric('externalFetchCount');
     const issuerResponse = await fetch(issuerUrl, {
       timeout: 10000,
       headers: { 'User-Agent': 'Badge-Generator-KeyCache/1.0' }
     });
-    
+
     if (!issuerResponse.ok) {
       return res.status(400).json({
         error: `Failed to fetch issuer: HTTP ${issuerResponse.status}`,
         details: { url: issuerUrl, status: issuerResponse.status }
       });
     }
-    
+
     let issuerData;
     try {
       issuerData = await issuerResponse.json();
@@ -2175,17 +2179,17 @@ app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
         details: { url: issuerUrl }
       });
     }
-    
+
     // Extract and cache the public key
     const keyMaterial = await getBadgeVerificationKey(issuerData, issuerUrl);
-    
+
     if (!keyMaterial?.publicKeyPem) {
       return res.status(400).json({
         error: 'No public key found in issuer data',
         details: { url: issuerUrl }
       });
     }
-    
+
     res.json({
       message: 'Public key cached successfully',
       issuerUrl: issuerUrl,
@@ -2196,7 +2200,7 @@ app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
       keySource: keyMaterial.source,
       cached: true
     });
-    
+
   } catch (error) {
     console.error(`Error caching public key for ${issuerUrl}:`, error);
     res.status(500).json({
@@ -2210,7 +2214,7 @@ app.post('/api/cache-public-key', requireApiKey, async (req, res) => {
 app.post('/api/sign-badge', requireApiKey, async (req, res) => {
   const { badgeData } = req.body;
   let { domain } = req.body;
-  
+
   if (!badgeData || !domain) {
     return res.status(400).json({ error: 'Badge data and domain are required' });
   }
@@ -2220,20 +2224,20 @@ app.post('/api/sign-badge', requireApiKey, async (req, res) => {
   if (domain.includes('/')) {
     return res.status(400).json({ error: 'Domain must be a bare host (e.g. example.com or example.com:3000), not a URL' });
   }
-  
+
   try {
     // Get the signing key for the domain
     const privateKey = await getBadgeSigningKey(domain);
     if (!privateKey) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: `No signing key found for domain: ${domain}`,
         suggestion: 'Use the CLI tool to generate verification files: badge-cli generate-keys'
       });
     }
-    
+
     // Sign the badge data
     const signature = signBadgeData(badgeData, privateKey);
-    
+
     // Add proof to badge data
     const signedBadge = {
       ...badgeData,
@@ -2245,14 +2249,14 @@ app.post('/api/sign-badge', requireApiKey, async (req, res) => {
         jws: signature
       }
     };
-    
+
     res.json({
       message: 'Badge signed successfully',
       signedBadge: signedBadge,
       signature: signature,
       verificationMethod: `https://${domain}${WELL_KNOWN_ISSUER_PATH}#key`
     });
-    
+
   } catch (error) {
     console.error(`Error signing badge:`, error);
     res.status(500).json({
@@ -2423,24 +2427,24 @@ app.post('/public/api/demo/prompt-to-badge', applyPublicVerifyConcurrencyLimit, 
 // API endpoints for creating issuers and badge classes
 app.post('/api/issuer', requireApiKey, async (req, res) => {
   const { id, name, url, email, description, image } = req.body;
-  
+
   if (!id || !name || !url) {
     return res.status(400).json({ error: 'Missing required fields: id, name, url' });
   }
-  
+
   // Validate the issuer domain
   const domainValidation = await validateIssuerDomain(id);
   if (!domainValidation.valid) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: domainValidation.message,
       domain_validation: domainValidation
     });
   }
-  
+
   const filename = `issuer-${Date.now()}.json`;
   const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
-  
+
   const issuer = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "Issuer",
@@ -2452,13 +2456,13 @@ app.post('/api/issuer', requireApiKey, async (req, res) => {
     "image": image,
     "originalId": id // Keep track of the original requested ID
   };
-  
+
   // Remove undefined fields
   Object.keys(issuer).forEach(key => issuer[key] === undefined && delete issuer[key]);
-  
+
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(issuer, null, 2));
-  
+
   res.json({
     message: 'Issuer created successfully',
     filename: filename,
@@ -2475,33 +2479,33 @@ app.post('/api/issuer', requireApiKey, async (req, res) => {
 
 app.post('/api/badge-class', requireApiKey, async (req, res) => {
   const { id, name, description, image, criteria, issuer, tags } = req.body;
-  
+
   if (!id || !name || !description || !criteria || !issuer) {
     return res.status(400).json({ error: 'Missing required fields: id, name, description, criteria, issuer' });
   }
-  
+
   // Validate both the badge class ID and issuer domains
   const badgeValidation = await validateIssuerDomain(id);
   const issuerValidation = await validateIssuerDomain(issuer);
-  
+
   if (!badgeValidation.valid) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: `Badge class domain validation failed: ${badgeValidation.message}`,
       domain_validation: badgeValidation
     });
   }
-  
+
   if (!issuerValidation.valid) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: `Issuer domain validation failed: ${issuerValidation.message}`,
       domain_validation: issuerValidation
     });
   }
-  
+
   const filename = `badge-class-${Date.now()}.json`;
   const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
-  
+
   const badgeClass = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "BadgeClass",
@@ -2514,15 +2518,15 @@ app.post('/api/badge-class', requireApiKey, async (req, res) => {
     "tags": tags,
     "originalId": id // Keep track of the original requested ID
   };
-  
+
   // Remove undefined fields
   Object.keys(badgeClass).forEach(key => badgeClass[key] === undefined && delete badgeClass[key]);
-  
+
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(badgeClass, null, 2));
-  
+
   const allWarnings = [...badgeValidation.warnings, ...issuerValidation.warnings];
-  
+
   res.json({
     message: 'Badge class created successfully',
     filename: filename,
@@ -2546,33 +2550,33 @@ app.post('/api/badge-class', requireApiKey, async (req, res) => {
 // API endpoint to create credential subject (badge assertion)
 app.post('/api/credential-subject', requireApiKey, async (req, res) => {
   const { id, recipient, badge, issuedOn, expires, evidence } = req.body;
-  
+
   if (!id || !recipient || !badge) {
     return res.status(400).json({ error: 'Missing required fields: id, recipient, badge' });
   }
-  
+
   // Validate credential and badge domains
   const credentialValidation = await validateIssuerDomain(id);
   const badgeValidation = await validateIssuerDomain(badge);
-  
+
   if (!credentialValidation.valid) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: `Credential domain validation failed: ${credentialValidation.message}`,
       domain_validation: credentialValidation
     });
   }
-  
+
   if (!badgeValidation.valid) {
-    return res.status(400).json({ 
+    return res.status(400).json({
       error: `Badge domain validation failed: ${badgeValidation.message}`,
       domain_validation: badgeValidation
     });
   }
-  
+
   const filename = `credential-${Date.now()}.json`;
   const filepath = uploadsPath(filename);
   const actualUrl = `${req.protocol}://${req.get('host')}/badges/${filename}`;
-  
+
   const credentialSubject = {
     "@context": "https://w3id.org/openbadges/v2",
     "type": "Assertion",
@@ -2584,15 +2588,15 @@ app.post('/api/credential-subject', requireApiKey, async (req, res) => {
     "evidence": evidence,
     "originalId": id // Keep track of the original requested ID
   };
-  
+
   // Remove undefined fields
   Object.keys(credentialSubject).forEach(key => credentialSubject[key] === undefined && delete credentialSubject[key]);
-  
+
   ensureUploadsDir();
   fs.writeFileSync(filepath, JSON.stringify(credentialSubject, null, 2));
-  
+
   const allWarnings = [...credentialValidation.warnings, ...badgeValidation.warnings];
-  
+
   res.json({
     message: 'Credential subject created successfully',
     filename: filename,
